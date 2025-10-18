@@ -1,0 +1,70 @@
+###################################################
+## 1. ARCHIVOS DE ENTORNO Y CONFIGURACIÓN SENSIBLE ##
+###################################################
+
+# Archivos que contienen claves API, contraseñas o credenciales sensibles.
+# Nunca deben subirse a un repositorio público o compartido.
+.env
+.env.local
+.env.*.local
+.flaskenv # Python Flask
+
+##########################################
+## 2. DEPENDENCIAS Y MÓDULOS DE PAQUETES ##
+##########################################
+
+# Carpeta de dependencias de Node.js (la más común en frontend/backend)
+**/node_modules
+
+# Dependencias de Python
+**/__pycache__
+*.pyc
+.pytest_cache/
+venv/
+.poetry/
+
+# Dependencias de PHP/Composer
+vendor/
+
+#################################
+## 3. ARCHIVOS DE BUILD/DISTRIBUCIÓN ##
+#################################
+
+# Archivos generados automáticamente al compilar o empaquetar el frontend/backend.
+# Estos deben ser generados por el desarrollador, no versionados.
+dist/
+build/
+out/
+.next/ # Next.js
+.nuxt/ # Nuxt.js
+
+################################################
+## 4. HERRAMIENTAS DE DESARROLLO Y LOGS (Local) ##
+################################################
+
+# Archivos de caché o logs (registros) generados durante la ejecución
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+log/
+tmp/
+
+################################################
+## 5. ARCHIVOS DE SISTEMAS OPERATIVOS Y EDITORES ##
+################################################
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDEs (Entornos de Desarrollo)
+.vscode/        # Configuración de Visual Studio Code (si es solo local)
+.idea/          # Configuración de JetBrains (WebStorm, PyCharm, etc.)
+*.iml           # Archivos de IntelliJ
+
+# Archivos de respaldo temporales
+*~
+*.bak
