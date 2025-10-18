@@ -1,0 +1,151 @@
+/* Estilos Globales para Pantalla Completa */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%; /* Asegura que html y body ocupen toda la altura */
+    overflow: hidden; /* Evita barras de desplazamiento si todo cabe */
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f4f4f9;
+}
+
+/* Contenedor Principal: Ocupa el 100% de la pantalla */
+.login-container {
+    display: flex;
+    width: 100vw; /* 100% del ancho del viewport */
+    height: 100vh; /* 100% de la altura del viewport */
+    box-shadow: none;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+/* MITAD IZQUIERDA: Área de Imagen */
+.login-image-area {
+    order: -1; 
+    flex: 1; /* Ocupa el 50% del espacio si .login-form-area es flex: 1 */
+    background-color: #007bff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.login-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* MITAD DERECHA: Formulario de Login */
+.login-form-area {
+    flex: 0.7; /* Establecemos flex: 1 para que ocupe el 50% del ancho */
+    padding: 40px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centra el contenido verticalmente */
+    
+    /* MODIFICACIÓN CLAVE: Centra el formulario horizontalmente */
+    align-items: center; 
+    
+    background-color: #ffffff;
+    /* text-align: center; se quita de aquí para evitar centrar inputs */
+}
+
+/* Estilo para el título h2 */
+.login-form-area h2 {
+    text-align: center; 
+    font-size: 2.2em; 
+    color: #030303; 
+    margin-bottom: 90px; /* Reducido de 120px para mejor ergonomía vertical */
+}
+
+/* Estilo para el párrafo debajo del título (para centrarlo y hacerlo grande) */
+.login-form-area p {
+    text-align: center; 
+    font-size: 1.2em; 
+    color: #555;
+    margin-bottom: 30px; 
+}
+
+
+/* ---------------------------------------------------- */
+/* MODIFICACIÓN CLAVE: Limitar y Centrar el Formulario */
+/* ---------------------------------------------------- */
+#loginForm {
+    /* Limita el ancho del formulario a 350px y se asegura de que sea responsive */
+    max-width: 500px; 
+    width: 100%; 
+    text-align: left; /* Asegura que el texto interno (labels) se alinee a la izquierda */
+}
+
+
+/* --- Estilos de Inputs y Botón --- */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.login-form label {
+    display: block;
+    font-size: 1.1em; /* Ajustado para que se vea más grande */
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #0b0b0b;
+    padding: 6px 0; /* padding horizontal eliminado, solo vertical */
+}
+
+.login-form input[type="text"],
+.login-form input[type="password"] {
+    width: 100%; /* Ocupa el 100% del max-width de #loginForm */
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.login-button {
+    width: 100%; /* Ocupa el 100% del max-width de #loginForm */
+    padding: 12px;
+    background-color: #3a37e7;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px; /* Incrementado para mejor separación */
+    transition: background-color 0.3s;
+}
+
+.login-button:hover {
+    background-color: #2d76ae;
+}
+
+.error-message {
+    color: #dc3545;
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* ------------------------------------------- */
+/* Media Query para pantallas pequeñas (móviles) */
+/* ------------------------------------------- */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column; 
+    }
+    
+    /* SOLUCIÓN CLAVE: Oculta la imagen en dispositivos móviles */
+    .login-image-area {
+        display: none; 
+    }
+    
+    .login-form-area {
+        flex: 1; /* Asegura que la mitad derecha ocupe el espacio completo */
+        height: 100vh; /* Ocupa toda la altura disponible cuando la imagen se oculta */
+        padding: 40px 20px;
+    }
+}
