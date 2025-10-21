@@ -39,7 +39,7 @@ function traducirErrorSupabase(originalMessage) {
 
     if (mensajeLower.includes("already registered")) {
         return "Ya existe una cuenta con este correo electrónico. Por favor, inicia sesión.";
-    } 
+    }
     if (mensajeLower.includes("password should be at least 6 characters")) {
         return "La contraseña debe tener al menos 6 caracteres.";
     }
@@ -50,9 +50,12 @@ function traducirErrorSupabase(originalMessage) {
     if (mensajeLower.includes("email not confirmed")) {
         return "El correo electrónico no ha sido confirmado. Revisa tu bandeja de entrada.";
     }
+    if (mensajeLower.includes("Unable to validate email address: invalid format")) {
+        return "Por faovor, ingresa un correo electrónico válido.";
+    }
 
     // Si no es un error conocido, devuelve el mensaje original o uno genérico
-    return originalMessage; 
+    return originalMessage;
 }
 
 
@@ -125,7 +128,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/register', async (req, res) => {
     console.log('¡Petición de Registro Recibida!');
 
-    const { username, password, role } = req.body; 
+    const { username, password, role } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ message: 'Faltan campos obligatorios.' });
@@ -146,18 +149,18 @@ app.post('/api/register', async (req, res) => {
 
         if (authError) {
             console.error('Error al registrar usuario:', authError.message);
-        
+
             const mensajeTraducido = traducirErrorSupabase(authError.message);
-            
-            return res.status(400).json({ 
-                message: mensajeTraducido 
+
+            return res.status(400).json({
+                message: mensajeTraducido
             });
         }
 
-        const message = authData.user?.identities?.length > 0 
-            ? 'Usuario registrado exitosamente. Por favor, revisa tu correo para confirmar la cuenta.' 
+        const message = authData.user?.identities?.length > 0
+            ? 'Usuario registrado exitosamente. Por favor, revisa tu correo para confirmar la cuenta.'
             : 'Usuario registrado exitosamente. Ya puedes iniciar sesión.';
-            
+
         res.status(201).json({ message: message });
     } catch (error) {
         console.error('Error inesperado:', error);
