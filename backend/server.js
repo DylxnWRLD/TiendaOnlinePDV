@@ -81,13 +81,15 @@ app.post('/api/login', async (req, res) => {
     });
 });
 
+
 // ===============================================
-// RUTA DE REGISTRO DE USUARIOS
+// RUTA DE REGISTRO DE USUARIOS CORREGIDA (Express)
 // ===============================================
 app.post('/api/register', async (req, res) => {
     console.log('¡Petición de Registro Recibida!');
 
-    const { username, password, role } = req.body;
+    // El frontend envía 'username' (que es el email), 'password' y 'role'
+    const { username, password, role } = req.body; 
 
     if (!username || !password) {
         return res.status(400).json({ message: 'Faltan campos obligatorios.' });
@@ -95,32 +97,27 @@ app.post('/api/register', async (req, res) => {
 
     try {
         // 1️⃣ Crear usuario en Supabase Auth
+        // NOTA: Usamos el campo 'data' para pasar el rol deseado
+        // al trigger de Postgres (aunque actualmente tu trigger lo ignora y pone 2)
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: username,
             password: password,
+            options: {
+                data: {
+                    // Pasamos el nombre y el rol deseado como metadatos
+                    display_name: username, // O el nombre real del usuario si lo tienes
+                    desired_role_id: role,
+                }
+            }
         });
 
         if (authError) {
             console.error('Error al registrar usuario:', authError.message);
             return res.status(400).json({ message: authError.message });
         }
-
-        const userId = authData.user.id;
-
-        // 2️⃣ Insertar en tabla "users" con rol
-        const { error: insertError } = await supabase
-            .from('users')
-            .insert([
-                {
-                    id: userId,
-                    role_id: role || 4 // Por ejemplo, 4 = Cliente
-                }
-            ]);
-
-        if (insertError) {
-            console.error('Error al guardar en tabla users:', insertError.message);
-            return res.status(500).json({ message: 'Error al guardar usuario en base de datos.' });
-        }
+        
+        // 2️⃣ El TRIGGER de Postgres se encarga de insertar en public.users
+        // Ya no es necesaria la inserción manual aquí (paso 2️⃣ eliminado)
 
         // 3️⃣ Respuesta exitosa
         res.status(201).json({ message: 'Usuario registrado exitosamente.' });
