@@ -22,6 +22,41 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ===============================================
+// FUNCIÓN DE TRADUCCIÓN DE ERRORES (Nueva Sección)
+// ===============================================
+
+/**
+ * Traduce mensajes de error comunes de Supabase Auth (GoTrue) de inglés a español.
+ * @param {string} originalMessage - El mensaje de error original en inglés.
+ * @returns {string} El mensaje de error traducido.
+ */
+function traducirErrorSupabase(originalMessage) {
+    if (!originalMessage) {
+        return 'Error desconocido en el servidor.';
+    }
+
+    const mensajeLower = originalMessage.toLowerCase();
+
+    if (mensajeLower.includes("already registered")) {
+        return "Ya existe una cuenta con este correo electrónico. Por favor, inicia sesión.";
+    } 
+    if (mensajeLower.includes("password should be at least 6 characters")) {
+        return "La contraseña debe tener al menos 6 caracteres.";
+    }
+    if (mensajeLower.includes("invalid login credentials")) {
+        // Aunque se maneja aparte en /api/login, es útil tenerla
+        return "Credenciales de inicio de sesión no válidas.";
+    }
+    if (mensajeLower.includes("email not confirmed")) {
+        return "El correo electrónico no ha sido confirmado. Revisa tu bandeja de entrada.";
+    }
+
+    // Si no es un error conocido, devuelve el mensaje original o uno genérico
+    return originalMessage; 
+}
+
+
+// ===============================================
 // 1. MIDDLEWARES
 // ===============================================
 
@@ -53,7 +88,9 @@ app.post('/api/login', async (req, res) => {
 
     if (authError) {
         console.error('Error de autenticación:', authError.message);
-        return res.status(401).json({ message: 'Usuario o contraseña inválidos.' });
+        // Usamos la función de traducción aquí también
+        const mensajeTraducido = traducirErrorSupabase(authError.message);
+        return res.status(401).json({ message: mensajeTraducido || 'Usuario o contraseña inválidos.' });
     }
 
     const userId = authData.user.id;
@@ -83,12 +120,11 @@ app.post('/api/login', async (req, res) => {
 
 
 // ===============================================
-// RUTA DE REGISTRO DE USUARIOS CORREGIDA (Express)
+// RUTA DE REGISTRO DE USUARIOS
 // ===============================================
 app.post('/api/register', async (req, res) => {
     console.log('¡Petición de Registro Recibida!');
 
-    // El frontend envía 'username' (que es el email), 'password' y 'role'
     const { username, password, role } = req.body; 
 
     if (!username || !password) {
@@ -97,15 +133,12 @@ app.post('/api/register', async (req, res) => {
 
     try {
         // 1️⃣ Crear usuario en Supabase Auth
-        // NOTA: Usamos el campo 'data' para pasar el rol deseado
-        // al trigger de Postgres (aunque actualmente tu trigger lo ignora y pone 2)
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: username,
             password: password,
             options: {
                 data: {
-                    // Pasamos el nombre y el rol deseado como metadatos
-                    display_name: username, // O el nombre real del usuario si lo tienes
+                    display_name: username,
                     desired_role_id: role,
                 }
             }
@@ -113,14 +146,19 @@ app.post('/api/register', async (req, res) => {
 
         if (authError) {
             console.error('Error al registrar usuario:', authError.message);
-            return res.status(400).json({ message: authError.message });
-        }
         
-        // 2️⃣ El TRIGGER de Postgres se encarga de insertar en public.users
-        // Ya no es necesaria la inserción manual aquí (paso 2️⃣ eliminado)
+            const mensajeTraducido = traducirErrorSupabase(authError.message);
+            
+            return res.status(400).json({ 
+                message: mensajeTraducido 
+            });
+        }
 
-        // 3️⃣ Respuesta exitosa
-        res.status(201).json({ message: 'Usuario registrado exitosamente.' });
+        const message = authData.user?.identities?.length > 0 
+            ? 'Usuario registrado exitosamente. Por favor, revisa tu correo para confirmar la cuenta.' 
+            : 'Usuario registrado exitosamente. Ya puedes iniciar sesión.';
+            
+        res.status(201).json({ message: message });
     } catch (error) {
         console.error('Error inesperado:', error);
         res.status(500).json({ message: 'Error interno del servidor.' });
