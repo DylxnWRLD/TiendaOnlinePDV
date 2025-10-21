@@ -50,8 +50,8 @@ function traducirErrorSupabase(originalMessage) {
     if (mensajeLower.includes("email not confirmed")) {
         return "El correo electrónico no ha sido confirmado. Revisa tu bandeja de entrada.";
     }
-    if (mensajeLower.includes("Unable to validate email address: invalid format")) {
-        return "Por faovor, ingresa un correo electrónico válido.";
+    if (mensajeLower.includes("unable to validate email address")) {
+        return "Por favor, ingresa un correo electrónico válido.";
     }
 
     // Si no es un error conocido, devuelve el mensaje original o uno genérico
