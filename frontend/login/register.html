@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Tienda Online PDV</title>
+    <title>Registro - Tienda Online PDV</title>
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
     <div class="login-container">
         <div class="login-form-area">
-            <h2 class="login-title">Inicio de Sesión</h2>
-          
+            <h2 class="login-title">Crear Cuenta</h2>
 
-            <form id="loginForm" class="login-form">
+            <form id="registerForm" class="login-form">
                 <div class="input-group">
                     <label for="username">Correo electrónico:</label>
                     <input type="text" id="username" name="username" required>
@@ -23,10 +22,19 @@
                     <input type="password" id="password" name="password" required>
                 </div>
 
-                <button type="submit" class="login-button">Iniciar Sesión</button>
-                <p id="error-message" class="error-message"></p>
-                <p>¿No tienes cuenta? <a href="register.html">Regístrate aquí</a></p>
+                <div class="input-group">
+                    <label for="role">Rol (solo para pruebas):</label>
+                    <select id="role" name="role">
+                        <option value="4">Cliente</option>
+                        <option value="1">Admin</option>
+                        <option value="2">Cajero</option>
+                        <option value="3">AdminInventario</option>
+                    </select>
+                </div>
 
+                <button type="submit" class="login-button">Registrar</button>
+                <p id="error-message" class="error-message"></p>
+                <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
             </form>
         </div>
 
@@ -35,6 +43,6 @@
         </div>
     </div>
 
-    <script src="login.js"></script>
+    <script src="register.js"></script>
 </body>
 </html>
