@@ -1,33 +1,34 @@
 // cajero/apertura_caja.js
 
-// Define la API base URL (¡Ajusta tus URLs de entorno!)
+// Define la API base URL (¡Ajusta tu URL de Render!)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv-hm20.onrender.com';
 
-const token = localStorage.getItem('sessionToken');
-const role = localStorage.getItem('userRole');
 
-// 1. Verificar Sesión y Rol (Cajero) - RESTAURADA
+// 1. Verificar Sesión y Rol (Cajero) - CORREGIDA
 function checkAuthentication() {
+    // ⭐️ CORRECCIÓN: Leemos localStorage AQUÍ para obtener el valor más reciente ⭐️
+    const token = localStorage.getItem('sessionToken');
+    const role = localStorage.getItem('userRole');
+    
     if (!token || role !== 'Cajero') {
         alert('Acceso no autorizado o sesión expirada. Redirigiendo al login.');
-        // Ruta relativa: Subir dos niveles (cajero/ -> login/)
+        // Ruta relativa: Sube dos niveles (cajero/ -> login/)
         window.location.href = '../../login/login.html'; 
-        // 🛑 Importante: Detener la ejecución si la autenticación falla
         throw new Error("No autenticado. Redirigido a login.");
     }
 }
 
+
 // 2. Inicialización y manejo de formulario
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        checkAuthentication(); // Ahora esto es seguro de llamar
+        checkAuthentication(); // Esto ahora es seguro y usa datos frescos
 
         const aperturaForm = document.getElementById('aperturaForm');
         aperturaForm.addEventListener('submit', handleAperturaSubmit);
     } catch (e) {
-        // Ignora el error de 'No autenticado' ya que la redirección lo maneja
         if (e.message !== "No autenticado. Redirigido a login.") {
             console.error(e);
         }
@@ -43,7 +44,15 @@ async function handleAperturaSubmit(e) {
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
     
-    // ... (Validación) ...
+    // ⭐️ RELECTURA DE TOKEN Y ROL AQUÍ (NECESARIO PARA EL ENCABEZADO) ⭐️
+    const token = localStorage.getItem('sessionToken');
+    
+    // VALIDACIÓN PENDIENTE: Puedes añadir tu lógica de 'if (isNaN...)' aquí.
+    if (isNaN(montoInicial) || montoInicial < 0) {
+        errorMessage.textContent = 'Por favor, ingresa un monto inicial válido.';
+        return;
+    }
+
 
     const submitButton = document.querySelector('.btn-abrir');
     submitButton.disabled = true;
@@ -54,7 +63,8 @@ async function handleAperturaSubmit(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                // ⭐️ CRUCIAL: Usar el token re-leído o asegurarnos de que la variable global exista ⭐️
+                'Authorization': `Bearer ${token}` 
             },
             body: JSON.stringify({ monto_inicial: montoInicial })
         });
@@ -67,7 +77,8 @@ async function handleAperturaSubmit(e) {
                 localStorage.setItem('currentCorteId', data.corteId);
             }
             
-            const redirectPath = 'cajero.html'; // ⬅️ Usamos pdv.html (o el nombre correcto)
+            // Asumiendo que 'cajero.html' es tu PDV
+            const redirectPath = './cajero.html'; 
 
             const message = response.status === 409
                 ? data.message + ' Redirigiendo a tu turno activo.'
@@ -84,11 +95,11 @@ async function handleAperturaSubmit(e) {
             errorMessage.textContent = data.message || `Error (${response.status}) al abrir la caja.`;
         }
     } catch (error) {
-        // 🛑 IMPORTANTE: Si la conexión falla (catch), el botón se debe restaurar
+        // Error de red
         errorMessage.textContent = 'Error de conexión con el servidor. Verifica tu red.';
         console.error('Error al abrir caja:', error);
     } finally {
-        // ⭐️ ESTE BLOQUE ES CRUCIAL: Se ejecuta siempre, asegurando que el botón se libere ⭐️
+        // Este bloque es crucial para restaurar el botón
         submitButton.disabled = false;
         submitButton.textContent = 'Abrir Caja';
     }
