@@ -3,7 +3,7 @@
 // Define la API base URL (¡Ajusta tus URLs de entorno!)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv.onrender.com';
+    : 'https://tiendaonlinepdv-hm20.onrender.com';
 
 const token = localStorage.getItem('sessionToken');
 const role = localStorage.getItem('userRole');
