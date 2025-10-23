@@ -8,23 +8,30 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 const token = localStorage.getItem('sessionToken');
 const role = localStorage.getItem('userRole');
 
-/*
-// 1. Verificar Sesión y Rol (Cajero)
+// 1. Verificar Sesión y Rol (Cajero) - RESTAURADA
 function checkAuthentication() {
     if (!token || role !== 'Cajero') {
         alert('Acceso no autorizado o sesión expirada. Redirigiendo al login.');
         // Ruta relativa: Subir dos niveles (cajero/ -> login/)
         window.location.href = '../../login/login.html'; 
+        // 🛑 Importante: Detener la ejecución si la autenticación falla
+        throw new Error("No autenticado. Redirigido a login.");
     }
 }
-*/
 
 // 2. Inicialización y manejo de formulario
 document.addEventListener('DOMContentLoaded', () => {
-    checkAuthentication();
+    try {
+        checkAuthentication(); // Ahora esto es seguro de llamar
 
-    const aperturaForm = document.getElementById('aperturaForm');
-    aperturaForm.addEventListener('submit', handleAperturaSubmit);
+        const aperturaForm = document.getElementById('aperturaForm');
+        aperturaForm.addEventListener('submit', handleAperturaSubmit);
+    } catch (e) {
+        // Ignora el error de 'No autenticado' ya que la redirección lo maneja
+        if (e.message !== "No autenticado. Redirigido a login.") {
+            console.error(e);
+        }
+    }
 });
 
 
@@ -35,12 +42,8 @@ async function handleAperturaSubmit(e) {
     const montoInicial = parseFloat(montoInicialInput.value);
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
-
-    // Validación
-    if (isNaN(montoInicial) || montoInicial < 0) {
-        errorMessage.textContent = 'Por favor, ingresa un monto inicial válido.';
-        return;
-    }
+    
+    // ... (Validación) ...
 
     const submitButton = document.querySelector('.btn-abrir');
     submitButton.disabled = true;
@@ -58,37 +61,35 @@ async function handleAperturaSubmit(e) {
 
         const data = await response.json();
 
-        if (response.ok) {
-            // 3. Éxito: Guardamos el ID del corte y redirigimos
-            localStorage.setItem('currentCorteId', data.corteId);
-            errorMessage.textContent = 'Caja abierta exitosamente. Redirigiendo al PDV...';
-
-            setTimeout(() => {
-                window.location.href = 'cajero.html'; // Redirige a la pantalla principal del cajero
-            }, 500);
-
-        } else if (response.status === 409) {
-            // 4. Manejo de Conflicto (Caja ya abierta)
-            // Usamos el ID de corte devuelto por el servidor
+        if (response.ok || response.status === 409) {
+            // Maneja Éxito (200) y Conflicto (409)
             if (data.corteId) {
                 localStorage.setItem('currentCorteId', data.corteId);
             }
-            errorMessage.textContent = data.message + ' Redirigiendo a tu turno activo.';
             
+            const redirectPath = './pdv.html'; // ⬅️ Usamos pdv.html (o el nombre correcto)
+
+            const message = response.status === 409
+                ? data.message + ' Redirigiendo a tu turno activo.'
+                : 'Caja abierta exitosamente. Redirigiendo al PDV...';
+            
+            errorMessage.textContent = message;
+
             setTimeout(() => {
-                window.location.href = 'cajero.html'; 
-            }, 1500);
-            
+                window.location.href = redirectPath; 
+            }, response.status === 409 ? 1500 : 500);
+
         } else {
             // 5. Manejo de otros errores (400, 500, etc.)
             errorMessage.textContent = data.message || `Error (${response.status}) al abrir la caja.`;
-            submitButton.disabled = false;
-            submitButton.textContent = 'Abrir Caja';
         }
     } catch (error) {
+        // 🛑 IMPORTANTE: Si la conexión falla (catch), el botón se debe restaurar
         errorMessage.textContent = 'Error de conexión con el servidor. Verifica tu red.';
         console.error('Error al abrir caja:', error);
+    } finally {
+        // ⭐️ ESTE BLOQUE ES CRUCIAL: Se ejecuta siempre, asegurando que el botón se libere ⭐️
         submitButton.disabled = false;
-        submitButton.textContent = 'Abrir Caja';
+        submitButton.textContent = '💰 Abrir Caja y Empezar';
     }
 }
