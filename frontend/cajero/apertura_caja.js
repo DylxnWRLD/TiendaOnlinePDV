@@ -67,7 +67,7 @@ async function handleAperturaSubmit(e) {
                 localStorage.setItem('currentCorteId', data.corteId);
             }
             
-            const redirectPath = './pdv.html'; // ⬅️ Usamos pdv.html (o el nombre correcto)
+            const redirectPath = 'cajero.html'; // ⬅️ Usamos pdv.html (o el nombre correcto)
 
             const message = response.status === 409
                 ? data.message + ' Redirigiendo a tu turno activo.'
@@ -90,6 +90,6 @@ async function handleAperturaSubmit(e) {
     } finally {
         // ⭐️ ESTE BLOQUE ES CRUCIAL: Se ejecuta siempre, asegurando que el botón se libere ⭐️
         submitButton.disabled = false;
-        submitButton.textContent = '💰 Abrir Caja y Empezar';
+        submitButton.textContent = 'Abrir Caja';
     }
 }
