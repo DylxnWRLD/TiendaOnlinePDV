@@ -1,16 +1,13 @@
+// backend/routes/cajeroRoutes.js (CORRECCIÓN FINAL Y ROBUSTA)
+
 const express = require('express');
 const router = express.Router();
-
-// ⭐️ IMPORTAR SOLAMENTE SUPABASE desde server.js ⭐️
 const { supabase } = require('../server'); 
 
 
 // ===============================================
-// 1. MIDDLEWARE DE AUTENTICACIÓN LOCAL
-// ===============================================
-/**
- * Verifica el token JWT y extrae el ID del usuario (UUID de Supabase).
- */
+// MIDDLEWARE DE AUTENTICACIÓN LOCAL (getUserIdFromToken)
+// ... (Se mantiene, asume que usa supabase y next()) ...
 async function getUserIdFromToken(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -18,7 +15,6 @@ async function getUserIdFromToken(req, res, next) {
     }
     const token = authHeader.split(' ')[1];
 
-    // Usa el objeto 'supabase' importado
     const { data: userData, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !userData.user) {
@@ -28,16 +24,16 @@ async function getUserIdFromToken(req, res, next) {
     req.userId = userData.user.id;
     next();
 }
+// ... (Fin del middleware) ...
 
 
 // ===============================================
 // RUTA: POST /caja/abrir (Apertura de Caja)
 // ===============================================
 router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
-    const userId = req.userId; // ID del cajero autenticado
+    const userId = req.userId;
     const { monto_inicial } = req.body;
 
-    // Validación de entrada
     if (typeof monto_inicial !== 'number' || monto_inicial < 0) {
         return res.status(400).json({ message: 'Monto inicial inválido o faltante.' });
     }
@@ -48,36 +44,38 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
             .from('users')
             .select('role_id')
             .eq('id', userId)
-            .single();
+            .maybeSingle(); // ⬅️ Usar maybeSingle para que devuelva null si no lo encuentra
 
-        // El ID 3 corresponde al rol 'Cajero' en tu esquema de BD
+        // Si hay error en la DB o si el rol no es Cajero (ID 3)
         if (roleError || !userData || userData.role_id !== 3) {
-            console.warn(`Intento de apertura rechazado: Usuario ${userId} tiene role_id: ${userData ? userData.role_id : 'N/A'}`);
-            // Devolver 403 (Permiso Denegado) si no es Cajero
+            if (roleError) console.error('[ROLE DB ERROR]:', roleError.message);
+            
+            // 🛑 Devolver 403 (Permiso Denegado) si no es Cajero o no existe su perfil
             return res.status(403).json({ 
-                message: 'Permiso denegado. Solo usuarios con el rol Cajero pueden abrir la caja.' 
+                message: 'Permiso denegado. Se requiere el rol Cajero.' 
             });
         }
         
     } catch (error) {
-        console.error('Error al verificar el rol del usuario:', error);
-        return res.status(500).json({ message: 'Error interno al verificar permisos.' });
+        // Captura errores inesperados, como problemas de conexión inicial de Supabase
+        console.error('[FATAL ERROR]: Role verification failed:', error.message);
+        // Devolver un error 500 explícito para evitar que Express devuelva HTML
+        return res.status(500).json({ message: 'Error interno: Fallo al verificar permisos.' });
     }
     
-    // ⭐️ 2. LLAMADA A LA FUNCIÓN DE APERTURA (Solo si el rol fue verificado como 3) ⭐️
+    // ⭐️ 2. LLAMADA A LA FUNCIÓN DE APERTURA (Solo si el rol fue verificado) ⭐️
     
     try {
-        // Llama a la función PostgreSQL 'abrir_caja_cajero' (RPC)
         const { data: corteData, error } = await supabase.rpc('abrir_caja_cajero', {
             p_id_cajero: userId,
             p_monto_inicial: monto_inicial
         });
         
         if (error) {
-            console.error('Error al abrir caja en DB:', error.message);
+            console.error('[RPC ERROR]: Error en abrir_caja_cajero:', error.message);
             
             if (error.message.includes('CAJA_ACTIVA_EXISTENTE')) {
-                 // Buscar el corte activo para devolver el ID
+                 // ... (Código para obtener existingCorte y devolver 409) ...
                  const { data: existingCorte } = await supabase
                     .from('cortes_caja')
                     .select('id_corte')
@@ -101,12 +99,11 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error inesperado al abrir caja:', error);
-        res.status(500).json({ message: 'Error interno del servidor.' });
+        // Captura errores durante la llamada RPC
+        console.error('[FATAL ERROR]: RPC call failed:', error);
+        res.status(500).json({ message: 'Error interno del servidor. Fallo crítico en RPC.' });
     }
 });
 
-
-// ... (Otras rutas de cajero, como /ventas/finalizar y /caja/cerrar) ...
 
 module.exports = router;
