@@ -66,6 +66,56 @@ function traducirErrorSupabase(originalMessage) {
 app.use(cors());
 app.use(bodyParser.json());
 
+// ===============================================
+// 1.5 MIDDLEWARE DE AUTENTICACIÓN Y AUTORIZACIÓN
+// ===============================================
+
+/**
+ * Verifica el token de Supabase y comprueba si el usuario es 'Admin'.
+ */
+const authenticateAdmin = async (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Formato: Bearer TOKEN
+
+    if (token == null) {
+        return res.status(401).json({ message: 'Token no proporcionado.' });
+    }
+
+    try {
+        // 1. Verificar el token
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+        if (userError) {
+            console.error('Error de token:', userError.message);
+            return res.status(403).json({ message: 'Token inválido o expirado.' });
+        }
+
+        // 2. Verificar el ROL del usuario (Autorización)
+        const { data: profileData, error: profileError } = await supabase
+            .from('users')
+            .select('roles(name)')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !profileData || !profileData.roles) {
+            return res.status(500).json({ message: 'No se pudo verificar el rol del usuario.' });
+        }
+
+        // 3. Comprobar si es 'Admin'
+        if (profileData.roles.name !== 'Admin') {
+            return res.status(403).json({ message: 'Acceso denegado. Se requiere rol de Administrador.' });
+        }
+        
+        // Si todo está bien, permite que la petición continúe
+        req.user = user;
+        next();
+
+    } catch (error) {
+        console.error('Error en middleware de autenticación:', error.message);
+        return res.status(500).json({ message: 'Error interno al validar la sesión.' });
+    }
+};
+
 
 // ===============================================
 // 2. RUTAS DE API (Login y prueba) - DEBEN IR PRIMERO
@@ -164,6 +214,66 @@ app.post('/api/register', async (req, res) => {
         res.status(201).json({ message: message });
     } catch (error) {
         console.error('Error inesperado:', error);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+// ===============================================
+// 2.5 RUTAS DE API (ADMIN)
+// ===============================================
+
+/**
+ * Obtiene una lista combinada de todos los usuarios (de auth y public)
+ * Protegida por el middleware 'authenticateAdmin'.
+ */
+app.get('/api/users', authenticateAdmin, async (req, res) => {
+    console.log('¡Petición para obtener usuarios (Admin) recibida!');
+    
+    try {
+        // 1. Obtener todos los usuarios de AUTH (requiere service_role key)
+        const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers();
+        if (authError) {
+            console.error('Error al obtener usuarios de auth:', authError.message);
+            return res.status(500).json({ message: 'Error al obtener lista de usuarios.' });
+        }
+        const authUsers = authUsersData.users;
+
+        // 2. Obtener todos los perfiles (roles) de PUBLIC
+        const { data: profilesData, error: profileError } = await supabase
+            .from('users')
+            .select('id, roles(name)'); // Selecciona el ID y el nombre del rol anidado
+        
+        if (profileError) {
+            console.error('Error al obtener perfiles/roles:', profileError.message);
+            return res.status(500).json({ message: 'Error al obtener roles de usuarios.' });
+        }
+
+        // 3. Mapear los roles (ID -> Nombre del Rol) para unirlos fácilmente
+        const rolesMap = new Map();
+        profilesData.forEach(profile => {
+            const roleName = profile.roles ? profile.roles.name : 'Cliente'; // Asignar 'Cliente' por defecto
+            rolesMap.set(profile.id, roleName);
+        });
+
+        // 4. Combinar los datos de Auth y Public
+        const combinedUsers = authUsers.map(authUser => {
+            const role = rolesMap.get(authUser.id) || 'Cliente'; // Default por si no está en 'users'
+            const status = authUser.email_confirmed_at ? 'Activo' : 'Pendiente';
+
+            return {
+                id: authUser.id,
+                email: authUser.email,
+                role: role,
+                created_at: authUser.created_at,
+                status: status
+            };
+        });
+        
+        // 5. Enviar la respuesta
+        res.status(200).json(combinedUsers);
+
+    } catch (error) {
+        console.error('Error inesperado en /api/users:', error.message);
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });

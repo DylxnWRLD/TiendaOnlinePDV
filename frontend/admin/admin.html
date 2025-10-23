@@ -1,11 +1,324 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Panel de Administración - Tienda Online PDV</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Panel del admin</h1>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-store"></i> <span class="menu-text">Admin PDV</span></h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> <span class="menu-text">Dashboard</span></a></li>
+            <li><a href="#" data-tab="users"><i class="fas fa-users"></i> <span class="menu-text">Gestión de Usuarios</span></a></li>
+            <li><a href="#" data-tab="reports"><i class="fas fa-chart-bar"></i> <span class="menu-text">Reportes</span></a></li>
+            <li><a href="#" data-tab="promotions"><i class="fas fa-tag"></i> <span class="menu-text">Promociones</span></a></li>
+            <li><a href="#" data-tab="performance"><i class="fas fa-chart-line"></i> <span class="menu-text">Rendimiento</span></a></li>
+            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span class="menu-text">Cerrar Sesión</span></a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1>Panel de Administración</h1>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <span id="userName">Cargando...</span>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <!-- Stats Cards -->
+            <div class="stats-cards">
+                <div class="stat-card primary">
+                    <i class="fas fa-shopping-cart"></i>
+                    <div class="stat-number" id="totalSales">$0</div>
+                    <div class="stat-title">Ventas Totales</div>
+                </div>
+                <div class="stat-card success">
+                    <i class="fas fa-users"></i>
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-title">Usuarios Registrados</div>
+                </div>
+                <div class="stat-card warning">
+                    <i class="fas fa-box"></i>
+                    <div class="stat-number" id="totalProducts">0</div>
+                    <div class="stat-title">Productos</div>
+                </div>
+                <div class="stat-card danger">
+                    <i class="fas fa-tags"></i>
+                    <div class="stat-number" id="activePromotions">0</div>
+                    <div class="stat-title">Promociones Activas</div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Actividad Reciente</h2>
+                </div>
+                <div class="table-container">
+                    <table id="recentActivityTable">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                                <th>Fecha</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentActivityBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Management Tab -->
+        <div id="users" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Gestión de Usuarios</h2>
+                    <button class="btn btn-primary" onclick="openAddUserModal()">
+                        <i class="fas fa-plus"></i> Agregar Usuario
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Fecha Registro</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Reportes y Análisis</h2>
+                </div>
+                <div class="tabs">
+                    <div class="tab active" data-report-tab="sales">Reporte de Ventas</div>
+                    <div class="tab" data-report-tab="users">Reporte de Usuarios</div>
+                    <div class="tab" data-report-tab="products">Reporte de Productos</div>
+                </div>
+                
+                <div id="salesReport" class="report-content active">
+                    <div class="form-group">
+                        <label class="form-label">Filtrar por fecha:</label>
+                        <input type="date" id="startDate" class="form-control" style="display: inline-block; width: auto;">
+                        <input type="date" id="endDate" class="form-control" style="display: inline-block; width: auto;">
+                        <button class="btn btn-primary" onclick="generateSalesReport()">Generar Reporte</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="usersReport" class="report-content">
+                    <div class="chart-container">
+                        <canvas id="usersChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="productsReport" class="report-content">
+                    <div class="chart-container">
+                        <canvas id="productsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promotions Tab -->
+        <div id="promotions" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Gestión de Promociones</h2>
+                    <button class="btn btn-primary" onclick="openAddPromotionModal()">
+                        <i class="fas fa-plus"></i> Nueva Promoción
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="promotionsTable">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Descuento</th>
+                                <th>Vigencia</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promotionsTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Tab -->
+        <div id="performance" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Rendimiento del Negocio</h2>
+                </div>
+                <div class="stats-cards">
+                    <div class="stat-card primary">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="stat-number" id="monthlyRevenue">$0</div>
+                        <div class="stat-title">Ingresos Mensuales</div>
+                    </div>
+                    <div class="stat-card success">
+                        <i class="fas fa-shopping-bag"></i>
+                        <div class="stat-number" id="totalOrders">0</div>
+                        <div class="stat-title">Pedidos Totales</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <i class="fas fa-user-check"></i>
+                        <div class="stat-number" id="activeCustomers">0</div>
+                        <div class="stat-title">Clientes Activos</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <i class="fas fa-percentage"></i>
+                        <div class="stat-number" id="conversionRate">0%</div>
+                        <div class="stat-title">Tasa de Conversión</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Agregar Nuevo Usuario</h3>
+                <button class="close" onclick="closeAddUserModal()">&times;</button>
+            </div>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="userEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="userPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rol</label>
+                    <select class="form-control" id="userRole" required>
+                        <option value="4">Cliente</option>
+                        <option value="3">Administrador de Inventario</option>
+                        <option value="2">Cajero</option>
+                        <option value="1">Administrador</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                    <button type="button" class="btn" onclick="closeAddUserModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Editar Rol de Usuario</h3>
+                <button class="close" onclick="closeEditUserModal()">&times;</button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="editUserEmail" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rol</label>
+                    <select class="form-control" id="editUserRole" required>
+                        <option value="1">Administrador</option>
+                        <option value="3">Administrador de Inventario</option>
+                        <option value="2">Cajero</option>
+                        <option value="4">Cliente</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Actualizar Rol</button>
+                    <button type="button" class="btn" onclick="closeEditUserModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Promotion Modal -->
+    <div id="addPromotionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Crear Nueva Promoción</h3>
+                <button class="close" onclick="closeAddPromotionModal()">&times;</button>
+            </div>
+            <form id="addPromotionForm">
+                <div class="form-group">
+                    <label class="form-label">Nombre de la Promoción</label>
+                    <input type="text" class="form-control" id="promotionName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tipo de Descuento</label>
+                    <select class="form-control" id="promotionType" required>
+                        <option value="percentage">Porcentaje</option>
+                        <option value="fixed">Monto Fijo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor del Descuento</label>
+                    <input type="number" class="form-control" id="promotionValue" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fecha de Inicio</label>
+                    <input type="datetime-local" class="form-control" id="promotionStart" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fecha de Fin</label>
+                    <input type="datetime-local" class="form-control" id="promotionEnd" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Crear Promoción</button>
+                    <button type="button" class="btn" onclick="closeAddPromotionModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
 </body>
 </html>
