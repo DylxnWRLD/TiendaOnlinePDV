@@ -1,0 +1,137 @@
+/* -------------------------------------- */
+/* 1. VARIABLES Y ESTILOS GLOBALES ESTÁNDARES */
+/* -------------------------------------- */
+:root {
+    /* Paleta limpia y de alto contraste */
+    --color-fondo-principal: #ffffff; /* Fondo blanco */
+    --color-fondo-contenedor: #f9f9f9; /* Blanco muy sutil para el contenedor */
+    --color-principal: #0d0c52; /* Azul Marino (para botones y acentos) */
+    --color-texto-oscuro: #0a0a1a; /* Negro o Azul muy oscuro para el texto */
+    --color-texto-input: #000000; /* Negro para el monto */
+    --color-error: #dc3545; /* Rojo estándar para errores */
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%; 
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--color-fondo-principal);
+    color: var(--color-texto-oscuro);
+    padding: 20px;
+}
+
+/* -------------------------------------- */
+/* 2. CONTENEDOR DE APERTURA DE CAJA */
+/* -------------------------------------- */
+.apertura-container {
+    background-color: var(--color-fondo-contenedor);
+    padding: 40px;
+    border-radius: 12px;
+    /* Borde y sombra sutiles, sin glow */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+}
+
+/* -------------------------------------- */
+/* 3. TÍTULOS */
+/* -------------------------------------- */
+.cyber-glow {
+    /* Mantenemos la fuente Orbitron, pero sin el glow */
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 2.5em;
+    color: var(--color-principal); /* Azul Marino */
+    text-shadow: none; 
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+}
+
+.apertura-title {
+    font-size: 1.5em;
+    color: var(--color-texto-oscuro);
+    margin-bottom: 30px;
+}
+
+.instruccion {
+    margin-bottom: 25px;
+    line-height: 1.5;
+    color: #555555;
+}
+
+/* -------------------------------------- */
+/* 4. INPUT Y BOTÓN */
+/* -------------------------------------- */
+
+.input-group {
+    text-align: left;
+    margin-bottom: 25px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--color-texto-oscuro);
+}
+
+#montoInicial {
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: var(--color-fondo-principal);
+    color: var(--color-texto-input);
+    font-size: 2.0em;
+    font-weight: bold;
+    text-align: right;
+    transition: border-color 0.3s;
+}
+
+#montoInicial:focus {
+    outline: none;
+    border-color: var(--color-principal); /* Borde azul marino al enfocar */
+    box-shadow: 0 0 5px rgba(13, 12, 82, 0.3);
+}
+
+.btn-abrir {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--color-principal); /* Azul Marino */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color 0.3s, transform 0.1s;
+    text-transform: uppercase;
+    margin-top: 20px;
+}
+
+.btn-abrir:hover {
+    background-color: #2d76ae; /* Azul más claro al pasar el ratón */
+    transform: translateY(-2px);
+}
+
+.error-message {
+    color: var(--color-error);
+    font-weight: bold;
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: rgba(220, 53, 69, 0.1);
+}

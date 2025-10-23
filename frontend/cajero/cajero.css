@@ -1,0 +1,313 @@
+/* ========================================================= */
+/* 1. VARIABLES Y ESTILOS GLOBALES (Adaptados del Login) */
+/* ========================================================= */
+:root {
+    /* Colores base de tu Login */
+    --color-bg-light: #ffffff; /* Blanco para fondo de secciones */
+    --color-bg-main: #f4f4f9; /* Gris muy claro/fondo principal */
+    --color-text-dark: #030303; 
+    --color-text-light: #555;
+    
+    /* Colores Cyber/Neón (Cian y Morado Oscuro) */
+    --color-primary-dark: #06022d; /* Azul/Morado Oscuro (Base Neón) */
+    --color-primary-light: #008080; /* Cian (Glow) */
+    
+    /* Colores Funcionales (Botones) */
+    --color-success: #4caf50; /* Verde para pago Efectivo */
+    --color-primary-btn: #0d0c52; /* Azul Oscuro para Tarjeta/Acciones */
+    --color-danger: #dc3545; /* Rojo para cancelar/corte */
+    --color-warning: #ff9800; /* Naranja para Cancelar Venta */
+    
+    /* Fuente */
+    --font-header: 'Orbitron', sans-serif;
+    --font-body: Arial, sans-serif;
+}
+
+/* Estilos Globales para la aplicación PDV */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; 
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--color-bg-main);
+    color: var(--color-text-dark);
+    font-size: 14px;
+}
+
+/* Adaptación del efecto Cyber Glow */
+.cyber-glow {
+    font-family: var(--font-header);
+    font-weight: 900;
+    font-size: 1.5em; /* Reducido para caber en la interfaz */
+    color: var(--color-primary-dark); 
+    text-shadow: 
+        0 0 5px var(--color-primary-light), 
+        0 0 10px rgba(0, 128, 128, 0.5); 
+    text-transform: uppercase;
+    letter-spacing: 2px; 
+    margin: 0 0 15px 0;
+}
+
+.section-title {
+    color: var(--color-primary-dark);
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+hr {
+    border: 0;
+    border-top: 1px dashed #ddd;
+    margin: 10px 0;
+}
+
+/* ========================================================= */
+/* 2. LAYOUT PRINCIPAL (Flexbox) */
+/* ========================================================= */
+
+.pdv-layout {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    height: 100%;
+    box-sizing: border-box;
+    max-height: 100vh;
+}
+
+/* Distribución de las 3 columnas: 1.5 - 5.5 - 3 */
+.col-acciones-caja { flex: 1.5; } /* Panel Izquierdo */
+.col-venta-principal { flex: 5.5; } /* Área Central (Carrito/Búsqueda) */
+.col-pago-final { flex: 3; } /* Área Derecha (Totales/Pago) */
+
+/* Estilo Base de las Secciones */
+.col-acciones-caja, .col-venta-principal, .col-pago-final {
+    background-color: var(--color-bg-light);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ========================================================= */
+/* 3. COLUMNA 1: ACCIONES (ASIDE) */
+/* ========================================================= */
+.col-acciones-caja {
+    min-width: 200px;
+    max-width: 250px;
+}
+
+.info-caja-sesion {
+    background-color: #eef; /* Fondo ligero para info importante */
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+.info-caja-sesion p {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+.btn-accion {
+    width: 100%;
+    padding: 12px; /* Más padding para facilidad táctil */
+    margin-bottom: 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1em;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    /* Estilo neutro/principal */
+    background-color: var(--color-primary-btn); 
+    color: white;
+}
+.btn-accion:hover {
+    background-color: #2d76ae;
+    box-shadow: 0 0 5px var(--color-primary-light);
+}
+
+.btn-cancelar { background-color: var(--color-warning); }
+.btn-cancelar:hover { background-color: #e68a00; }
+
+.btn-danger { background-color: var(--color-danger); }
+.btn-danger:hover { background-color: #c42b38; }
+
+.btn-logout { 
+    margin-top: auto; /* Empuja el botón al fondo del panel */
+    background-color: #888;
+}
+.btn-logout:hover { background-color: #666; }
+
+
+/* ========================================================= */
+/* 4. COLUMNA 2: VENTA PRINCIPAL (MAIN) */
+/* ========================================================= */
+.title-venta-actual {
+    font-size: 1.4em;
+    margin-bottom: 15px;
+}
+
+/* Área de Búsqueda */
+.seccion-busqueda {
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+#input-sku {
+    width: 98%;
+    padding: 15px 10px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    outline-color: var(--color-primary-light);
+}
+.resultados-area {
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: #fcfcfc;
+    border-radius: 4px;
+}
+.resultado-item {
+    padding: 8px 10px;
+    margin: 0;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+.resultado-item:hover {
+    background-color: #e9f5ff; /* Resaltado al pasar el ratón */
+    color: var(--color-primary-dark);
+}
+
+/* Área del Carrito */
+.seccion-carrito {
+    flex-grow: 1; 
+    overflow: hidden;
+    padding-top: 15px;
+}
+.carrito-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+#detalle-venta-tabla {
+    width: 100%;
+    border-collapse: collapse;
+}
+#detalle-venta-tabla th, #detalle-venta-tabla td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #f4f4f4;
+}
+#detalle-venta-tabla thead th {
+    background-color: #eef;
+    font-weight: bold;
+    color: var(--color-primary-dark);
+}
+
+/* Estilo para el input de cantidad dentro de la tabla */
+#detalle-venta-tabla input[type="number"] {
+    width: 50px;
+    padding: 5px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+.btn-eliminar {
+    background-color: var(--color-danger);
+    color: white;
+    border: none;
+    padding: 5px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+
+/* ========================================================= */
+/* 5. COLUMNA 3: PAGO FINAL */
+/* ========================================================= */
+.col-pago-final {
+    min-width: 250px;
+}
+
+.totales-resumen {
+    padding: 15px 0;
+    margin-bottom: 20px;
+}
+.totales-resumen h3 {
+    font-size: 1.2em;
+    margin-top: 0;
+}
+.totales-resumen p {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1em;
+    margin: 8px 0;
+}
+.total-final-line {
+    display: flex;
+    justify-content: space-between;
+    border-top: 2px solid var(--color-primary-dark);
+    padding-top: 15px;
+    margin-top: 15px;
+}
+.monto-total {
+    font-size: 2.2em; /* Hace que el total destaque mucho */
+    font-weight: bold;
+    color: var(--color-danger); /* Rojo de alerta para el total */
+}
+
+/* Botones de Pago */
+.btn-pago {
+    width: 100%;
+    padding: 18px 10px; /* Muy grandes para facilidad táctil */
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2em;
+    transition: transform 0.1s;
+}
+.btn-pago:active {
+    transform: translateY(2px);
+}
+
+.btn-success { background-color: var(--color-success); color: white; }
+.btn-success:hover { background-color: #449d44; }
+
+.btn-primary { background-color: var(--color-primary-btn); color: white; }
+.btn-primary:hover { background-color: #2d76ae; }
+
+
+/* ========================================================= */
+/* 6. MODALES (Simplificado) */
+/* ========================================================= */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+.modal-content {
+    background-color: var(--color-bg-light);
+    margin: 10% auto;
+    padding: 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 0 20px var(--color-primary-dark);
+}

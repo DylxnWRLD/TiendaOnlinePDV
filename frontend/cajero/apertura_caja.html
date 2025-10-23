@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abrir Caja - Level One PDV</title>
+    <link rel="stylesheet" href="apertura_caja.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="apertura-container">
+        <h1 class="cyber-glow">Level One PDV</h1>
+        <h2 class="apertura-title">Inicio de Turno y Apertura de Caja</h2>
+        
+        <form id="aperturaForm" class="apertura-form">
+            <p class="instruccion">
+                Por favor, ingresa la cantidad de **efectivo inicial** (fondo de caja) para tu turno.
+            </p>
+
+            <div class="input-group">
+                <label for="montoInicial" class="input-label">Monto Inicial (Fondo):</label>
+                <input 
+                    type="number" 
+                    id="montoInicial" 
+                    name="montoInicial" 
+                    step="0.01" 
+                    min="0" 
+                    placeholder="Ej: 1000.00"
+                    required
+                >
+            </div>
+            
+            <button type="submit" class="btn-abrir">Abrir Caja</button>
+            <p id="apertura-error" class="error-message"></p>
+        </form>
+    </div>
+
+    <script src="apertura_caja.js"></script>
+</body>
+</html>

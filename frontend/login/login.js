@@ -50,7 +50,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
                     window.location.href = '../admin/admin.html';
                     break;
                 case 'Cajero':
-                    window.location.href = '../cajero/cajero.html';
+                    window.location.href = '../cajero/apertura_caja.html';
                     break;
                 case 'AdminInventario':
                     window.location.href = '../adminInventario/adminInventario.html'; // Corregida a formato consistente

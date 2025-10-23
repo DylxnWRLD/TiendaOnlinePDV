@@ -1,11 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Punto de Venta (PDV) - Level One</title>
+    <link rel="stylesheet" href="cajero.css">
 </head>
 <body>
-    <h1>Cajero vista</h1>
+    <div class="pdv-layout">
+        
+        <aside class="col-acciones-caja">
+            <h3 class="cyber-glow">Cajero Activo</h3>
+            <div class="info-caja-sesion">
+                <p>Cajero: <span id="cajero-nombre">Nombre Cajero</span></p>
+                <p>Corte Activo: <span id="corte-id">ID Corte</span></p>
+            </div>
+            
+            <hr>
+            
+            <h4 class="section-title">Operaciones de Venta</h4>
+            
+            <button id="btn-cancelar-venta" class="btn-accion btn-cancelar">❌ Cancelar Venta Actual</button>
+            <button id="btn-aplicar-promo" class="btn-accion">🏷️ Aplicar Promoción</button>
+            <button id="btn-devolucion" class="btn-accion">🔄 Cambios y Devoluciones</button>
+            
+            <hr>
+            
+            <h4 class="section-title">Gestión de Turno</h4>
+            
+            <button id="btn-corte-caja" class="btn-accion btn-danger">🚨 Corte de Caja</button>
+            <button id="btn-buscar-ventas" class="btn-accion">🔍 Buscar Ventas Anteriores</button>
+
+            <hr>
+            
+            <button id="btn-logout" class="btn-accion btn-logout">🚪 Cerrar Sesión</button>
+        </aside>
+
+        <main class="col-venta-principal">
+            <h3 class="cyber-glow title-venta-actual">1. Iniciar Venta / Agregar Productos 🛒</h3>
+
+            <section class="seccion-busqueda">
+                <input type="text" id="input-sku" placeholder="Escanear o buscar SKU / Nombre" autofocus>
+                <div id="resultados-busqueda" class="resultados-area">
+                    </div>
+            </section>
+            
+            <section class="seccion-carrito">
+                <h4 class="subtitle-venta">Detalle de la Transacción</h4>
+                <div class="carrito-area">
+                    <table id="detalle-venta-tabla">
+                        <thead>
+                            <tr>
+                                <th style="width: 45%;">Producto</th>
+                                <th style="width: 15%;">Cant.</th>
+                                <th style="width: 25%;">Precio</th>
+                                <th style="width: 15%;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carrito-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <section class="col-pago-final">
+            <h3 class="cyber-glow">2. Finalizar Venta / Cobro 💵</h3>
+            <div class="totales-resumen">
+                <h3>Resumen de Cobro</h3>
+                <p>Subtotal: <span id="subtotal" class="monto">0.00</span></p>
+                <p>Descuento: <span id="descuento" class="monto">0.00</span></p>
+                <div class="total-final-line">
+                    <h4>TOTAL:</h4> 
+                    <h4 id="total-final" class="monto monto-total">0.00</h4>
+                </div>
+            </div>
+
+            <hr>
+            
+            <h4 class="section-title">Opciones de Pago</h4>
+            
+            <button id="btn-pago-efectivo" class="btn-pago btn-success">💵 Pagar en Efectivo</button>
+            <button id="btn-pago-tarjeta" class="btn-pago btn-primary">💳 Pagar con Tarjeta</button>
+        </section>
+    </div>
+
+    <div id="modal-efectivo" class="modal">...</div>
+    
+    <script src="./pdv.js"></script>
 </body>
 </html>
