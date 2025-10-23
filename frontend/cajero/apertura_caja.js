@@ -1,4 +1,4 @@
-// cajero/apertura_caja.js
+// frontend/cajero/apertura_caja.js
 
 // Define la API base URL (¡Ajusta tu URL de Render!)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -6,32 +6,15 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     : 'https://tiendaonlinepdv-hm20.onrender.com';
 
 
-// 1. Verificar Sesión y Rol (Cajero) - CORREGIDA
-function checkAuthentication() {
-    // ⭐️ CORRECCIÓN: Leemos localStorage AQUÍ para obtener el valor más reciente ⭐️
-    const token = localStorage.getItem('sessionToken');
-    const role = localStorage.getItem('userRole');
-    
-    if (!token || role !== 'Cajero') {
-        alert('Acceso no autorizado o sesión expirada. Redirigiendo al login.');
-        // Ruta relativa: Sube dos niveles (cajero/ -> login/)
-        window.location.href = '../../login/login.html'; 
-        throw new Error("No autenticado. Redirigido a login.");
-    }
-}
-
-
 // 2. Inicialización y manejo de formulario
 document.addEventListener('DOMContentLoaded', () => {
-    try {
-        checkAuthentication(); // Esto ahora es seguro y usa datos frescos
-
-        const aperturaForm = document.getElementById('aperturaForm');
+    // ⭐️ CORRECCIÓN CLAVE: Eliminamos el try/catch y la llamada a checkAuthentication() ⭐️
+    // La función ya no existe, y si el token es inválido, el fetch lo manejará.
+    
+    const aperturaForm = document.getElementById('aperturaForm');
+    // Verificamos que el formulario exista antes de añadir el listener
+    if (aperturaForm) {
         aperturaForm.addEventListener('submit', handleAperturaSubmit);
-    } catch (e) {
-        if (e.message !== "No autenticado. Redirigido a login.") {
-            console.error(e);
-        }
     }
 });
 
@@ -44,15 +27,14 @@ async function handleAperturaSubmit(e) {
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
     
-    // ⭐️ RELECTURA DE TOKEN Y ROL AQUÍ (NECESARIO PARA EL ENCABEZADO) ⭐️
-    const token = localStorage.getItem('sessionToken');
+    // ⭐️ CORRECCIÓN: Leemos la clave de token que tu login escribe ⭐️
+    const token = localStorage.getItem('supabase-token');
     
-    // VALIDACIÓN PENDIENTE: Puedes añadir tu lógica de 'if (isNaN...)' aquí.
+    // Validación de entrada
     if (isNaN(montoInicial) || montoInicial < 0) {
         errorMessage.textContent = 'Por favor, ingresa un monto inicial válido.';
         return;
     }
-
 
     const submitButton = document.querySelector('.btn-abrir');
     submitButton.disabled = true;
@@ -63,7 +45,7 @@ async function handleAperturaSubmit(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // ⭐️ CRUCIAL: Usar el token re-leído o asegurarnos de que la variable global exista ⭐️
+                // ⭐️ CRUCIAL: Usamos la clave 'supabase-token' ⭐️
                 'Authorization': `Bearer ${token}` 
             },
             body: JSON.stringify({ monto_inicial: montoInicial })
@@ -71,13 +53,13 @@ async function handleAperturaSubmit(e) {
 
         const data = await response.json();
 
+        // 3. Manejo de Éxito (200) y Conflicto (409)
         if (response.ok || response.status === 409) {
-            // Maneja Éxito (200) y Conflicto (409)
+            
             if (data.corteId) {
                 localStorage.setItem('currentCorteId', data.corteId);
             }
             
-            // Asumiendo que 'cajero.html' es tu PDV
             const redirectPath = './cajero.html'; 
 
             const message = response.status === 409
@@ -90,6 +72,18 @@ async function handleAperturaSubmit(e) {
                 window.location.href = redirectPath; 
             }, response.status === 409 ? 1500 : 500);
 
+        } else if (response.status === 401 || response.status === 403) {
+            // 4. Fallo de Seguridad/Autorización (Rechazado por el BACKEND)
+            // Esto ocurre si el token es inválido o si el role_id no es 3.
+            errorMessage.textContent = 'Sesión inválida o expirada. Redirigiendo al login.';
+            // Limpia la sesión y redirige
+            localStorage.removeItem('supabase-token');
+            localStorage.removeItem('user-role');
+            
+            setTimeout(() => {
+                window.location.href = '../../login/login.html';
+            }, 1000);
+        
         } else {
             // 5. Manejo de otros errores (400, 500, etc.)
             errorMessage.textContent = data.message || `Error (${response.status}) al abrir la caja.`;
@@ -99,8 +93,8 @@ async function handleAperturaSubmit(e) {
         errorMessage.textContent = 'Error de conexión con el servidor. Verifica tu red.';
         console.error('Error al abrir caja:', error);
     } finally {
-        // Este bloque es crucial para restaurar el botón
+        // Restaura el botón al estado inicial (sin importar si hubo éxito o fallo)
         submitButton.disabled = false;
-        submitButton.textContent = 'Abrir Caja';
+        submitButton.textContent = 'Abrir Caja'; 
     }
 }
