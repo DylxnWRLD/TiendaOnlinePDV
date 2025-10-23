@@ -21,34 +21,6 @@ const supabaseKey = process.env.SUPABASE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ===============================================
-// DEFINICIÓN DE MIDDLEWARE DE AUTENTICACIÓN (MOVIDA Y CORREGIDA)
-// ===============================================
-
-/**
- * Middleware de autenticación general (Para Cajeros y Clientes).
- * Se define ANTES de ser exportado e importado por los routers.
- */
-async function getUserIdFromToken(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Acceso denegado. No se proporcionó token.' });
-    }
-    const token = authHeader.split(' ')[1];
-
-    const { data: userData, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !userData.user) {
-        return res.status(401).json({ message: 'Token de sesión inválido o expirado. Vuelve a iniciar sesión.' });
-    }
-
-    req.userId = userData.user.id;
-    next();
-}
-
-// ⭐️ EXPORTAMOS inmediatamente después de la definición ⭐️
-module.exports.getUserIdFromToken = getUserIdFromToken;
-module.exports.supabase = supabase;
 
 
 // ===============================================

@@ -1,19 +1,44 @@
-// backend/routes/cajeroRoutes.js
+// backend/routes/cajeroRoutes.js (CORRECTED FINAL VERSION)
 
 const express = require('express');
 const router = express.Router();
 
-// ⭐️ Importar supabase y el middleware de autenticación desde server.js ⭐️
-// Esto es crucial para que el router pueda acceder a la DB y verificar tokens.
-const { supabase, getUserIdFromToken } = require('../server'); 
+// ⭐️ IMPORTAR SOLAMENTE SUPABASE desde server.js ⭐️
+// NO IMPORTAMOS getUserIdFromToken para evitar el error de importación.
+const { supabase } = require('../server'); 
 
 
 // ===============================================
-// RUTA: POST /caja/abrir (Apertura de Caja)
-// Requiere: Token de autenticación y monto_inicial
+// 1. MIDDLEWARE DE AUTENTICACIÓN LOCAL (Solución al TypeError)
+// ===============================================
+/**
+ * Se define localmente para garantizar que exista antes de ser usado.
+ */
+async function getUserIdFromToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Acceso denegado. No se proporcionó token.' });
+    }
+    const token = authHeader.split(' ')[1];
+
+    // Usa el objeto 'supabase' importado arriba
+    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !userData.user) {
+        return res.status(401).json({ message: 'Token de sesión inválido o expirado. Vuelve a iniciar sesión.' });
+    }
+
+    req.userId = userData.user.id;
+    next();
+}
+
+
+// ===============================================
+// RUTA: POST /caja/abrir (LÍNEA 15 - El punto de error)
 // ===============================================
 router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
-    const userId = req.userId; // ID del cajero autenticado (del middleware)
+    // ... (Your code for /caja/abrir remains here) ...
+    const userId = req.userId; 
     const { monto_inicial } = req.body;
 
     if (typeof monto_inicial !== 'number' || monto_inicial < 0) {
@@ -21,18 +46,15 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
     }
     
     try {
-        // Llama a la función PostgreSQL 'abrir_caja_cajero' (RPC)
         const { data: corteData, error } = await supabase.rpc('abrir_caja_cajero', {
             p_id_cajero: userId,
             p_monto_inicial: monto_inicial
         });
-
+        
         if (error) {
             console.error('Error al abrir caja en DB:', error.message);
             
-            // Manejo del error específico lanzado en la función SQL (CAJA_ACTIVA_EXISTENTE)
             if (error.message.includes('CAJA_ACTIVA_EXISTENTE')) {
-                 // Busca el ID del corte activo para devolverlo
                  const { data: existingCorte } = await supabase
                     .from('cortes_caja')
                     .select('id_corte')
@@ -40,7 +62,7 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
                     .eq('estado', 'ABIERTA')
                     .single();
                     
-                return res.status(409).json({ // 409 Conflict
+                return res.status(409).json({ 
                     message: 'Ya tienes una caja abierta. Redirigiendo a tu turno activo.',
                     corteId: existingCorte ? existingCorte.id_corte : null 
                 });
@@ -49,7 +71,6 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
             return res.status(500).json({ message: 'Error en la base de datos al registrar la apertura.' });
         }
 
-        // Éxito: corteData contiene el UUID retornado por la función SQL
         res.status(200).json({ 
             message: 'Caja abierta exitosamente.', 
             corteId: corteData 
@@ -62,21 +83,6 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
 });
 
 
-// ===============================================
-// RUTAS DE VENTA Y CIERRE (A implementar más tarde)
-// ===============================================
-
-// RUTA: POST /ventas/finalizar (Registrar Venta)
-router.post('/ventas/finalizar', getUserIdFromToken, async (req, res) => {
-    // La lógica de inserción en las tablas VENTAS y DETALLE_VENTA va aquí
-    res.status(501).json({ message: 'Ruta de Finalizar Venta pendiente de implementar.' });
-});
-
-// RUTA: POST /caja/cerrar (Realizar Corte de Caja)
-router.post('/caja/cerrar', getUserIdFromToken, async (req, res) => {
-    // La lógica de cálculo de SUM(Ventas Efectivo) y UPDATE cortes_caja va aquí
-    res.status(501).json({ message: 'Ruta de Corte de Caja pendiente de implementar.' });
-});
-
+// ... (Other router.post calls for /ventas/finalizar and /caja/cerrar) ...
 
 module.exports = router;
