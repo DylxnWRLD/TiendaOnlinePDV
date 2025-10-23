@@ -132,44 +132,64 @@ app.post('/api/login', async (req, res) => {
     });
 });
 
-
-// RUTA DE REGISTRO DE USUARIOS
+// ===============================================
+// RUTA DE REGISTRO DE USUARIOS (VERSIÓN ROBUSTA)
+// ===============================================
 app.post('/api/register', async (req, res) => {
     console.log('¡Petición de Registro Recibida!');
 
-    const { username, password, role } = req.body;
+    const { username, password, role } = req.body; 
 
     if (!username || !password) {
         return res.status(400).json({ message: 'Faltan campos obligatorios.' });
     }
 
     try {
+        // 1️⃣ Crear/Obtener usuario en Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: username,
             password: password,
-            options: {
-                data: {
-                    display_name: username,
-                    desired_role_id: role,
-                }
-            }
         });
 
         if (authError) {
             console.error('Error al registrar usuario:', authError.message);
             const mensajeTraducido = traducirErrorSupabase(authError.message);
-            return res.status(400).json({
-                message: mensajeTraducido
-            });
+            return res.status(400).json({ message: mensajeTraducido });
+        }
+        
+        if (!authData.user) {
+             console.error('auth.signUp no devolvió un usuario.');
+             return res.status(500).json({ message: 'Error interno: No se pudo obtener el ID de usuario.' });
         }
 
+        const userId = authData.user.id;
+
+        // 2️⃣ Insertar en tabla "users" (ESTE ES EL PASO QUE TE FALTA)
+        const { error: insertError } = await supabase
+            .from('users')
+            .insert([
+                {
+                    id: userId,
+                    // Usa el 'role' del formulario, o '2' (Cliente) por defecto
+                    role_id: role || 2 
+                }
+            ]);
+
+        // 3️⃣ MANEJAR EL ERROR DE DUPLICADO (Evita crasheo por doble clic)
+        if (insertError && insertError.code !== '23505') {
+            console.error('Error al guardar en tabla users:', insertError.message);
+            return res.status(500).json({ message: 'Error al guardar usuario en base de datos.' });
+        }
+
+        // 4️⃣ Respuesta exitosa
         const message = authData.user?.identities?.length > 0
             ? 'Usuario registrado exitosamente. Por favor, revisa tu correo para confirmar la cuenta.'
             : 'Usuario registrado exitosamente. Ya puedes iniciar sesión.';
-
+            
         res.status(201).json({ message: message });
+        
     } catch (error) {
-        console.error('Error inesperado:', error);
+        console.error('Error inesperado:', error.message);
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
