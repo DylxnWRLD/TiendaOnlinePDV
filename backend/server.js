@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 // Importar el router del cajero
-const cajeroRoutes = require('./routes/cajeroRoutes'); 
+const cajeroRoutes = require('./routes/cajeroRoutes');
 // Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -179,8 +179,20 @@ app.post('/api/register', async (req, res) => {
 // 2.5 RUTAS DE API (ADMIN)
 // ===============================================
 
+// ===============================================
+// 2.5 RUTAS DE API (ADMIN) - CORREGIDA
+// ===============================================
+
 app.get('/api/users', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para obtener usuarios (Admin) recibida!');
+
+    // ✅ ¡CORREGIDO! Este mapa ahora coincide con tabla 'public.roles'.
+    const roleIdToName = {
+        1: 'Admin',
+        2: 'Cliente',
+        3: 'Cajero',
+        4: 'AdminInventario'
+    };
 
     try {
         const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers();
@@ -192,7 +204,7 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
 
         const { data: profilesData, error: profileError } = await supabase
             .from('users')
-            .select('id, roles(name)'); 
+            .select('id, role_id'); // Pedimos el ID numérico
 
         if (profileError) {
             console.error('Error al obtener perfiles/roles:', profileError.message);
@@ -201,12 +213,13 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
 
         const rolesMap = new Map();
         profilesData.forEach(profile => {
-            const roleName = profile.roles ? profile.roles.name : 'Cliente'; 
+            // Traducimos el ID (ej. 3) al nombre (ej. 'Cajero')
+            const roleName = roleIdToName[profile.role_id] || 'Cliente';
             rolesMap.set(profile.id, roleName);
         });
 
         const combinedUsers = authUsers.map(authUser => {
-            const role = rolesMap.get(authUser.id) || 'Cliente'; 
+            const role = rolesMap.get(authUser.id) || 'Cliente';
             const status = authUser.email_confirmed_at ? 'Activo' : 'Pendiente';
 
             return {
@@ -217,7 +230,7 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
                 status: status
             };
         });
-        
+
         res.status(200).json(combinedUsers);
 
     } catch (error) {
@@ -232,7 +245,7 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
 // ===============================================
 
 // ⭐️ Conecta el router modular de caja ⭐️
-app.use('/api', cajeroRoutes); 
+app.use('/api', cajeroRoutes);
 
 
 // ===============================================
