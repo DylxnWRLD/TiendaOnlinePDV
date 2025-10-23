@@ -21,6 +21,8 @@ const supabaseKey = process.env.SUPABASE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// ⭐️ EXPORTAMOS el middleware para que lo usen otros routers ⭐️
+module.exports.getUserIdFromToken = getUserIdFromToken;
 // ⭐️ EXPORTAMOS supabase y getUserIdFromToken para el router ⭐️
 module.exports.supabase = supabase;
 
@@ -71,8 +73,7 @@ async function getUserIdFromToken(req, res, next) {
     req.userId = userData.user.id;
     next();
 }
-// ⭐️ EXPORTAMOS el middleware para que lo usen otros routers ⭐️
-module.exports.getUserIdFromToken = getUserIdFromToken;
+
 
 /**
  * Middleware para verificar el rol 'Admin'.
