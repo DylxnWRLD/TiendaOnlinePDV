@@ -1,22 +1,25 @@
+// cajero/apertura_caja.js
+
+// Define la API base URL (¡Ajusta tus URLs de entorno!)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:3000' // <-- Usar 127.0.0.1 para que el origen coincida con el servidor Express
+    ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv.onrender.com';
+
 const token = localStorage.getItem('sessionToken');
 const role = localStorage.getItem('userRole');
-
 
 /*
 // 1. Verificar Sesión y Rol (Cajero)
 function checkAuthentication() {
     if (!token || role !== 'Cajero') {
         alert('Acceso no autorizado o sesión expirada. Redirigiendo al login.');
-        // Subir dos niveles (cajero/ -> login/)
-        window.location.href = '../login/login.html';
+        // Ruta relativa: Subir dos niveles (cajero/ -> login/)
+        window.location.href = '../../login/login.html'; 
     }
 }
 */
 
-// 2. Manejar el envío del formulario
+// 2. Inicialización y manejo de formulario
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthentication();
 
@@ -33,13 +36,12 @@ async function handleAperturaSubmit(e) {
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
 
-    // Validación básica en el cliente
+    // Validación
     if (isNaN(montoInicial) || montoInicial < 0) {
-        errorMessage.textContent = 'Por favor, ingresa un monto inicial válido (cero o positivo).';
+        errorMessage.textContent = 'Por favor, ingresa un monto inicial válido.';
         return;
     }
 
-    // Deshabilitar botón para evitar envíos dobles
     const submitButton = document.querySelector('.btn-abrir');
     submitButton.disabled = true;
     submitButton.textContent = 'Abriendo Caja...';
@@ -57,25 +59,36 @@ async function handleAperturaSubmit(e) {
         const data = await response.json();
 
         if (response.ok) {
-            // Éxito: Guardamos el ID del corte para usarlo en el PDV
+            // 3. Éxito: Guardamos el ID del corte y redirigimos
             localStorage.setItem('currentCorteId', data.corteId);
             errorMessage.textContent = 'Caja abierta exitosamente. Redirigiendo al PDV...';
 
-            // Redirigir a la pantalla principal del cajero (PDV) en la misma carpeta
             setTimeout(() => {
-                window.location.href = 'cajero.html';
+                window.location.href = 'cajero.html'; // Redirige a la pantalla principal del cajero
             }, 500);
 
+        } else if (response.status === 409) {
+            // 4. Manejo de Conflicto (Caja ya abierta)
+            // Usamos el ID de corte devuelto por el servidor
+            if (data.corteId) {
+                localStorage.setItem('currentCorteId', data.corteId);
+            }
+            errorMessage.textContent = data.message + ' Redirigiendo a tu turno activo.';
+            
+            setTimeout(() => {
+                window.location.href = 'cajero.html'; 
+            }, 1500);
+            
         } else {
-            // El error 409 (Conflict) es importante si la caja ya estaba abierta
+            // 5. Manejo de otros errores (400, 500, etc.)
             errorMessage.textContent = data.message || `Error (${response.status}) al abrir la caja.`;
             submitButton.disabled = false;
-            submitButton.textContent = '💰 Abrir Caja y Empezar';
+            submitButton.textContent = 'Abrir Caja';
         }
     } catch (error) {
         errorMessage.textContent = 'Error de conexión con el servidor. Verifica tu red.';
         console.error('Error al abrir caja:', error);
         submitButton.disabled = false;
-        submitButton.textContent = '💰 Abrir Caja y Empezar';
+        submitButton.textContent = 'Abrir Caja';
     }
 }

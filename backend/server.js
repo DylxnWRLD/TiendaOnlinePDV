@@ -5,111 +5,104 @@ const { createClient } = require('@supabase/supabase-js');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
-// Importar dotenv y cargar las variables de entorno desde el archivo .env
+// Importar el router del cajero
+const cajeroRoutes = require('./routes/cajeroRoutes'); 
+// Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
-// Usar el puerto de Render ($PORT) o 3000 para desarrollo local
 const port = process.env.PORT || 3000;
 
 // ===============================================
-// Configuración de Supabase (AHORA LEE DE process.env)
+// Configuración de Supabase
 // ===============================================
-
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ===============================================
-// FUNCIÓN DE TRADUCCIÓN DE ERRORES (Nueva Sección)
-// ===============================================
+// ⭐️ EXPORTAMOS supabase y getUserIdFromToken para el router ⭐️
+module.exports.supabase = supabase;
 
-/**
- * Traduce mensajes de error comunes de Supabase Auth (GoTrue) de inglés a español.
- * @param {string} originalMessage - El mensaje de error original en inglés.
- * @returns {string} El mensaje de error traducido.
- */
+
+// ===============================================
+// FUNCIÓN DE TRADUCCIÓN DE ERRORES
+// ===============================================
 function traducirErrorSupabase(originalMessage) {
-    if (!originalMessage) {
-        return 'Error desconocido en el servidor.';
-    }
-
+    if (!originalMessage) return 'Error desconocido en el servidor.';
     const mensajeLower = originalMessage.toLowerCase();
-
-    if (mensajeLower.includes("already registered")) {
-        return "Ya existe una cuenta con este correo electrónico. Por favor, inicia sesión.";
-    }
-    if (mensajeLower.includes("password should be at least 6 characters")) {
-        return "La contraseña debe tener al menos 6 caracteres.";
-    }
-    if (mensajeLower.includes("invalid login credentials")) {
-        // Aunque se maneja aparte en /api/login, es útil tenerla
-        return "Credenciales de inicio de sesión no válidas.";
-    }
-    if (mensajeLower.includes("email not confirmed")) {
-        return "El correo electrónico no ha sido confirmado. Revisa tu bandeja de entrada.";
-    }
-    if (mensajeLower.includes("unable to validate email address")) {
-        return "Por favor, ingresa un correo electrónico válido.";
-    }
-
-    // Si no es un error conocido, devuelve el mensaje original o uno genérico
+    if (mensajeLower.includes("already registered")) return "Ya existe una cuenta con este correo electrónico. Por favor, inicia sesión.";
+    if (mensajeLower.includes("password should be at least 6 characters")) return "La contraseña debe tener al menos 6 caracteres.";
+    if (mensajeLower.includes("invalid login credentials")) return "Credenciales de inicio de sesión no válidas.";
+    if (mensajeLower.includes("email not confirmed")) return "El correo electrónico no ha sido confirmado. Revisa tu bandeja de entrada.";
+    if (mensajeLower.includes("unable to validate email address")) return "Por favor, ingresa un correo electrónico válido.";
     return originalMessage;
 }
 
 
 // ===============================================
-// 1. MIDDLEWARES
+// 1. MIDDLEWARES GLOBALES
 // ===============================================
 
 app.use(cors());
 app.use(bodyParser.json());
 
+
 // ===============================================
-// 1.5 MIDDLEWARE DE AUTENTICACIÓN Y AUTORIZACIÓN
+// 1.5 MIDDLEWARES DE AUTENTICACIÓN Y AUTORIZACIÓN
 // ===============================================
 
 /**
- * Verifica el token de Supabase y comprueba si el usuario es 'Admin'.
+ * Middleware de autenticación general (Para Cajeros y Clientes).
+ */
+async function getUserIdFromToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Acceso denegado. No se proporcionó token.' });
+    }
+    const token = authHeader.split(' ')[1];
+
+    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !userData.user) {
+        return res.status(401).json({ message: 'Token de sesión inválido o expirado. Vuelve a iniciar sesión.' });
+    }
+
+    req.userId = userData.user.id;
+    next();
+}
+// ⭐️ EXPORTAMOS el middleware para que lo usen otros routers ⭐️
+module.exports.getUserIdFromToken = getUserIdFromToken;
+
+/**
+ * Middleware para verificar el rol 'Admin'.
  */
 const authenticateAdmin = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Formato: Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1];
 
-    if (token == null) {
-        return res.status(401).json({ message: 'Token no proporcionado.' });
-    }
+    if (token == null) return res.status(401).json({ message: 'Token no proporcionado.' });
 
     try {
-        // 1. Verificar el token
         const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
         if (userError) {
             console.error('Error de token:', userError.message);
             return res.status(403).json({ message: 'Token inválido o expirado.' });
         }
 
-        // 2. Verificar el ROL del usuario (Autorización)
         const { data: profileData, error: profileError } = await supabase
             .from('users')
             .select('roles(name)')
             .eq('id', user.id)
             .single();
 
-        if (profileError || !profileData || !profileData.roles) {
-            return res.status(500).json({ message: 'No se pudo verificar el rol del usuario.' });
-        }
-
-        // 3. Comprobar si es 'Admin'
-        if (profileData.roles.name !== 'Admin') {
+        if (profileError || !profileData || !profileData.roles || profileData.roles.name !== 'Admin') {
             return res.status(403).json({ message: 'Acceso denegado. Se requiere rol de Administrador.' });
         }
-        
-        // Si todo está bien, permite que la petición continúe
-        req.user = user;
-        next();
 
+        req.user = user;
+        req.userId = user.id;
+        next();
     } catch (error) {
         console.error('Error en middleware de autenticación:', error.message);
         return res.status(500).json({ message: 'Error interno al validar la sesión.' });
@@ -118,10 +111,9 @@ const authenticateAdmin = async (req, res, next) => {
 
 
 // ===============================================
-// 2. RUTAS DE API (Login y prueba) - DEBEN IR PRIMERO
+// 2. RUTAS DE AUTENTICACIÓN (CORE)
 // ===============================================
 
-// Ruta de prueba (MANTENLA PARA DEBUGGING)
 app.post('/test', (req, res) => {
     console.log('¡Ruta de prueba alcanzada!');
     res.status(200).json({ message: 'Ruta de prueba OK.' });
@@ -130,10 +122,8 @@ app.post('/test', (req, res) => {
 // Ruta de LOGIN PRINCIPAL
 app.post('/api/login', async (req, res) => {
     console.log('¡Petición de Login Recibida!');
-
     const { username, password } = req.body;
 
-    // 1. AUTENTICACIÓN
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: username,
         password: password,
@@ -141,7 +131,6 @@ app.post('/api/login', async (req, res) => {
 
     if (authError) {
         console.error('Error de autenticación:', authError.message);
-        // Usamos la función de traducción aquí también
         const mensajeTraducido = traducirErrorSupabase(authError.message);
         return res.status(401).json({ message: mensajeTraducido || 'Usuario o contraseña inválidos.' });
     }
@@ -149,7 +138,6 @@ app.post('/api/login', async (req, res) => {
     const userId = authData.user.id;
     const sessionToken = authData.session.access_token;
 
-    // 2. AUTORIZACIÓN: Obtener el rol
     const { data: profileData, error: profileError } = await supabase
         .from('users')
         .select('roles(name)')
@@ -163,7 +151,6 @@ app.post('/api/login', async (req, res) => {
 
     const userRole = profileData.roles.name;
 
-    // 3. RESPUESTA EXITOSA
     res.status(200).json({
         message: 'Inicio de sesión exitoso.',
         token: sessionToken,
@@ -172,9 +159,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 
-// ===============================================
 // RUTA DE REGISTRO DE USUARIOS
-// ===============================================
 app.post('/api/register', async (req, res) => {
     console.log('¡Petición de Registro Recibida!');
 
@@ -185,7 +170,6 @@ app.post('/api/register', async (req, res) => {
     }
 
     try {
-        // 1️⃣ Crear usuario en Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: username,
             password: password,
@@ -199,9 +183,7 @@ app.post('/api/register', async (req, res) => {
 
         if (authError) {
             console.error('Error al registrar usuario:', authError.message);
-
             const mensajeTraducido = traducirErrorSupabase(authError.message);
-
             return res.status(400).json({
                 message: mensajeTraducido
             });
@@ -218,19 +200,15 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+
 // ===============================================
 // 2.5 RUTAS DE API (ADMIN)
 // ===============================================
 
-/**
- * Obtiene una lista combinada de todos los usuarios (de auth y public)
- * Protegida por el middleware 'authenticateAdmin'.
- */
 app.get('/api/users', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para obtener usuarios (Admin) recibida!');
-    
+
     try {
-        // 1. Obtener todos los usuarios de AUTH (requiere service_role key)
         const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers();
         if (authError) {
             console.error('Error al obtener usuarios de auth:', authError.message);
@@ -238,26 +216,23 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
         }
         const authUsers = authUsersData.users;
 
-        // 2. Obtener todos los perfiles (roles) de PUBLIC
         const { data: profilesData, error: profileError } = await supabase
             .from('users')
-            .select('id, roles(name)'); // Selecciona el ID y el nombre del rol anidado
-        
+            .select('id, roles(name)'); 
+
         if (profileError) {
             console.error('Error al obtener perfiles/roles:', profileError.message);
             return res.status(500).json({ message: 'Error al obtener roles de usuarios.' });
         }
 
-        // 3. Mapear los roles (ID -> Nombre del Rol) para unirlos fácilmente
         const rolesMap = new Map();
         profilesData.forEach(profile => {
-            const roleName = profile.roles ? profile.roles.name : 'Cliente'; // Asignar 'Cliente' por defecto
+            const roleName = profile.roles ? profile.roles.name : 'Cliente'; 
             rolesMap.set(profile.id, roleName);
         });
 
-        // 4. Combinar los datos de Auth y Public
         const combinedUsers = authUsers.map(authUser => {
-            const role = rolesMap.get(authUser.id) || 'Cliente'; // Default por si no está en 'users'
+            const role = rolesMap.get(authUser.id) || 'Cliente'; 
             const status = authUser.email_confirmed_at ? 'Activo' : 'Pendiente';
 
             return {
@@ -269,7 +244,6 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
             };
         });
         
-        // 5. Enviar la respuesta
         res.status(200).json(combinedUsers);
 
     } catch (error) {
@@ -280,18 +254,19 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
 
 
 // ===============================================
-// 3. RUTAS ESTÁTICAS (Frontend) - DEBEN IR AL FINAL
+// 3. CONEXIÓN DE ROUTERS MODULARES (CAJERO)
 // ===============================================
 
-// Servir archivos estáticos desde la carpeta 'frontend' (asumiendo /backend/server.js)
+// ⭐️ Conecta el router modular de caja ⭐️
+app.use('/api', cajeroRoutes); 
+
+
+// ===============================================
+// 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
+// ===============================================
+
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-
-// ===============================================
-// 4. INICIO DEL SERVIDOR (USA EL PUERTO DINÁMICO)
-// ===============================================
-
-// Corrección: Escucha en todas las interfaces de red ('0.0.0.0')
 app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
 });
