@@ -286,8 +286,8 @@ class AdminPanel {
 
     getRoleBadgeClass(role) {
         const roles = {
-            'Administrador': 'badge-admin',
-            'Administrador de Inventario': 'badge-inventario',
+            'Admin': 'badge-admin',
+            'AdminInventario': 'badge-inventario',
             'Cajero': 'badge-cajero',
             'Cliente': 'badge-cliente'
         };
@@ -372,22 +372,22 @@ class AdminPanel {
 
     getRoleName(roleValue) {
         const roles = {
-            '1': 'Administrador',
-            '2': 'Cajero',
-            '3': 'Administrador de Inventario',
-            '4': 'Cliente'
+            '1': 'Admin',
+            '2': 'Cliente',
+            '3': 'Cajero',
+            '4': 'AdminInventario'
         };
         return roles[roleValue] || 'Cliente';
     }
 
     getRoleValue(roleName) {
         const roles = {
-            'Administrador': '1',
-            'Cajero': '2',
-            'Administrador de Inventario': '3',
-            'Cliente': '4'
+            'Admin': '1',
+            'Cliente': '2',
+            'Cajero': '3',
+            'AdminInventario': '4'
         };
-        return roles[roleName] || '4';
+        return roles[roleName] || '2';
     }
 
     // Charts
