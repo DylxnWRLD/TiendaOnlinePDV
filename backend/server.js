@@ -213,12 +213,12 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
         const rolesMap = new Map();
         profilesData.forEach(profile => {
             // Traducimos el ID (ej. 3) al nombre (ej. 'Cajero')
-            const roleName = roleIdToName[profile.role_id] || 'Cliente';
+            const roleName = roleIdToName[profile.role_id];
             rolesMap.set(profile.id, roleName);
         });
 
         const combinedUsers = authUsers.map(authUser => {
-            const role = rolesMap.get(authUser.id) || 'Cliente';
+            const role = rolesMap.get(authUser.id);
             const status = authUser.email_confirmed_at ? 'Activo' : 'Pendiente';
 
             return {
