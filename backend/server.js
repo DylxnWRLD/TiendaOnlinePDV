@@ -185,7 +185,6 @@ app.post('/api/register', async (req, res) => {
 app.get('/api/users', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para obtener usuarios (Admin) recibida!');
 
-    // ✅ ¡CORREGIDO! Este mapa ahora coincide con tabla 'public.roles'.
     const roleIdToName = {
         1: 'Admin',
         2: 'Cliente',
@@ -203,7 +202,14 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
 
         const { data: profilesData, error: profileError } = await supabase
             .from('users')
-            .select('id, role_id'); // Pedimos el ID numérico
+            .select('id, role_id');
+
+        // ===============================================
+        // 1. CONSOLE.LOG
+        // ===============================================
+        console.log('--- PERFILES OBTENIDOS DE public.users ---');
+        console.log(profilesData);
+        // ===============================================
 
         if (profileError) {
             console.error('Error al obtener perfiles/roles:', profileError.message);
@@ -212,10 +218,16 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
 
         const rolesMap = new Map();
         profilesData.forEach(profile => {
-            // Traducimos el ID (ej. 3) al nombre (ej. 'Cajero')
             const roleName = roleIdToName[profile.role_id];
             rolesMap.set(profile.id, roleName);
         });
+
+        // ===============================================
+        // 2. CONSOLE.LOG
+        // ===============================================
+        console.log('--- MAPA DE ROLES CREADO ---');
+        console.log(rolesMap);
+        // ===============================================
 
         const combinedUsers = authUsers.map(authUser => {
             const role = rolesMap.get(authUser.id);
@@ -229,6 +241,13 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
                 status: status
             };
         });
+
+        // ===============================================
+        // 3.CONSOLE.LOG
+        // ===============================================
+        console.log('--- DATOS COMBINADOS (ENVIADOS AL FRONTEND) ---');
+        console.log(combinedUsers);
+        // ===============================================
 
         res.status(200).json(combinedUsers);
 
