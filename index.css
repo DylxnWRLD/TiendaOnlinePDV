@@ -1,3 +1,4 @@
+/* 🎨 RESET Y CONFIGURACIÓN BÁSICA */
 * {
   margin: 0;
   padding: 0;
@@ -9,7 +10,7 @@ body {
   background-color: #bcbdff;
 }
 
-/* 🔹 Encabezado general */
+/* 🔹 ENCABEZADO GENERAL */
 .header {
   display: flex;
   align-items: center;
@@ -20,21 +21,21 @@ body {
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* 🔹 Menú hamburguesa */
+/* 🔹 MENÚ HAMBURGUESA */
 .menu-icon {
   font-size: 1.8rem;
   cursor: pointer;
   user-select: none;
 }
 
-/* 🔹 Nombre de la tienda */
+/* 🔹 NOMBRE DE LA TIENDA */
 .logo {
   font-size: 1.6rem;
   margin-left: 10px;
   flex-shrink: 0;
 }
 
-/* 🔹 Barra de búsqueda */
+/* 🔹 BARRA DE BÚSQUEDA */
 .search-bar {
   display: flex;
   flex: 1;
@@ -60,7 +61,7 @@ body {
   font-size: 1rem;
 }
 
-/* 🔹 Botones de usuario */
+/* 🔹 BOTONES DE USUARIO */
 .user-actions {
   display: flex;
   align-items: center;
@@ -82,7 +83,7 @@ body {
   background-color: #ffdfde;
 }
 
-/* 🔹 Adaptación para móviles */
+/* 🔹 ADAPTACIÓN PARA MÓVILES */
 @media (max-width: 700px) {
   .header {
     flex-wrap: wrap;
@@ -99,54 +100,108 @@ body {
   }
 }
 
-.carousel-container {
-  position: relative;
-  width: 80%;
-  max-width: 800px;
+/* ======================================= */
+/* 🔸 NUEVO CARRUSEL ESTILO AMAZON */
+/* ======================================= */
+
+.carousel-section {
   margin: 30px auto;
-  overflow: hidden;
+  width: 90%;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(33, 25, 73, 0.3);
 }
 
-.carousel {
+.carousel-section h2 {
+  color: #211949;
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+/* Contenedor del carrusel */
+.carousel-wrapper {
+  position: relative;
   display: flex;
-  transition: transform 0.5s ease-in-out;
+  align-items: center;
 }
 
-.carousel-item {
-  min-width: 100%;
-  text-align: center;
+.carousel-container {
+  display: flex;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* Cada producto */
+.product-card {
+  min-width: 160px;
+  margin: 10px;
   background-color: #fcfcff;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgb(41, 23, 75);
-  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(41, 23, 75, 0.3);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.carousel-item img {
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(41, 23, 75, 0.4);
+}
+
+.product-card img {
   width: 100%;
-  border-radius: 10px;
+  border-radius: 10px 10px 0 0;
 }
 
-button.prev, button.next {
+.product-card p {
+  padding: 10px;
+  color: #3f3d56;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Flechas laterales */
+.arrow {
+  background-color: rgba(33, 25, 73, 0.8);
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 50%;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(44, 34, 86, 0.8);
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  padding: 10px;
-  cursor: pointer;
-  border-radius: 50%;
+  transition: background-color 0.2s;
+  z-index: 5;
 }
 
-button.prev:hover, button.next:hover {
+.arrow:hover {
   background-color: rgb(73, 106, 235);
 }
 
-button.prev {
-  left: 10px;
+.arrow.left {
+  left: -15px;
 }
 
-button.next {
-  right: 10px;
+.arrow.right {
+  right: -15px;
+}
+
+/* 🔹 Responsividad del carrusel */
+@media (max-width: 700px) {
+  .carousel-section {
+    width: 95%;
+    padding: 15px;
+  }
+
+  .product-card {
+    min-width: 130px;
+  }
+
+  .arrow {
+    font-size: 1.4rem;
+    padding: 8px;
+  }
 }

@@ -33,36 +33,66 @@
 
     <!--Creacion del carrusel-->
     <main>
-      <section class="carousel-container">
-        <div class="carousel">
-          <div class="carousel-item">
-            <img src="/frontend/images/conNin.jpg" alt="Nintendo 3Ds">
-            <h3>Nintendo 3Ds</h3>
-            <p>$3600.00</p>
+      <!-- Sección 1 -->
+      <section class="carousel-section">
+        <h2>Los más vendidos en Videojuegos</h2>
+        <div class="carousel-wrapper">
+          <button class="arrow left" data-target="carousel1">&#10094;</button>
+          <div class="carousel-container" id="carousel1">
+            <div class="product-card">
+              <img src="/frontend/images/conSwitch.jpg" alt="Nintendo Switch" />
+              <p>Nintendo Switch 2</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/conPS5.jpg" alt="PS5" />
+              <p>PlayStation 5 Slim</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/conXbox.jpg" alt="Xbox Series S" />
+              <p>Xbox Series S</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/conNin.jpg" alt="Nintendo 3DS" />
+              <p>Nintendo 3DS</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/conGBA.jpg" alt="GameBoy" />
+              <p>GameBoy Advance</p>
+            </div>
           </div>
-          <div class="carousel-item">
-            <img src="/frontend/images/conPS5.jpg" alt="Play Station 5">
-            <h3>Play Station 5 Slim</h3>
-            <p>$9575.00</p>
-          </div>
-          <div class="carousel-item">
-            <img src="/frontend/images/conGBA.jpg" alt="GameBoy">
-            <h3>GameBoy Advance</h3>
-            <p>$750.00</p>
-          </div>
-          <div class="carousel-item">
-            <img src="frontend/images/conXbox.jpg" alt="XBOX serie S">
-            <h3>Consola XBOX serie S</h3>
-            <p>$6500.00</p>
-          </div>
-          <div class="carousel-item">
-            <img src="frontend/images/conSwitch.jpg" alt="Nintendo Switch">
-            <h3>Nintendo Switch 2</h3>
-            <p>$7500.00</p>
-          </div>
+          <button class="arrow right" data-target="carousel1">&#10095;</button>
         </div>
-        <button class="prev">&#10094;</button>
-        <button class="next">&#10095;</button>
+      </section>
+
+      <!-- Sección 2 -->
+      <section class="carousel-section">
+        <h2>Ahorra en productos reacondicionados</h2>
+        <div class="carousel-wrapper">
+          <button class="arrow left" data-target="carousel2">&#10094;</button>
+          <div class="carousel-container" id="carousel2">
+            <div class="product-card">
+              <img src="/frontend/images/phone.jpg" alt="Smartphone" />
+              <p>Smartphone</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/laptop.jpg" alt="Laptop" />
+              <p>Laptop</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/tablet.jpg" alt="Tablet" />
+              <p>Tablet</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/tv.jpg" alt="Televisor" />
+              <p>Televisor</p>
+            </div>
+            <div class="product-card">
+              <img src="/frontend/images/headphones.jpg" alt="Audífonos" />
+              <p>Audífonos</p>
+            </div>
+          </div>
+          <button class="arrow right" data-target="carousel2">&#10095;</button>
+        </div>
       </section>
     </main>
 
