@@ -117,7 +117,7 @@ body {
   text-align: center;
   background-color: #fff;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgb(82, 0, 234);
+  box-shadow: 0 4px 10px rgb(41, 23, 75);
   padding: 15px;
 }
 
@@ -140,7 +140,7 @@ button.prev, button.next {
 }
 
 button.prev:hover, button.next:hover {
-  background-color: rgb(97, 129, 255);
+  background-color: rgb(73, 106, 235);
 }
 
 button.prev {
