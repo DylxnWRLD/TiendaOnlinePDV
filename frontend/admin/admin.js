@@ -364,7 +364,7 @@ class AdminPanel {
 
         try {
             // Llamar a la API (¡con la URL base correcta!)
-            const response = await fetch(`${this.API_BASE_URL}/api/admin/promociones`, {
+            const response = await fetch(`${this.API_BASE_URL}/api/promociones`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -439,7 +439,7 @@ class AdminPanel {
 
         try {
             
-            const response = await fetch(`${this.API_BASE_URL}/api/admin/promociones`, {
+            const response = await fetch(`${this.API_BASE_URL}/api/promociones`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
