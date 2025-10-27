@@ -688,11 +688,37 @@ function generateSalesReport() {
     adminPanel.generateSalesReport();
 }
 
-function deleteUser(userId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-        alert(`Usuario ${userId} eliminado exitosamente`);
-        console.log('Eliminando usuario:', userId);
-        // En una implementación real, aquí harías la llamada a la API
+async function deleteUser(userId) {
+    // El adminPanel debe estar disponible globalmente
+    if (!adminPanel) {
+        console.error('AdminPanel no está inicializado.');
+        return;
+    }
+
+    if (confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')) {
+        
+        const token = localStorage.getItem('supabase-token');
+        
+        try {
+            const response = await fetch(`${adminPanel.API_BASE_URL}/api/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}` // Autenticación de Admin
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message || 'Usuario eliminado exitosamente.');
+                adminPanel.loadUsers(); // Recargar la tabla
+            } else {
+                alert(`Error: ${data.message || 'No se pudo eliminar el usuario.'}`);
+            }
+        } catch (error) {
+            console.error('Error de red al eliminar usuario:', error);
+            alert('Error de red. Inténtalo de nuevo.');
+        }
     }
 }
 

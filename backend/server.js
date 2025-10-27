@@ -314,6 +314,30 @@ app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
     }
 });
 
+/**
+ * RUTA: ELIMINAR un usuario (Admin)
+ * DELETE /api/users/:id
+ */
+app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        // Eliminar el usuario de Supabase Auth
+        const { data, error } = await supabase.auth.admin.deleteUser(userId);
+
+        if (error) {
+            console.error('Error al eliminar usuario de Auth:', error.message);
+            return res.status(500).json({ message: 'No se pudo eliminar el usuario.' });
+        }
+
+        res.status(200).json({ message: 'Usuario eliminado exitosamente.' });
+
+    } catch (error) {
+        console.error('Error inesperado en DELETE /api/users/:id:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
 
 // ===============================================
 // 3. CONEXIÓN DE ROUTERS MODULARES (CAJERO)
