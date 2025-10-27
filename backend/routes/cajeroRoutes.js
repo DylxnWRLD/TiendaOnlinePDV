@@ -1,3 +1,4 @@
+/*
 const express = require('express');
 const router = express.Router();
 // ⭐️ IMPORTACIÓN CORREGIDA ⭐️
@@ -116,3 +117,4 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
 
 
 module.exports = router;
+*/
