@@ -1,13 +1,17 @@
-// backend/routes/cajeroRoutes.js (CORRECCIÓN FINAL Y ROBUSTA)
-
+/*
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../server'); 
+// ⭐️ IMPORTACIÓN CORREGIDA ⭐️
+// Importamos el módulo completo del servidor
+const server = require('../server');
+// Accedemos a la propiedad 'supabase' que exportaremos directamente
+const supabase = server.supabase; 
 
 
 // ===============================================
 // MIDDLEWARE DE AUTENTICACIÓN LOCAL (getUserIdFromToken)
-// ... (Se mantiene, asume que usa supabase y next()) ...
+// ⭐️ CORRECCIÓN: Añadido try...catch para evitar fallos 500/HTML en Render ⭐️
+// ===============================================
 async function getUserIdFromToken(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -15,16 +19,23 @@ async function getUserIdFromToken(req, res, next) {
     }
     const token = authHeader.split(' ')[1];
 
-    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+    try {
+        // 1. Validar el token y obtener el usuario
+        const { data: userData, error: authError } = await supabase.auth.getUser(token);
 
-    if (authError || !userData.user) {
-        return res.status(401).json({ message: 'Token de sesión inválido o expirado. Vuelve a iniciar sesión.' });
+        if (authError || !userData.user) {
+            console.error('Error al validar token:', authError?.message || 'Usuario no encontrado');
+            return res.status(401).json({ message: 'Token de sesión inválido o expirado. Vuelve a iniciar sesión.' });
+        }
+
+        req.userId = userData.user.id;
+        next();
+    } catch (error) {
+        // ⭐️ Captura errores críticos (ej. fallos de conexión API) y asegura JSON ⭐️
+        console.error('[FATAL ERROR]: Validación de Token falló críticamente:', error.message);
+        return res.status(500).json({ message: 'Error interno del servidor al validar sesión.' });
     }
-
-    req.userId = userData.user.id;
-    next();
 }
-// ... (Fin del middleware) ...
 
 
 // ===============================================
@@ -44,26 +55,25 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
             .from('users')
             .select('role_id')
             .eq('id', userId)
-            .maybeSingle(); // ⬅️ Usar maybeSingle para que devuelva null si no lo encuentra
+            .maybeSingle(); 
 
         // Si hay error en la DB o si el rol no es Cajero (ID 3)
         if (roleError || !userData || userData.role_id !== 3) {
             if (roleError) console.error('[ROLE DB ERROR]:', roleError.message);
             
-            // 🛑 Devolver 403 (Permiso Denegado) si no es Cajero o no existe su perfil
+            // 🛑 Devolver 403 (Permiso Denegado) si no es Cajero
             return res.status(403).json({ 
-                message: 'Permiso denegado. Se requiere el rol Cajero.' 
+                message: 'Acceso denegado. Se requiere el rol Cajero.' 
             });
         }
         
     } catch (error) {
-        // Captura errores inesperados, como problemas de conexión inicial de Supabase
+        // Captura errores inesperados al consultar el rol
         console.error('[FATAL ERROR]: Role verification failed:', error.message);
-        // Devolver un error 500 explícito para evitar que Express devuelva HTML
         return res.status(500).json({ message: 'Error interno: Fallo al verificar permisos.' });
     }
     
-    // ⭐️ 2. LLAMADA A LA FUNCIÓN DE APERTURA (Solo si el rol fue verificado) ⭐️
+    // ⭐️ 2. LLAMADA A LA FUNCIÓN DE APERTURA ⭐️
     
     try {
         const { data: corteData, error } = await supabase.rpc('abrir_caja_cajero', {
@@ -75,13 +85,13 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
             console.error('[RPC ERROR]: Error en abrir_caja_cajero:', error.message);
             
             if (error.message.includes('CAJA_ACTIVA_EXISTENTE')) {
-                 // ... (Código para obtener existingCorte y devolver 409) ...
-                 const { data: existingCorte } = await supabase
+                // Obtener el ID de la caja activa para devolverlo en 409
+                const { data: existingCorte } = await supabase
                     .from('cortes_caja')
                     .select('id_corte')
                     .eq('id_cajero', userId)
                     .eq('estado', 'ABIERTA')
-                    .single();
+                    .maybeSingle();
                     
                 return res.status(409).json({ 
                     message: 'Ya tienes una caja abierta. Redirigiendo a tu turno activo.',
@@ -89,7 +99,7 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
                 });
             }
 
-            return res.status(500).json({ message: 'Error en la base de datos al registrar la apertura.' });
+            return res.status(500).json({ message: 'Error en la base de datos al registrar la apertura.', details: error.message });
         }
 
         // Éxito
@@ -107,3 +117,4 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
 
 
 module.exports = router;
+*/

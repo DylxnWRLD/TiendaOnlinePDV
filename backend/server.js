@@ -1,26 +1,46 @@
-// backend/server.js
-
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
-// Importar el router del cajero
-const cajeroRoutes = require('./routes/cajeroRoutes');
+// ⭐️ SE ELIMINÓ: const cajeroRoutes = require('./routes/cajeroRoutes');
 // Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// ===============================================
+// ⭐️ MANEJO GLOBAL DE EXCEPCIONES ⭐️
+// Esto garantiza que cualquier error que intente crashear el proceso
+// se imprima en los logs de Render antes de que el proceso termine.
+// ===============================================
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('--- EXCEPCIÓN NO MANEJADA (PROMESA) ---');
+    console.error('Razón:', reason);
+    console.error('Promesa:', promise);
+    // Permite que el proceso siga corriendo (opcionalmente)
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('--- EXCEPCIÓN NO CAPTURADA (CRASH) ---');
+    console.error('Error:', err);
+    // Intenta un cierre limpio, pero garantiza que el error se logre.
+    process.exit(1); 
+});
+
+// ⭐️ SOLUCIÓN CRÍTICA: Deshabilita la verificación de SSL.
+// Esto ayuda a Node.js a conectarse a Supabase cuando hay problemas de certificado en el hosting.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // ===============================================
-// Configuración de Supabase
+// Configuración de Supabase (Inicialización Local)
 // ===============================================
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-
 
 
 // ===============================================
@@ -47,7 +67,7 @@ app.use(bodyParser.json());
 
 
 // ===============================================
-// 1.5 MIDDLEWARES DE AUTORIZACIÓN (Admin)
+// 1.5 MIDDLEWARES DE AUTORIZACIÓN (Admin y Cajero)
 // ===============================================
 
 /**
@@ -60,7 +80,6 @@ const authenticateAdmin = async (req, res, next) => {
     if (token == null) return res.status(401).json({ message: 'Token no proporcionado.' });
 
     try {
-        // Nota: Usamos la función de autenticación interna para obtener el user object
         const { data: { user }, error: userError } = await supabase.auth.getUser(token);
         if (userError) return res.status(403).json({ message: 'Token inválido o expirado.' });
 
@@ -82,6 +101,32 @@ const authenticateAdmin = async (req, res, next) => {
         return res.status(500).json({ message: 'Error interno al validar la sesión.' });
     }
 };
+
+// ⭐️ MIDDLEWARE DE AUTENTICACIÓN (MOVIDO DESDE cajeroRoutes) ⭐️
+async function getUserIdFromToken(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Acceso denegado. No se proporcionó token.' });
+    }
+    const token = authHeader.split(' ')[1];
+
+    try {
+        // 1. Validar el token y obtener el usuario
+        const { data: userData, error: authError } = await supabase.auth.getUser(token);
+
+        if (authError || !userData.user) {
+            console.error('Error al validar token:', authError?.message || 'Usuario no encontrado');
+            return res.status(401).json({ message: 'Token de sesión inválido o expirado. Vuelve a iniciar sesión.' });
+        }
+
+        req.userId = userData.user.id;
+        next();
+    } catch (error) {
+        // Captura errores críticos (ej. fallos de conexión API) y asegura JSON 
+        console.error('[FATAL ERROR]: Validación de Token falló críticamente. Detalles:', error); // Aseguramos el log completo
+        return res.status(500).json({ message: 'Error interno del servidor al validar sesión.' });
+    }
+}
 
 
 // ===============================================
@@ -174,7 +219,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 // ===============================================
-// 2.5 RUTAS DE API (ADMIN) - CORREGIDA
+// 2.5 RUTAS DE API (ADMIN)
 // ===============================================
 
 app.get('/api/users', authenticateAdmin, async (req, res) => {
@@ -199,9 +244,7 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
         // 2. Obtener perfiles de public.users (para rol y STATUS REAL)
         const { data: profilesData, error: profileError } = await supabase
             .from('users')
-            .select('id, role_id, status'); // <-- ¡AHORA PEDIMOS EL STATUS REAL!
-        // Ya no filtramos por 'Activo' aquí, los traemos todos
-        // (Opcional: si quieres ver *solo* los activos: .eq('status', 'Activo'))
+            .select('id, role_id, status'); 
 
         if (profileError) {
             console.error('Error al obtener perfiles/roles:', profileError.message);
@@ -212,31 +255,27 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
         const profileMap = new Map();
         profilesData.forEach(profile => {
             profileMap.set(profile.id, {
-                role: roleIdToName[profile.role_id] || 'Cliente', // Traduce el ID a nombre
-                status: profile.status // <-- Guarda el status real ('Activo' o 'Inactivo')
+                role: roleIdToName[profile.role_id] || 'Cliente', 
+                status: profile.status 
             });
         });
 
         // 4. Combinar datos
         const combinedUsers = authUsers
             .map(authUser => {
-                // Busca el perfil del usuario en el mapa
                 const profile = profileMap.get(authUser.id);
-
-                // Si no tiene perfil (raro, pero posible), lo marcamos
                 if (!profile) {
                     return null;
                 }
-
                 return {
                     id: authUser.id,
                     email: authUser.email,
-                    role: profile.role, // <-- Rol del mapa
+                    role: profile.role, 
                     created_at: authUser.created_at,
-                    status: profile.status // <-- ¡STATUS REAL DEL MAPA!
+                    status: profile.status 
                 };
             })
-            .filter(user => user !== null && user.status === 'Activo'); // <-- Filtra nulos y los 'Inactivo'
+            .filter(user => user !== null && user.status === 'Activo'); 
 
         res.status(200).json(combinedUsers);
 
@@ -251,7 +290,6 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
  * POST /api/users
  */
 app.post('/api/users', authenticateAdmin, async (req, res) => {
-    // El frontend envía 'role' como el ID numérico
     const { email, password, role } = req.body;
 
     if (!email || !password || !role) {
@@ -262,13 +300,11 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
 
     try {
         // 1. Crear el usuario en Supabase Auth
-        // Usamos la API de Admin para crear usuarios
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
             email: email,
             password: password,
             email_confirm: true, // Auto-confirma el email para que pueda iniciar sesión
             user_metadata: {
-                // Pasamos el role_id aquí.
                 desired_role_id: role_id
             }
         });
@@ -278,7 +314,6 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
             return res.status(400).json({ message: traducirErrorSupabase(authError.message) });
         }
 
-        // ¡Éxito!
         res.status(201).json({ message: 'Usuario creado exitosamente.', user: authData.user });
 
     } catch (error) {
@@ -293,7 +328,7 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
  */
 app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
     const userId = req.params.id;
-    const { role_id } = req.body; // Esperamos un ID numérico
+    const { role_id } = req.body; 
 
     if (!role_id) {
         return res.status(400).json({ message: 'El ID del rol es obligatorio.' });
@@ -302,10 +337,10 @@ app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
     try {
         // Actualizamos 'public.users'.
         const { data, error } = await supabase
-            .from('users') // Tabla de perfiles
-            .update({ role_id: parseInt(role_id, 10) }) // El nuevo rol
-            .eq('id', userId) // Dónde el ID coincida
-            .select(); // Devuelve la fila actualizada
+            .from('users') 
+            .update({ role_id: parseInt(role_id, 10) })
+            .eq('id', userId) 
+            .select(); 
 
         if (error) {
             console.error('Error al actualizar rol en public.users:', error.message);
@@ -332,13 +367,11 @@ app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
     const userId = req.params.id;
 
     try {
-        // MODIFICACIÓN: En lugar de borrar de Auth,
-        // actualizamos el 'status' en la tabla 'users' a 'Inactivo'.
         const { data, error } = await supabase
-            .from('users') // La tabla de perfiles
-            .update({ status: 'Inactivo' }) // Establece el status a Inactivo
-            .eq('id', userId) // Dónde el ID coincida
-            .select(); // Para verificar que se hizo
+            .from('users') 
+            .update({ status: 'Inactivo' }) 
+            .eq('id', userId) 
+            .select(); 
 
         if (error) {
             console.error('Error al desactivar usuario en public.users:', error.message);
@@ -349,7 +382,6 @@ app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
             return res.status(404).json({ message: 'Usuario no encontrado en perfiles.' });
         }
 
-        // Cambiamos el mensaje de éxito
         res.status(200).json({ message: 'Usuario desactivado exitosamente.' });
 
     } catch (error) {
@@ -391,18 +423,16 @@ app.get('/api/admin/promociones', authenticateAdmin, async (req, res) => {
 
 
 
-
 // ===============================================
-// RUTA PARA CREAR PROMOCIONES (CORREGIDA)
+// RUTA PARA CREAR PROMOCIONES (ADMIN)
 // ===============================================
 
 app.post('/api/admin/promociones', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para crear promoción (Admin) recibida!');
     
-    // 1. Obtener datos del body (con 'descripcion' añadido)
     const { 
         nombre, 
-        descripcion, // <--- CAMPO AÑADIDO
+        descripcion, 
         tipo_descuento, 
         valor, 
         tipo_regla, 
@@ -412,19 +442,16 @@ app.post('/api/admin/promociones', authenticateAdmin, async (req, res) => {
         activa
     } = req.body;
 
-    // 2. Validación simple (la DB hará el resto)
-    // 'descripcion' es opcional, así que no se valida aquí.
     if (!nombre || !tipo_descuento || !valor || !tipo_regla || !fecha_inicio) {
         return res.status(400).json({ message: 'Faltan campos obligatorios para la promoción.' });
     }
     if (activa === undefined) {
-         return res.status(400).json({ message: 'Falta el estado "activa".' });
+        return res.status(400).json({ message: 'Falta el estado "activa".' });
     }
 
     try {
-        // 3. Insertar en Supabase (con 'descripcion' añadida)
         const { data, error } = await supabase
-            .from('promociones') // El nombre de tu tabla
+            .from('promociones') 
             .insert([
                 {
                     nombre: nombre,
@@ -438,20 +465,17 @@ app.post('/api/admin/promociones', authenticateAdmin, async (req, res) => {
                     activa: activa
                 }
             ])
-            .select(); // Para que devuelva el objeto creado
+            .select(); 
 
-        // 4. Manejar error de la base de datos
         if (error) {
             console.error('Error de Supabase al insertar promoción:', error.message);
-            // Manejo de error si el 'tipo_regla' no es válido
             if (error.message.includes('promociones_tipo_regla_check')) {
-                 return res.status(400).json({ message: `El tipo de regla "${tipo_regla}" no es válido.` });
+                return res.status(400).json({ message: `El tipo de regla "${tipo_regla}" no es válido.` });
             }
             return res.status(500).json({ message: 'Error al guardar la promoción.', details: error.message });
         }
 
-        // 5. Éxito
-        res.status(201).json(data[0]); // Devolver la promoción recién creada
+        res.status(201).json(data[0]); 
 
     } catch (error) {
         console.error('Error inesperado en /api/admin/promociones:', error.message);
@@ -460,19 +484,82 @@ app.post('/api/admin/promociones', authenticateAdmin, async (req, res) => {
 });
 
 
-
-
-
-
-
-
-
 // ===============================================
-// 3. CONEXIÓN DE ROUTERS MODULARES (CAJERO)
+// 3. RUTAS DE CAJERO (MOVIDAS DESDE cajeroRoutes)
 // ===============================================
 
-// ⭐️ Conecta el router modular de caja ⭐️
-app.use('/api', cajeroRoutes);
+/**
+ * RUTA: POST /api/caja/abrir (Apertura de Caja)
+ */
+app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
+    const userId = req.userId;
+    const { monto_inicial } = req.body;
+
+    if (typeof monto_inicial !== 'number' || monto_inicial < 0) {
+        return res.status(400).json({ message: 'Monto inicial inválido o faltante.' });
+    }
+    
+    // 1. VERIFICACIÓN DE ROL CONTRA LA BD (role_id = 3)
+    try {
+        const { data: userData, error: roleError } = await supabase
+            .from('users')
+            .select('role_id')
+            .eq('id', userId)
+            .maybeSingle(); 
+
+        if (roleError || !userData || userData.role_id !== 3) {
+            if (roleError) console.error('[ROLE DB ERROR]:', roleError.message);
+            
+            // Devolver 403 (Permiso Denegado) si no es Cajero
+            return res.status(403).json({ 
+                message: 'Permiso denegado. Se requiere el rol Cajero.' 
+            });
+        }
+        
+    } catch (error) {
+        console.error('[FATAL ERROR]: Role verification failed:', error.message);
+        return res.status(500).json({ message: 'Error interno: Fallo al verificar permisos.' });
+    }
+    
+    // 2. LLAMADA A LA FUNCIÓN DE APERTURA
+    
+    try {
+        const { data: corteData, error } = await supabase.rpc('abrir_caja_cajero', {
+            p_id_cajero: userId,
+            p_monto_inicial: monto_inicial
+        });
+        
+        if (error) {
+            console.error('[RPC ERROR]: Error en abrir_caja_cajero:', error.message);
+            
+            if (error.message.includes('CAJA_ACTIVA_EXISTENTE')) {
+                const { data: existingCorte } = await supabase
+                    .from('cortes_caja')
+                    .select('id_corte')
+                    .eq('id_cajero', userId)
+                    .eq('estado', 'ABIERTA')
+                    .maybeSingle();
+                    
+                return res.status(409).json({ 
+                    message: 'Ya tienes una caja abierta. Redirigiendo a tu turno activo.',
+                    corteId: existingCorte ? existingCorte.id_corte : null 
+                });
+            }
+
+            return res.status(500).json({ message: 'Error en la base de datos al registrar la apertura.', details: error.message });
+        }
+
+        res.status(200).json({ 
+            message: 'Caja abierta exitosamente.', 
+            corteId: corteData 
+        });
+
+    } catch (error) {
+        console.error('[FATAL ERROR]: RPC call failed:', error);
+        res.status(500).json({ message: 'Error interno del servidor. Fallo crítico en RPC.' });
+    }
+});
+
 
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
@@ -483,3 +570,6 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
 });
+
+// Exportaciones para el caso de que existan otros módulos que las necesiten.
+module.exports = { app, supabase, traducirErrorSupabase, authenticateAdmin, getUserIdFromToken };
