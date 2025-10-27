@@ -391,6 +391,38 @@ app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
 });
 
 
+
+
+// ===============================================
+// RUTA PARA OBTENER TODAS LAS PROMOCIONES
+// ===============================================
+app.get('/api/admin/promociones', authenticateAdmin, async (req, res) => {
+    console.log('¡Petición para OBTENER promociones (Admin) recibida!');
+
+    try {
+        // Consultar a Supabase
+        const { data, error } = await supabase
+            .from('promociones')
+            .select('*') // Traer todas las columnas
+            .order('created_at', { ascending: false }); // Mostrar las más nuevas primero
+
+        // Manejar error de la base de datos
+        if (error) {
+            console.error('Error de Supabase al obtener promociones:', error.message);
+            return res.status(500).json({ message: 'Error al obtener las promociones.', details: error.message });
+        }
+
+        // Éxito
+        res.status(200).json(data);
+
+    } catch (error) {
+        console.error('Error inesperado en GET /api/admin/promociones:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+
+
 // ===============================================
 // RUTA PARA CREAR PROMOCIONES (ADMIN)
 // ===============================================
@@ -427,7 +459,6 @@ app.post('/api/admin/promociones', authenticateAdmin, async (req, res) => {
                     tipo_descuento: tipo_descuento,
                     valor: valor,
                     tipo_regla: tipo_regla,
-                    // Lógica para 'valor_regla' nulo si no aplica
                     valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'REBAJAS' || tipo_regla === 'FECHA ESPECIAL') ? null : valor_regla, 
                     fecha_inicio: fecha_inicio,
                     fecha_fin: fecha_fin || null, 
