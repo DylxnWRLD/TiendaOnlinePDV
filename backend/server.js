@@ -1,6 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
-const bodyParser = require('body-parser');
+// ⭐️ ELIMINADO: const bodyParser = require('body-parser'); // Funcionalidad ahora en express.json()
 const cors = require('cors');
 const path = require('path');
 // ⭐️ SE ELIMINÓ: const cajeroRoutes = require('./routes/cajeroRoutes');
@@ -17,18 +17,16 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('--- EXCEPCIÓN NO MANEJADA (PROMESA) ---');
     console.error('Razón:', reason);
     console.error('Promesa:', promise);
-    // Permite que el proceso siga corriendo (opcionalmente)
 });
 
 process.on('uncaughtException', (err) => {
     console.error('--- EXCEPCIÓN NO CAPTURADA (CRASH) ---');
     console.error('Error:', err);
-    // Intenta un cierre limpio, pero garantiza que el error se logre.
+    // Intentamos un cierre limpio, pero garantizamos que el error se logre.
     process.exit(1); 
 });
 
-// ⭐️ SOLUCIÓN CRÍTICA: Deshabilita la verificación de SSL.
-// Esto ayuda a Node.js a conectarse a Supabase cuando hay problemas de certificado en el hosting.
+// ⭐️ SOLUCIÓN CRÍTICA: Deshabilita la verificación de SSL (Render fix).
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app = express();
@@ -63,7 +61,8 @@ function traducirErrorSupabase(originalMessage) {
 // ===============================================
 
 app.use(cors());
-app.use(bodyParser.json());
+// ⭐️ CAMBIO DE BODY-PARSER A EXPRESS.JSON() ⭐️
+app.use(express.json());
 
 
 // ===============================================
@@ -102,7 +101,7 @@ const authenticateAdmin = async (req, res, next) => {
     }
 };
 
-// ⭐️ MIDDLEWARE DE AUTENTICACIÓN (MOVIDO DESDE cajeroRoutes) ⭐️
+// ⭐️ MIDDLEWARE DE AUTENTICACIÓN (CAJERO) ⭐️
 async function getUserIdFromToken(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
