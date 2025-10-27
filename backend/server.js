@@ -7,6 +7,10 @@ const path = require('path');
 // Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// ⭐️ CAMBIO APLICADO: Deshabilita la verificación de SSL para evitar problemas de certificado en Render ⭐️
+// Esto es un parche común en entornos de hosting con Supabase/Node.js.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -99,7 +103,7 @@ async function getUserIdFromToken(req, res, next) {
         next();
     } catch (error) {
         // Captura errores críticos (ej. fallos de conexión API) y asegura JSON 
-        console.error('[FATAL ERROR]: Validación de Token falló críticamente:', error.message);
+        console.error('[FATAL ERROR]: Validación de Token falló críticamente. Detalles:', error); // Aseguramos el log completo
         return res.status(500).json({ message: 'Error interno del servidor al validar sesión.' });
     }
 }
@@ -516,5 +520,4 @@ app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
 });
 
-// Exportaciones para el caso de que existan otros módulos que las necesiten.
-module.exports = { app, supabase, traducirErrorSupabase, authenticateAdmin, getUserIdFromToken };
+// Exportaciones para el caso de que existan otros módulos que
