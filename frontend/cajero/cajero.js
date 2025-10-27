@@ -1,13 +1,14 @@
 // cajero/pdv.js
 
+// Define la API base URL (Ajustada para Render)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv.onrender.com';
+    : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Asegúrate que esta URL sea la correcta de tu servicio Render ⭐️
 
-// ⭐️ CORRECCIÓN CLAVE: Usar 'supabase-token' en lugar de 'sessionToken' ⭐️
+// ⭐️ CORRECCIÓN: Leer el token con la clave correcta ⭐️
 const token = localStorage.getItem('supabase-token'); 
 const corteId = localStorage.getItem('currentCorteId');
-// ⭐️ CORRECCIÓN CLAVE: Usar 'user-role' en lugar de 'userRole' ⭐️
+// ⭐️ CORRECCIÓN: Leer el rol con la clave correcta ⭐️
 const role = localStorage.getItem('user-role'); 
 
 // Estado local de la venta (el "carrito")
@@ -24,9 +25,10 @@ let ventaActual = {
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Verificar Sesión y Corte Abierto
+    // La verificación ahora es correcta gracias a las claves 'supabase-token' y 'user-role'
     if (!token || role !== 'Cajero' || !corteId) {
-        // Ahora esta verificación funcionará correctamente al leer las claves correctas.
         alert('Caja no abierta o sesión inválida. Redirigiendo a Apertura.');
+        // Redirige a la página de apertura para forzar el inicio del turno
         window.location.href = './apertura_caja.html'; 
         return;
     }
