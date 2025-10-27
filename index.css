@@ -188,7 +188,7 @@ body {
   right: -15px;
 }
 
-/*Responsividad del carrusel */
+/*Responsividad del carrusel*/
 @media (max-width: 700px) {
   .carousel-section {
     width: 95%;
