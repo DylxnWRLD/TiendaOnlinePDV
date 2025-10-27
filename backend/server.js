@@ -173,11 +173,6 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-
-// ===============================================
-// 2.5 RUTAS DE API (ADMIN)
-// ===============================================
-
 // ===============================================
 // 2.5 RUTAS DE API (ADMIN) - CORREGIDA
 // ===============================================
@@ -193,6 +188,7 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
     };
 
     try {
+        // 1. Obtener usuarios de Autenticación (para email y fecha de creación)
         const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers();
         if (authError) {
             console.error('Error al obtener usuarios de auth:', authError.message);
@@ -200,33 +196,47 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
         }
         const authUsers = authUsersData.users;
 
+        // 2. Obtener perfiles de public.users (para rol y STATUS REAL)
         const { data: profilesData, error: profileError } = await supabase
             .from('users')
-            .select('id, role_id');
+            .select('id, role_id, status'); // <-- ¡AHORA PEDIMOS EL STATUS REAL!
+        // Ya no filtramos por 'Activo' aquí, los traemos todos
+        // (Opcional: si quieres ver *solo* los activos: .eq('status', 'Activo'))
 
         if (profileError) {
             console.error('Error al obtener perfiles/roles:', profileError.message);
             return res.status(500).json({ message: 'Error al obtener roles de usuarios.' });
         }
 
-        const rolesMap = new Map();
+        // 3. Crear un mapa con los datos de perfil (rol y status)
+        const profileMap = new Map();
         profilesData.forEach(profile => {
-            const roleName = roleIdToName[profile.role_id];
-            rolesMap.set(profile.id, roleName);
+            profileMap.set(profile.id, {
+                role: roleIdToName[profile.role_id] || 'Cliente', // Traduce el ID a nombre
+                status: profile.status // <-- Guarda el status real ('Activo' o 'Inactivo')
+            });
         });
 
-        const combinedUsers = authUsers.map(authUser => {
-            const role = rolesMap.get(authUser.id);
-            const status = authUser.email_confirmed_at ? 'Activo' : 'Pendiente';
+        // 4. Combinar datos
+        const combinedUsers = authUsers
+            .map(authUser => {
+                // Busca el perfil del usuario en el mapa
+                const profile = profileMap.get(authUser.id);
 
-            return {
-                id: authUser.id,
-                email: authUser.email,
-                role: role,
-                created_at: authUser.created_at,
-                status: status
-            };
-        });
+                // Si no tiene perfil (raro, pero posible), lo marcamos
+                if (!profile) {
+                    return null;
+                }
+
+                return {
+                    id: authUser.id,
+                    email: authUser.email,
+                    role: profile.role, // <-- Rol del mapa
+                    created_at: authUser.created_at,
+                    status: profile.status // <-- ¡STATUS REAL DEL MAPA!
+                };
+            })
+            .filter(user => user !== null && user.status === 'Activo'); // <-- Filtra nulos y los 'Inactivo'
 
         res.status(200).json(combinedUsers);
 
@@ -267,7 +277,7 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
             console.error('Error al crear usuario en Auth:', authError.message);
             return res.status(400).json({ message: traducirErrorSupabase(authError.message) });
         }
-        
+
         // ¡Éxito!
         res.status(201).json({ message: 'Usuario creado exitosamente.', user: authData.user });
 
@@ -315,22 +325,32 @@ app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * RUTA: ELIMINAR un usuario (Admin)
+ * RUTA: "ELIMINAR" (Desactivar) un usuario (Admin)
  * DELETE /api/users/:id
  */
 app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
     const userId = req.params.id;
 
     try {
-        // Eliminar el usuario de Supabase Auth
-        const { data, error } = await supabase.auth.admin.deleteUser(userId);
+        // MODIFICACIÓN: En lugar de borrar de Auth,
+        // actualizamos el 'status' en la tabla 'users' a 'Inactivo'.
+        const { data, error } = await supabase
+            .from('users') // La tabla de perfiles
+            .update({ status: 'Inactivo' }) // Establece el status a Inactivo
+            .eq('id', userId) // Dónde el ID coincida
+            .select(); // Para verificar que se hizo
 
         if (error) {
-            console.error('Error al eliminar usuario de Auth:', error.message);
-            return res.status(500).json({ message: 'No se pudo eliminar el usuario.' });
+            console.error('Error al desactivar usuario en public.users:', error.message);
+            return res.status(500).json({ message: 'No se pudo desactivar el usuario.' });
         }
 
-        res.status(200).json({ message: 'Usuario eliminado exitosamente.' });
+        if (!data || data.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado en perfiles.' });
+        }
+
+        // Cambiamos el mensaje de éxito
+        res.status(200).json({ message: 'Usuario desactivado exitosamente.' });
 
     } catch (error) {
         console.error('Error inesperado en DELETE /api/users/:id:', error.message);

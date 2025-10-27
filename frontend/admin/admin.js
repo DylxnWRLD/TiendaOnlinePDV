@@ -695,10 +695,11 @@ async function deleteUser(userId) {
         return;
     }
 
-    if (confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')) {
-        
+    // MODIFICACIÓN: Texto del confirm() actualizado
+    if (confirm('¿Estás seguro de que deseas desactivar este usuario? El usuario ya no aparecerá en la lista')) {
+
         const token = localStorage.getItem('supabase-token');
-        
+
         try {
             const response = await fetch(`${adminPanel.API_BASE_URL}/api/users/${userId}`, {
                 method: 'DELETE',
@@ -710,13 +711,15 @@ async function deleteUser(userId) {
             const data = await response.json();
 
             if (response.ok) {
-                alert(data.message || 'Usuario eliminado exitosamente.');
+                // El backend ahora envía 'Usuario desactivado exitosamente.'
+                alert(data.message || 'Usuario desactivado exitosamente.');
                 adminPanel.loadUsers(); // Recargar la tabla
             } else {
-                alert(`Error: ${data.message || 'No se pudo eliminar el usuario.'}`);
+                // MODIFICACIÓN: Mensaje de error por defecto actualizado
+                alert(`Error: ${data.message || 'No se pudo desactivar el usuario.'}`);
             }
         } catch (error) {
-            console.error('Error de red al eliminar usuario:', error);
+            console.error('Error de red al desactivar usuario:', error);
             alert('Error de red. Inténtalo de nuevo.');
         }
     }
