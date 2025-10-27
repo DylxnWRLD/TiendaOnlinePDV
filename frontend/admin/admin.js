@@ -722,6 +722,99 @@ async function deleteUser(userId) {
     }
 }
 
+
+
+
+
+
+
+// En tu archivo JS del frontend (el que maneja el formulario)
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const addPromotionForm = document.getElementById('addPromotionForm');
+    const ruleTypeSelect = document.getElementById('promotionRuleType');
+    const ruleValueGroup = document.getElementById('promotionRuleValueGroup');
+    const ruleValueInput = document.getElementById('promotionRuleValue');
+
+    // (Tu función 'toggleRuleValueField' para ocultar/mostrar el valor de la regla
+    //  debe ir aquí, sin cambios)
+    function toggleRuleValueField() {
+        if (ruleTypeSelect.value === 'GLOBAL' || ruleTypeSelect.value === 'REBAJAS' || ruleTypeSelect.value === 'FECHA ESPECIAL') {
+            ruleValueGroup.style.display = 'none'; // Ocultar
+            ruleValueInput.required = false; // No es requerido
+            ruleValueInput.value = ''; // Limpiar valor
+        } else {
+            ruleValueGroup.style.display = 'block'; // Mostrar
+            ruleValueInput.required = true; // Es requerido
+        }
+    }
+    ruleTypeSelect.addEventListener('change', toggleRuleValueField);
+    toggleRuleValueField(); 
+
+
+    // --- 3. Manejador del envío del formulario ---
+    addPromotionForm.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Evitar que la página se recargue
+
+        // 1. Obtén el token que guardaste en el login
+        const token = localStorage.getItem('miTokenSupabase'); // O como lo hayas guardado
+
+        if (!token) {
+            alert('Error: No estás autenticado. Por favor, inicia sesión de nuevo.');
+            return;
+        }
+
+        // Recolectar todos los datos del formulario
+        const promotionData = {
+            nombre: document.getElementById('promotionName').value,
+            
+            // --- CAMPO AÑADIDO ---
+            descripcion: document.getElementById('promotionDescription').value || null,
+
+            tipo_descuento: document.getElementById('promotionType').value,
+            valor: parseFloat(document.getElementById('promotionValue').value),
+            tipo_regla: document.getElementById('promotionRuleType').value,
+            valor_regla: document.getElementById('promotionRuleValue').value,
+            fecha_inicio: document.getElementById('promotionStart').value,
+            fecha_fin: document.getElementById('promotionEnd').value || null,
+            activa: document.getElementById('promotionActive').checked 
+        };
+
+        console.log('Enviando promoción:', promotionData);
+
+        try {
+            // Asegúrate que esta URL sea correcta (tu API de Render o localhost)
+            const response = await fetch('/api/admin/promociones', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Envía el token de admin
+                },
+                body: JSON.stringify(promotionData),
+            });
+
+            if (response.ok) {
+                alert('¡Promoción creada con éxito!');
+                addPromotionForm.reset(); 
+                closeAddPromotionModal(); 
+                // Aquí deberías recargar tu lista de promociones
+            } else {
+                const error = await response.json();
+                alert(`Error al crear la promoción: ${error.message || 'Error desconocido'}`);
+            }
+        } catch (error) {
+            console.error('Error de red:', error);
+            alert('Error de conexión. No se pudo crear la promoción.');
+        }
+    });
+});
+
+
+
+
+
+
 // Inicializar el panel de administración cuando se carga la página
 let adminPanel;
 document.addEventListener('DOMContentLoaded', () => {

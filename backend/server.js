@@ -339,13 +339,94 @@ app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
 });
 
 
+
+
+
+
+
+
+// ===============================================
+// RUTA PARA CREAR PROMOCIONES (CORREGIDA)
+// ===============================================
+
+app.post('/api/admin/promociones', authenticateAdmin, async (req, res) => {
+    console.log('¡Petición para crear promoción (Admin) recibida!');
+    
+    // 1. Obtener datos del body (con 'descripcion' añadido)
+    const { 
+        nombre, 
+        descripcion, // <--- CAMPO AÑADIDO
+        tipo_descuento, 
+        valor, 
+        tipo_regla, 
+        valor_regla, 
+        fecha_inicio, 
+        fecha_fin,
+        activa
+    } = req.body;
+
+    // 2. Validación simple (la DB hará el resto)
+    // 'descripcion' es opcional, así que no se valida aquí.
+    if (!nombre || !tipo_descuento || !valor || !tipo_regla || !fecha_inicio) {
+        return res.status(400).json({ message: 'Faltan campos obligatorios para la promoción.' });
+    }
+    if (activa === undefined) {
+         return res.status(400).json({ message: 'Falta el estado "activa".' });
+    }
+
+    try {
+        // 3. Insertar en Supabase (con 'descripcion' añadida)
+        const { data, error } = await supabase
+            .from('promociones') // El nombre de tu tabla
+            .insert([
+                {
+                    nombre: nombre,
+                    descripcion: descripcion, // <--- CAMPO AÑADIDO
+                    tipo_descuento: tipo_descuento,
+                    valor: valor,
+                    tipo_regla: tipo_regla,
+                    // Lógica para 'valor_regla' nulo si no aplica
+                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'REBAJAS' || tipo_regla === 'FECHA ESPECIAL') ? null : valor_regla, 
+                    fecha_inicio: fecha_inicio,
+                    fecha_fin: fecha_fin || null, 
+                    activa: activa
+                }
+            ])
+            .select(); // Para que devuelva el objeto creado
+
+        // 4. Manejar error de la base de datos
+        if (error) {
+            console.error('Error de Supabase al insertar promoción:', error.message);
+            // Manejo de error si el 'tipo_regla' no es válido
+            if (error.message.includes('promociones_tipo_regla_check')) {
+                 return res.status(400).json({ message: `El tipo de regla "${tipo_regla}" no es válido.` });
+            }
+            return res.status(500).json({ message: 'Error al guardar la promoción.', details: error.message });
+        }
+
+        // 5. Éxito
+        res.status(201).json(data[0]); // Devolver la promoción recién creada
+
+    } catch (error) {
+        console.error('Error inesperado en /api/admin/promociones:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+
+
+
+
+
+
+
+
 // ===============================================
 // 3. CONEXIÓN DE ROUTERS MODULARES (CAJERO)
 // ===============================================
 
 // ⭐️ Conecta el router modular de caja ⭐️
 app.use('/api', cajeroRoutes);
-
 
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR

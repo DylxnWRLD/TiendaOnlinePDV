@@ -226,19 +226,19 @@
             </div>
             <form id="addUserForm">
                 <div class="form-group">
-                    <label class="form-label">Email</label>
+                    <label class="form-label" for="userEmail">Email</label>
                     <input type="email" class="form-control" id="userEmail" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Contraseña</label>
+                    <label class="form-label" for="userPassword">Contraseña</label>
                     <input type="password" class="form-control" id="userPassword" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Rol</label>
+                    <label class="form-label" for="userRole">Rol</label>
                     <select class="form-control" id="userRole" required>
-                        <option value="2">Cliente</option>
-                        <option value="4">Administrador de Inventario</option>
-                        <option value="3">Cajero</option>
+                        <option value="4">Cliente</option>
+                        <option value="3">Administrador de Inventario</option>
+                        <option value="2">Cajero</option>
                         <option value="1">Administrador</option>
                     </select>
                 </div>
@@ -260,16 +260,16 @@
             <form id="editUserForm">
                 <input type="hidden" id="editUserId">
                 <div class="form-group">
-                    <label class="form-label">Email</label>
+                    <label class="form-label" for="editUserEmail">Email</label>
                     <input type="email" class="form-control" id="editUserEmail" disabled>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Rol</label>
+                    <label class="form-label" for="editUserRole">Rol</label>
                     <select class="form-control" id="editUserRole" required>
                         <option value="1">Administrador</option>
-                        <option value="4">Administrador de Inventario</option>
-                        <option value="3">Cajero</option>
-                        <option value="2">Cliente</option>
+                        <option value="3">Administrador de Inventario</option>
+                        <option value="2">Cajero</option>
+                        <option value="4">Cliente</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -280,45 +280,84 @@
         </div>
     </div>
 
-    <!-- Add Promotion Modal -->
-    <div id="addPromotionModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Crear Nueva Promoción</h3>
-                <button class="close" onclick="closeAddPromotionModal()">&times;</button>
-            </div>
-            <form id="addPromotionForm">
-                <div class="form-group">
-                    <label class="form-label">Nombre de la Promoción</label>
-                    <input type="text" class="form-control" id="promotionName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tipo de Descuento</label>
-                    <select class="form-control" id="promotionType" required>
-                        <option value="percentage">Porcentaje</option>
-                        <option value="fixed">Monto Fijo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Valor del Descuento</label>
-                    <input type="number" class="form-control" id="promotionValue" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Fecha de Inicio</label>
-                    <input type="datetime-local" class="form-control" id="promotionStart" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Fecha de Fin</label>
-                    <input type="datetime-local" class="form-control" id="promotionEnd" required>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Crear Promoción</button>
-                    <button type="button" class="btn" onclick="closeAddPromotionModal()">Cancelar</button>
-                </div>
-            </form>
+  <div id="addPromotionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Crear Nueva Promoción</h3>
+            <button class="close" onclick="closeAddPromotionModal()">&times;</button>
         </div>
-    </div>
+        
+        <form id="addPromotionForm">
+            <div class="form-group">
+                <label class="form-label" for="promotionName">Nombre de la Promoción</label>
+                <input type="text" class="form-control" id="promotionName" required>
+            </div>
 
-    <script src="admin.js"></script>
+            <div class="form-group">
+                <label class="form-label" for="promotionDescription">Descripción (Opcional)</label>
+                <textarea class="form-control" id="promotionDescription" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="promotionType">Tipo de Descuento</label>
+                <select class="form-control" id="promotionType" required>
+                    <option value="PORCENTAJE">Porcentaje (%)</option>
+                    <option value="FIJO">Monto Fijo ($)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="promotionValue">Valor del Descuento</label>
+                <input type="number" class="form-control" id="promotionValue" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="promotionRuleType">Aplicar descuento a:</label>
+                <select class="form-control" id="promotionRuleType" required>
+                    <option value="GLOBAL">Global (Toda la compra)</option>
+                    <option value="CATEGORIA">Categoría de Producto</option>
+                    <option value="MARCA">Marca Específica</option>
+                    <option value="PRODUCTO">Producto Específico (SKU o ID)</option>
+                    <option value="PRECIO">Basado en Precio (Ej. Gasta $1000)</option>
+                    <option value="CANTIDAD">Basado en Cantidad (Ej. Compra 3)</option>
+                    <option value="FECHA ESPECIAL">Fecha Especial (Ej. Navidad)</option>
+                    <option value="REBAJAS">Rebajas (General)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="promotionRuleValueGroup">
+                <label class="form-label" for="promotionRuleValue">Valor de la Regla</label>
+                <input type="text" class="form-control" id="promotionRuleValue" 
+                       placeholder="Ej: 'videojuegos' o '500' (para precio)">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="promotionStart">Fecha de Inicio</label>
+                <input type="datetime-local" class="form-control" id="promotionStart" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="promotionEnd">Fecha de Fin (Opcional)</label>
+                <input type="datetime-local" class="form-control" id="promotionEnd">
+            </div>
+
+            <div class="form-group">
+                <input type="checkbox" id="promotionActive" checked 
+                       style="margin-right: 10px; width: auto;">
+                <label class="form-label" for="promotionActive" 
+                       style="display: inline-block; vertical-align: middle;">
+                    Promoción Activa
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Crear Promoción</button>
+                <button type="button" class="btn" onclick="closeAddPromotionModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+    
 </body>
+<script src="admin.js"></script>
 </html>
