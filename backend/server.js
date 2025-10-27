@@ -395,7 +395,7 @@ app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
 // ===============================================
 // RUTA PARA OBTENER TODAS LAS PROMOCIONES
 // ===============================================
-app.get('/api/admin/promociones', authenticateAdmin, async (req, res) => {
+app.get('/api/promociones', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para OBTENER promociones (Admin) recibida!');
 
     try {
@@ -426,7 +426,7 @@ app.get('/api/admin/promociones', authenticateAdmin, async (req, res) => {
 // RUTA PARA CREAR PROMOCIONES (ADMIN)
 // ===============================================
 
-app.post('/api/admin/promociones', authenticateAdmin, async (req, res) => {
+app.post('/api/promociones', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para crear promoción (Admin) recibida!');
     
     const { 
