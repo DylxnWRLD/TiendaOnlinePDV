@@ -309,7 +309,7 @@ function setupEventListeners() {
     // Logout
     document.getElementById('btn-logout').addEventListener('click', () => {
         localStorage.clear();
-        window.location.href = '../../login/login.html';
+        window.location.href = '../login/login.html';
     });
     
     // Otros botones (simulación de funcionalidad)
