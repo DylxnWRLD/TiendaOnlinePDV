@@ -7,8 +7,8 @@ const path = require('path');
 // Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-// ⭐️ CAMBIO APLICADO: Deshabilita la verificación de SSL para evitar problemas de certificado en Render ⭐️
-// Esto es un parche común en entornos de hosting con Supabase/Node.js.
+// ⭐️ SOLUCIÓN CRÍTICA: Deshabilita la verificación de SSL.
+// Esto ayuda a Node.js a conectarse a Supabase cuando hay problemas de certificado en el hosting.
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app = express();
@@ -520,4 +520,5 @@ app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
 });
 
-// Exportaciones para el caso de que existan otros módulos que
+// Exportaciones para el caso de que existan otros módulos que las necesiten.
+module.exports = { app, supabase, traducirErrorSupabase, authenticateAdmin, getUserIdFromToken };
