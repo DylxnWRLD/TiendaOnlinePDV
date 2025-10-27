@@ -27,15 +27,14 @@ if (menuToggle) {
 }
 
 // ==========================================
-// 🔸 NUEVO CARRUSEL ESTILO AMAZON
+// 🔸 NUEVO CARRUSEL
 // ==========================================
 
-// Obtenemos las flechas y el contenedor del carrusel
+//flechas y el contenedor del carrusel
 const carouselContainer = document.getElementById("carousel");
 const prevArrow = document.getElementById("prev");
 const nextArrow = document.getElementById("next");
 
-// Verificamos que existan antes de usar
 if (carouselContainer && prevArrow && nextArrow) {
   const scrollAmount = 250; // distancia que se moverá cada vez
 
@@ -55,10 +54,8 @@ if (carouselContainer && prevArrow && nextArrow) {
 }
 
 // ==========================================
-// 💡 OPCIONAL: AUTO-SCROLL (si quieres animación continua)
+// (animación continua)
 // ==========================================
-// Puedes descomentar esto si quieres que el carrusel se mueva solo
-
 setInterval(() => {
   if (carouselContainer) {
     carouselContainer.scrollBy({ left: 250, behavior: "smooth" });

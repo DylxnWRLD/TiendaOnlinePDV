@@ -1,4 +1,3 @@
-/* 🎨 RESET Y CONFIGURACIÓN BÁSICA */
 * {
   margin: 0;
   padding: 0;
@@ -10,7 +9,7 @@ body {
   background-color: #bcbdff;
 }
 
-/* 🔹 ENCABEZADO GENERAL */
+/*ENCABEZADO GENERAL */
 .header {
   display: flex;
   align-items: center;
@@ -21,21 +20,21 @@ body {
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* 🔹 MENÚ HAMBURGUESA */
+/*MENÚ HAMBURGUESA */
 .menu-icon {
   font-size: 1.8rem;
   cursor: pointer;
   user-select: none;
 }
 
-/* 🔹 NOMBRE DE LA TIENDA */
+/*NOMBRE DE LA TIENDA */
 .logo {
   font-size: 1.6rem;
   margin-left: 10px;
   flex-shrink: 0;
 }
 
-/* 🔹 BARRA DE BÚSQUEDA */
+/*BARRA DE BÚSQUEDA */
 .search-bar {
   display: flex;
   flex: 1;
@@ -61,7 +60,7 @@ body {
   font-size: 1rem;
 }
 
-/* 🔹 BOTONES DE USUARIO */
+/*BOTONES DE USUARIO */
 .user-actions {
   display: flex;
   align-items: center;
@@ -83,7 +82,7 @@ body {
   background-color: #ffdfde;
 }
 
-/* 🔹 ADAPTACIÓN PARA MÓVILES */
+/*ADAPTACIÓN PARA MÓVILES */
 @media (max-width: 700px) {
   .header {
     flex-wrap: wrap;
@@ -101,7 +100,7 @@ body {
 }
 
 /* ======================================= */
-/* 🔸 NUEVO CARRUSEL ESTILO AMAZON */
+/* NUEVO CARRUSEL
 /* ======================================= */
 
 .carousel-section {
@@ -189,7 +188,7 @@ body {
   right: -15px;
 }
 
-/* 🔹 Responsividad del carrusel */
+/*Responsividad del carrusel */
 @media (max-width: 700px) {
   .carousel-section {
     width: 95%;
