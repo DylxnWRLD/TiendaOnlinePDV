@@ -1,10 +1,10 @@
-// backend/routes/cajeroRoutes.js (CORRECCIÓN FINAL Y ROBUSTA)
-
 const express = require('express');
 const router = express.Router();
-// NOTA IMPORTANTE: Esta línea requiere que server.js haga: 
-// module.exports = { app, supabase, ... };
-const { supabase } = require('../server'); 
+// ⭐️ IMPORTACIÓN CORREGIDA ⭐️
+// Importamos el módulo completo del servidor
+const server = require('../server');
+// Accedemos a la propiedad 'supabase' que exportaremos directamente
+const supabase = server.supabase; 
 
 
 // ===============================================
@@ -90,7 +90,7 @@ router.post('/caja/abrir', getUserIdFromToken, async (req, res) => {
                     .select('id_corte')
                     .eq('id_cajero', userId)
                     .eq('estado', 'ABIERTA')
-                    .maybeSingle(); // Usamos maybeSingle aquí para evitar errores si por algún motivo no se encuentra.
+                    .maybeSingle();
                     
                 return res.status(409).json({ 
                     message: 'Ya tienes una caja abierta. Redirigiendo a tu turno activo.',

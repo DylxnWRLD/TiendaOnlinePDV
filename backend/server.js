@@ -457,4 +457,5 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
 });
-module.exports = { app, supabase, traducirErrorSupabase, authenticateAdmin }; // Exporta todo lo necesario
+
+module.exports.supabase = supabase;
