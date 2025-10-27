@@ -7,6 +7,26 @@ const path = require('path');
 // Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// ===============================================
+// ⭐️ MANEJO GLOBAL DE EXCEPCIONES ⭐️
+// Esto garantiza que cualquier error que intente crashear el proceso
+// se imprima en los logs de Render antes de que el proceso termine.
+// ===============================================
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('--- EXCEPCIÓN NO MANEJADA (PROMESA) ---');
+    console.error('Razón:', reason);
+    console.error('Promesa:', promise);
+    // Permite que el proceso siga corriendo (opcionalmente)
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('--- EXCEPCIÓN NO CAPTURADA (CRASH) ---');
+    console.error('Error:', err);
+    // Intenta un cierre limpio, pero garantiza que el error se logre.
+    process.exit(1); 
+});
+
 // ⭐️ SOLUCIÓN CRÍTICA: Deshabilita la verificación de SSL.
 // Esto ayuda a Node.js a conectarse a Supabase cuando hay problemas de certificado en el hosting.
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
