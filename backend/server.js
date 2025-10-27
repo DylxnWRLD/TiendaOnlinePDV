@@ -204,13 +204,6 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
             .from('users')
             .select('id, role_id');
 
-        // ===============================================
-        // 1. CONSOLE.LOG
-        // ===============================================
-        console.log('--- PERFILES OBTENIDOS DE public.users ---');
-        console.log(profilesData);
-        // ===============================================
-
         if (profileError) {
             console.error('Error al obtener perfiles/roles:', profileError.message);
             return res.status(500).json({ message: 'Error al obtener roles de usuarios.' });
@@ -221,13 +214,6 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
             const roleName = roleIdToName[profile.role_id];
             rolesMap.set(profile.id, roleName);
         });
-
-        // ===============================================
-        // 2. CONSOLE.LOG
-        // ===============================================
-        console.log('--- MAPA DE ROLES CREADO ---');
-        console.log(rolesMap);
-        // ===============================================
 
         const combinedUsers = authUsers.map(authUser => {
             const role = rolesMap.get(authUser.id);
@@ -242,17 +228,51 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
             };
         });
 
-        // ===============================================
-        // 3.CONSOLE.LOG
-        // ===============================================
-        console.log('--- DATOS COMBINADOS (ENVIADOS AL FRONTEND) ---');
-        console.log(combinedUsers);
-        // ===============================================
-
         res.status(200).json(combinedUsers);
 
     } catch (error) {
         console.error('Error inesperado en /api/users:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+/**
+ * RUTA: CREAR un nuevo usuario (Admin)
+ * POST /api/users
+ */
+app.post('/api/users', authenticateAdmin, async (req, res) => {
+    // El frontend envía 'role' como el ID numérico
+    const { email, password, role } = req.body;
+
+    if (!email || !password || !role) {
+        return res.status(400).json({ message: 'Email, contraseña y rol son obligatorios.' });
+    }
+
+    const role_id = parseInt(role, 10);
+
+    try {
+        // 1. Crear el usuario en Supabase Auth
+        // Usamos la API de Admin para crear usuarios
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email: email,
+            password: password,
+            email_confirm: true, // Auto-confirma el email para que pueda iniciar sesión
+            user_metadata: {
+                // Pasamos el role_id aquí.
+                desired_role_id: role_id
+            }
+        });
+
+        if (authError) {
+            console.error('Error al crear usuario en Auth:', authError.message);
+            return res.status(400).json({ message: traducirErrorSupabase(authError.message) });
+        }
+        
+        // ¡Éxito!
+        res.status(201).json({ message: 'Usuario creado exitosamente.', user: authData.user });
+
+    } catch (error) {
+        console.error('Error inesperado en POST /api/users:', error.message);
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });

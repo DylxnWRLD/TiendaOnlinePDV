@@ -331,16 +331,58 @@ class AdminPanel {
     }
 
     // Form Handlers
-    handleAddUser(e) {
-        e.preventDefault();
+    async handleAddUser(e) {
+        e.preventDefault(); // Evita que la página se recargue
 
+        // 1. Obtener los datos del formulario
         const email = document.getElementById('userEmail').value;
+        const password = document.getElementById('userPassword').value;
+        // 'userRole' es el <select> que ya tiene los IDs numéricos (1, 2, 3, 4)
         const role = document.getElementById('userRole').value;
 
-        console.log('Agregando usuario:', { email, role });
-        alert(`Usuario ${email} creado exitosamente con rol ${this.getRoleName(role)}`);
+        const token = localStorage.getItem('supabase-token');
 
-        this.closeAddUserModal();
+        // 2. Desactivar el botón para evitar doble envío
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Creando...';
+
+        try {
+            // 3. Llamar a la API del backend
+            const response = await fetch(`${this.API_BASE_URL}/api/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Autenticación de Admin
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                    role: role // El backend lo espera como 'role'
+                })
+            });
+
+            const data = await response.json();
+
+            // 4. Manejar la respuesta
+            if (response.ok) {
+                alert(data.message || 'Usuario creado exitosamente.');
+                this.closeAddUserModal(); // Cierra el modal
+                this.loadUsers(); // Recarga la tabla de usuarios
+                
+            } else {
+                // Si falla, mostrar el error traducido del backend
+                alert(`Error: ${data.message || 'No se pudo crear el usuario.'}`);
+            }
+
+        } catch (error) {
+            console.error('Error de red al agregar usuario:', error);
+            alert('Error de red. Inténtalo de nuevo.');
+        } finally {
+            // 5. Reactivar el botón (pase lo que pase)
+            submitButton.disabled = false;
+            submitButton.textContent = 'Crear Usuario';
+        }
     }
 
     handleEditUser(e) {
