@@ -325,22 +325,32 @@ app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
 });
 
 /**
- * RUTA: ELIMINAR un usuario (Admin)
+ * RUTA: "ELIMINAR" (Desactivar) un usuario (Admin)
  * DELETE /api/users/:id
  */
 app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
     const userId = req.params.id;
 
     try {
-        // Eliminar el usuario de Supabase Auth
-        const { data, error } = await supabase.auth.admin.deleteUser(userId);
+        // MODIFICACIÓN: En lugar de borrar de Auth,
+        // actualizamos el 'status' en la tabla 'users' a 'Inactivo'.
+        const { data, error } = await supabase
+            .from('users') // La tabla de perfiles
+            .update({ status: 'Inactivo' }) // Establece el status a Inactivo
+            .eq('id', userId) // Dónde el ID coincida
+            .select(); // Para verificar que se hizo
 
         if (error) {
-            console.error('Error al eliminar usuario de Auth:', error.message);
-            return res.status(500).json({ message: 'No se pudo eliminar el usuario.' });
+            console.error('Error al desactivar usuario en public.users:', error.message);
+            return res.status(500).json({ message: 'No se pudo desactivar el usuario.' });
         }
 
-        res.status(200).json({ message: 'Usuario eliminado exitosamente.' });
+        if (!data || data.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado en perfiles.' });
+        }
+
+        // Cambiamos el mensaje de éxito
+        res.status(200).json({ message: 'Usuario desactivado exitosamente.' });
 
     } catch (error) {
         console.error('Error inesperado en DELETE /api/users/:id:', error.message);
