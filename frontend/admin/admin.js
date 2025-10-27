@@ -369,7 +369,7 @@ class AdminPanel {
                 alert(data.message || 'Usuario creado exitosamente.');
                 this.closeAddUserModal(); // Cierra el modal
                 this.loadUsers(); // Recarga la tabla de usuarios
-                
+
             } else {
                 // Si falla, mostrar el error traducido del backend
                 alert(`Error: ${data.message || 'No se pudo crear el usuario.'}`);
@@ -385,16 +385,48 @@ class AdminPanel {
         }
     }
 
-    handleEditUser(e) {
-        e.preventDefault();
+    async handleEditUser(e) {
+        e.preventDefault(); // Evita que la página se recargue
 
+        // 1. Obtener los datos del formulario
         const userId = document.getElementById('editUserId').value;
-        const role = document.getElementById('editUserRole').value;
+        const role_id = document.getElementById('editUserRole').value; // Este es el ID numérico
+        const token = localStorage.getItem('supabase-token');
 
-        console.log('Editando usuario:', { userId, role });
-        alert(`Rol del usuario actualizado exitosamente a ${this.getRoleName(role)}`);
+        // 2. Desactivar el botón
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Actualizando...';
 
-        this.closeEditUserModal();
+        try {
+            // 3. Llamar a la API del backend
+            const response = await fetch(`${this.API_BASE_URL}/api/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ role_id: role_id }) // Enviamos el nuevo role_id
+            });
+
+            const data = await response.json();
+
+            // 4. Manejar la respuesta
+            if (response.ok) {
+                alert(data.message || 'Rol actualizado exitosamente.');
+                this.closeEditUserModal();
+                this.loadUsers(); // Recargar la tabla
+            } else {
+                alert(`Error: ${data.message || 'No se pudo actualizar el rol.'}`);
+            }
+        } catch (error) {
+            console.error('Error de red al editar usuario:', error);
+            alert('Error de red. Inténtalo de nuevo.');
+        } finally {
+            // 5. Reactivar el botón
+            submitButton.disabled = false;
+            submitButton.textContent = 'Actualizar Rol';
+        }
     }
 
     handleAddPromotion(e) {

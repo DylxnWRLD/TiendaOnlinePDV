@@ -277,6 +277,43 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
     }
 });
 
+/**
+ * RUTA: ACTUALIZAR el rol de un usuario (Admin)
+ * PUT /api/users/:id
+ */
+app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
+    const userId = req.params.id;
+    const { role_id } = req.body; // Esperamos un ID numérico
+
+    if (!role_id) {
+        return res.status(400).json({ message: 'El ID del rol es obligatorio.' });
+    }
+
+    try {
+        // Actualizamos 'public.users'.
+        const { data, error } = await supabase
+            .from('users') // Tabla de perfiles
+            .update({ role_id: parseInt(role_id, 10) }) // El nuevo rol
+            .eq('id', userId) // Dónde el ID coincida
+            .select(); // Devuelve la fila actualizada
+
+        if (error) {
+            console.error('Error al actualizar rol en public.users:', error.message);
+            return res.status(500).json({ message: 'No se pudo actualizar el rol.' });
+        }
+
+        if (data.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado en perfiles.' });
+        }
+
+        res.status(200).json({ message: 'Rol de usuario actualizado exitosamente.' });
+
+    } catch (error) {
+        console.error('Error inesperado en PUT /api/users/:id:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
 
 // ===============================================
 // 3. CONEXIÓN DE ROUTERS MODULARES (CAJERO)
