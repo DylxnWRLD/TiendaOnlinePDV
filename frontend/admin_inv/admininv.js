@@ -1,6 +1,6 @@
 /********** Config **********/
 const USE_HTTP = true; 
-const API_BASE_URL = "/api"; // e.g. http://127.0.0.1:3000/api
+const API_BASE_URL = "/api"; 
 
 /********** Utils UI **********/
 const $  = (s, c=document)=>c.querySelector(s);
