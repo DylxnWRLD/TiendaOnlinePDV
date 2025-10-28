@@ -58,6 +58,19 @@ mongoose.connect(mongoUri)
     .catch(err => console.error('❌ Error al conectar a MongoDB:', err));
 
 
+// ==========================================================
+// ⭐️ OPCIONES DE CORS (PARA RUTAS CON CREDENCIALES) ⭐️
+// ==========================================================
+const corsOptionsWithCredentials = {
+    origin: [
+        'https://dyknxwld.github.io', // Tu GH Pages para el panel de inventario
+        'http://127.0.0.1:3000',      // Tu local para pruebas
+        'http://localhost:3000'        // Tu local para pruebas
+    ],
+    credentials: true // Esto permite que admininv.js envíe credenciales
+};
+
+
 // ===============================================
 // FUNCIÓN DE TRADUCCIÓN DE ERRORES
 // ===============================================
@@ -81,29 +94,8 @@ function traducirErrorSupabase(originalMessage) {
 // 1. MIDDLEWARES GLOBALES
 // ===============================================
 
-// ⭐️ CORRECCIÓN DE CORS (para permitir GitHub Pages + Credenciales) ⭐️
 
-// Lista de dominios que tienen permiso para hacer peticiones
-const whitelist = [
-    'http://127.0.0.1:3000', // Para tus pruebas locales
-    'http://localhost:3000',  // Para tus pruebas locales
-    'https://dyknxwld.github.io' // ❗️ Tu GitHub Pages
-];
-
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Permite peticiones si el 'origin' está en la lista blanca (o si no hay 'origin', como en Postman)
-        if (whitelist.indexOf(origin) !== -1 || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error('No permitido por CORS'));
-        }
-    },
-    credentials: true // ⭐️ Esto es CLAVE: permite que el navegador envíe 'credentials: "include"'
-};
-
-app.use(cors(corsOptions)); // ⭐️ Usa las nuevas opciones
-
+app.use(cors());
 app.use(bodyParser.json());
 
 
