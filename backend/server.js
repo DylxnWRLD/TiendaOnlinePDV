@@ -3,9 +3,16 @@ const { createClient } = require('@supabase/supabase-js');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const mongoose = require('mongoose');
+const Product = require('./models/product.model'); // ⭐️ NUEVO: Importa el modelo
+
+
 // ⭐️ SE ELIMINÓ: const cajeroRoutes = require('./routes/cajeroRoutes');
 // Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// ⭐️ PRUEBA 1: PARA VER SI EL ARCHIVO SE CARGA
+console.log('--- ¡VERSIÓN MÁS RECIENTE DE SERVER.JS CARGADA! ---');
 
 // ===============================================
 // ⭐️ MANEJO GLOBAL DE EXCEPCIONES ⭐️
@@ -41,6 +48,14 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+// ===============================================
+// ⭐️ NUEVO: Configuración de MongoDB (Mongoose) ⭐️
+// ===============================================
+const mongoUri = process.env.MONGO_URI;
+
+mongoose.connect(mongoUri)
+    .then(() => console.log('✅ Conectado a MongoDB Atlas'))
+    .catch(err => console.error('❌ Error al conectar a MongoDB:', err));
 
 
 // ===============================================
@@ -133,9 +148,116 @@ async function getUserIdFromToken(req, res, next) {
 // 2. RUTAS DE AUTENTICACIÓN (CORE)
 // ===============================================
 
-app.post('/test', (req, res) => {
-    console.log('¡Ruta de prueba alcanzada!');
-    res.status(200).json({ message: 'Ruta de prueba OK.' });
+
+
+// ===============================================
+// ⭐️⭐️ PRUEBA DE RUTA DE INVENTARIO ⭐️⭐️
+// ===============================================
+
+app.get('/api/products', async (req, res) => {
+    console.log('--- ¡¡¡RUTA GET /api/products SÍ FUNCIONA!!! ---');
+
+    try {
+        const { search = "", page = 1, limit = 10 } = req.query;
+        const query = {};
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { sku: { $regex: search, $options: "i" } }
+            ];
+        }
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const [items, total] = await Promise.all([
+            Product.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)),
+            Product.countDocuments(query)
+        ]);
+        res.status(200).json({ items, total });
+    } catch (error) {
+        console.error('Error al listar productos:', error.message);
+        res.status(500).json({ 
+            message: 'Error interno del servidor al listar productos.',
+            details: error.message 
+        });
+    }
+});
+/**
+ * RUTA: DELETE /api/products/:id
+ * Objetivo: Eliminar un producto de MongoDB.
+ * Creado para: Sprint 1 - HU "Eliminar productos"
+ */
+app.delete('/api/products/:id', async (req, res) => {
+    // NOTA: Añadir seguridad de AdminInventario aquí
+    try {
+        const id = req.params.id;
+        
+        // Busca el producto por su ID de Mongo y elimínalo
+        const productoEliminado = await Product.findByIdAndDelete(id);
+        
+        if (!productoEliminado) {
+            return res.status(404).json({ message: 'Producto no encontrado.' });
+        }
+        
+        res.status(200).json({ message: 'Producto eliminado exitosamente.' });
+        
+    } catch (error) {
+        console.error('Error al eliminar producto:', error.message);
+        res.status(500).json({ 
+            message: 'Error interno del servidor al eliminar.',
+            details: error.message 
+        });
+    }
+});
+/**
+ * RUTA: PUT /api/products/:id
+ * Objetivo: Actualizar un producto existente en MongoDB.
+ * Creado para: Sprint 1 - HU "Editar productos"
+ */
+app.put('/api/products/:id', async (req, res) => {
+    // NOTA: Añadir seguridad de AdminInventario aquí
+    try {
+        const id = req.params.id;
+        const datosActualizados = req.body;
+        
+        // Evitar que el _id se sobrescriba
+        delete datosActualizados._id; 
+
+        // 1. Validar si el SKU se está cambiando a uno que ya existe
+        if (datosActualizados.sku) {
+            const skuExistente = await Product.findOne({ 
+                sku: datosActualizados.sku, 
+                _id: { $ne: id } // Busca SKU en productos que NO sean este
+            });
+            if (skuExistente) {
+                return res.status(400).json({ 
+                    message: `Error: El SKU "${datosActualizados.sku}" ya está en uso por otro producto.` 
+                });
+            }
+        }
+
+        // 2. Buscar y actualizar el producto
+        // { new: true } devuelve el documento ya actualizado
+        const productoActualizado = await Product.findByIdAndUpdate(
+            id, 
+            datosActualizados, 
+            { new: true, runValidators: true }
+        );
+
+        if (!productoActualizado) {
+            return res.status(404).json({ message: 'Producto no encontrado.' });
+        }
+        
+        res.status(200).json({ 
+            message: 'Producto actualizado exitosamente.',
+            producto: productoActualizado 
+        });
+        
+    } catch (error) {
+        console.error('Error al actualizar producto:', error.message);
+        res.status(500).json({ 
+            message: 'Error interno del servidor al actualizar.',
+            details: error.message 
+        });
+    }
 });
 
 // Ruta de LOGIN PRINCIPAL
@@ -483,6 +605,56 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
     }
 });
 
+// ===============================================
+// ⭐️ NUEVO: RUTAS DE API (INVENTARIO - MONGODB) ⭐️
+// ===============================================
+
+/**
+ * RUTA: POST /api/products
+ * Objetivo: Crear un nuevo producto en MongoDB.
+ * Creado para: Sprint 1 - HU "Agregar productos"
+ * Panel: admin_inv
+ */
+app.post('/api/products', async (req, res) => {
+    // NOTA: Aquí deberíamos añadir un middleware de seguridad 
+    // (como authenticateAdminInventario) más adelante.
+    
+    console.log('Recibida petición para CREAR producto:', req.body);
+    
+    try {
+        // req.body contiene los datos del formulario (sku, name, price, etc.)
+        const newProductData = req.body;
+        
+        // 1. Validar si el SKU ya existe (para evitar duplicados)
+        const skuExistente = await Product.findOne({ sku: newProductData.sku });
+        if (skuExistente) {
+            return res.status(400).json({ 
+                message: `Error: El SKU "${newProductData.sku}" ya está registrado.` 
+            });
+        }
+        
+        // 2. Crear el nuevo producto usando el "molde"
+        const producto = new Product(newProductData);
+        
+        // 3. Guardar en la base de datos
+        await producto.save();
+        
+        // 4. Enviar respuesta de éxito
+        res.status(201).json({ 
+            message: 'Producto agregado exitosamente.',
+            producto: producto 
+        });
+        
+    } catch (error) {
+        // Manejo de errores (ej. campos requeridos faltantes)
+        console.error('Error al guardar producto:', error.message);
+        res.status(500).json({ 
+            message: 'Error interno del servidor al guardar el producto.',
+            details: error.message 
+        });
+    }
+});
+
 
 // ===============================================
 // 3. RUTAS DE CAJERO (MOVIDAS DESDE cajeroRoutes)
@@ -565,11 +737,21 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
 // ===============================================
 
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+// ⭐️ CORRECCIÓN ⭐️
 
+// 1. Sirve la carpeta 'frontend' bajo el prefijo '/frontend'
+//    Esto arregla: /frontend/admin_inv/admininv.js (Error 404)
+app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
+
+// 2. Sirve la carpeta raíz (TiendaOnlinePDV)
+//    Esto arregla: index.html, index.css, index.js
+app.use(express.static(path.join(__dirname, '..')));
+
+
+// Esta línea AHORA SÍ va al final
 app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
 });
 
-// Exportaciones para el caso de que existan otros módulos que las necesiten.
+// Exportaciones
 module.exports = { app, supabase, traducirErrorSupabase, authenticateAdmin, getUserIdFromToken };
