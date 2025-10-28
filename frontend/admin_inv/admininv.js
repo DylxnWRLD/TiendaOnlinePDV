@@ -166,7 +166,7 @@ function uid(){ return (self.crypto?.randomUUID?.() || String(Date.now()+Math.ra
 function setLastChange(){ localStorage.setItem(LSK_LAST, String(Date.now())); }
 
 /********** UI Controller **********/
-const api = USE_HTTP ? new HttpAdapter(API_BASE_URL) : new MemoryAdapter();
+const api = USE_HTTP ? new HttpAdapter(RENDER_SERVER_URL) : new MemoryAdapter();
 
 const state = {page:1, limit:10, search:""};
 const el = {
