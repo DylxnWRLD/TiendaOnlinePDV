@@ -1,6 +1,8 @@
 /********** Config **********/
 const USE_HTTP = true; 
-const API_BASE_URL = "/api"; 
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:3000/api' // URL de desarrollo local
+    : 'https://tiendaonlinepdv-hm20.onrender.com/api'; // URL de producción
 
 /********** Utils UI **********/
 const $  = (s, c=document)=>c.querySelector(s);
