@@ -1,8 +1,9 @@
 /********** Config **********/
+/********** Config **********/
 const USE_HTTP = true; 
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://127.0.0.1:3000/api' // URL de desarrollo local
-    : 'https://tiendaonlinepdv-hm20.onrender.com/api'; // URL de producción
+
+// ⭐️ CORRECCIÓN: Apuntar al servidor de Render
+const RENDER_SERVER_URL = 'https://tiendaonlinepdv-hm20.onrender.com';
 
 /********** Utils UI **********/
 const $  = (s, c=document)=>c.querySelector(s);
@@ -33,48 +34,53 @@ function timeAgo(ts){
 class HttpAdapter {
   constructor(base){ this.base = base; }
   async list({search="", page=1, limit=10}={}){
-    const url = new URL(`${this.base}/products`, location.origin);
+    const url = new URL(`${RENDER_SERVER_URL}/api/products`);
     url.searchParams.set("search", search);
     url.searchParams.set("page", page);
     url.searchParams.set("limit", limit);
-    const r = await fetch(url, {credentials:"include"});
+    const r = await fetch(url);
     if(!r.ok) throw new Error("Error listando productos");
     return r.json();
   }
+// Esta es la función que tienes que arreglar
   async get(id){
-    const r = await fetch(`${this.base}/products/${id}`, {credentials:"include"});
+    // ⬇️ CORRECCIÓN: Usar backticks (`) en lugar de $[ ⬇️
+    const r = await fetch(`${RENDER_SERVER_URL}/api/products/${id}`);
+    
     if(!r.ok) throw new Error("No encontrado");
     return r.json();
   }
   async create(input){
-    const r = await fetch(`${this.base}/products`, {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(input), credentials:"include"
-    });
+  const r = await fetch(`${RENDER_SERVER_URL}/api/products`, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(input)
+  });
     if(!r.ok) throw new Error((await r.json()).message||"Error creando");
     return r.json();
   }
   async update(id, patch){
-    const r = await fetch(`${this.base}/products/${id}`, {
+    // ⬇️ CORRECCIÓN: Añadir /${id} al final de la URL ⬇️
+    const r = await fetch(`${RENDER_SERVER_URL}/api/products/${id}`, {
       method:"PUT", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(patch), credentials:"include"
+      body: JSON.stringify(patch)
     });
     if(!r.ok) throw new Error((await r.json()).message||"Error actualizando");
     return r.json();
   }
   async remove(id){
-    const r = await fetch(`${this.base}/products/${id}`, {method:"DELETE", credentials:"include"});
+    // ⬇️ CORRECCIÓN: Añadir /${id} al final de la URL ⬇️
+    const r = await fetch(`${RENDER_SERVER_URL}/api/products/${id}`, {method:"DELETE"});
     if(!r.ok) throw new Error("Error eliminando");
     return {ok:true};
   }
   async adjust({productId, type, quantity, reason}){
-    const r = await fetch(`${this.base}/stock/adjust`, {
+    // ⬇️ CORRECCIÓN: Usa backticks (`) y quita credentials ⬇️
+    const r = await fetch(`${RENDER_SERVER_URL}/api/stock/adjust`, {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({productId, type, quantity, reason}),
-      credentials:"include"
+      body: JSON.stringify({productId, type, quantity, reason})
     });
-    if(!r.ok) throw new Error((await r.json()).message||"Error de ajuste");
-    return r.json();
+      if(!r.ok) throw new Error((await r.json()).message||"Error de ajuste");
+      return r.json();
   }
 }
 
