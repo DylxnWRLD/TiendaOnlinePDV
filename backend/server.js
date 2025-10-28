@@ -77,7 +77,33 @@ function traducirErrorSupabase(originalMessage) {
 // 1. MIDDLEWARES GLOBALES
 // ===============================================
 
-app.use(cors());
+// ===============================================
+// 1. MIDDLEWARES GLOBALES
+// ===============================================
+
+// ⭐️ CORRECCIÓN DE CORS (para permitir GitHub Pages + Credenciales) ⭐️
+
+// Lista de dominios que tienen permiso para hacer peticiones
+const whitelist = [
+    'http://127.0.0.1:3000', // Para tus pruebas locales
+    'http://localhost:3000',  // Para tus pruebas locales
+    'https://dyknxwld.github.io' // ❗️ Tu GitHub Pages
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Permite peticiones si el 'origin' está en la lista blanca (o si no hay 'origin', como en Postman)
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
+    credentials: true // ⭐️ Esto es CLAVE: permite que el navegador envíe 'credentials: "include"'
+};
+
+app.use(cors(corsOptions)); // ⭐️ Usa las nuevas opciones
+
 app.use(bodyParser.json());
 
 
