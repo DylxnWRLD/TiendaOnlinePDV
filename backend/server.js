@@ -526,7 +526,7 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
         const { data, error } = await supabase
             .from('promociones')
             .select('*') // Traer todas las columnas
-            .order('created_at', { ascending: false }); // Mostrar las más nuevas primero
+            //.order('created_at', { ascending: false }); // Mostrar las más nuevas primero
 
         // Manejar error de la base de datos
         if (error) {
