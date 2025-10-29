@@ -12,7 +12,7 @@
         <aside class="col-acciones-caja">
             <h3 class="cyber-glow">Cajero Activo</h3>
             <div class="info-caja-sesion">
-                <p>Cajero: <span id="cajero-nombre"></span></p>
+                <p>Cajero: <span id="cajero-nombre">Nombre de Cajero</span></p>
                 <p>Corte Activo: <span id="corte-id">ID Corte</span></p>
             </div>
             
@@ -42,7 +42,8 @@
             <section class="seccion-busqueda">
                 <input type="text" id="input-sku" placeholder="Escanear o buscar SKU / Nombre" autofocus>
                 <div id="resultados-busqueda" class="resultados-area">
-                    </div>
+                    <p class="instruccion">Escribe o escanea para buscar...</p>
+                </div>
             </section>
             
             <section class="seccion-carrito">
@@ -68,8 +69,8 @@
             <h3 class="cyber-glow">2. Finalizar Venta / Cobro </h3>
             <div class="totales-resumen">
                 <h3>Resumen de Cobro</h3>
-                <p>Subtotal: <span id="subtotal" class="monto">0.00</span></p>
-                <p>Descuento: <span id="descuento" class="monto">0.00</span></p>
+                <p>Subtotal: $<span id="subtotal" class="monto">0.00</span></p>
+                <p>Descuento: $<span id="descuento" class="monto">0.00</span></p>
                 <div class="total-final-line">
                     <h4>TOTAL:</h4> 
                     <h4 id="total-final" class="monto monto-total">0.00</h4>
@@ -85,7 +86,31 @@
         </section>
     </div>
 
-    <div id="modal-efectivo" class="modal">...</div>
+    <div id="modal-efectivo" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('modal-efectivo').style.display='none'">&times;</span>
+            <h2>Cobro en Efectivo</h2>
+            
+            <div class="modal-linea">
+                <label>Total a Cobrar:</label>
+                <span id="modal-total" class="monto monto-total">0.00</span> 
+            </div>
+            
+            <div class="modal-linea">
+                <label for="monto-recibido">Monto Recibido:</label>
+                <input type="number" id="monto-recibido" min="0" value="0.00" step="0.01" autofocus>
+            </div>
+            
+            <div class="modal-linea cambio-linea">
+                <label>Cambio / Faltante:</label>
+                <span id="cambio-calculado" class="monto monto-cambio">0.00</span>
+            </div>
+            
+            <button id="btn-finalizar-efectivo" class="btn-pago btn-success btn-full">
+                Finalizar Venta en Efectivo
+            </button>
+        </div>
+    </div>
     
     <script src="cajero.js"></script>
 </body>
