@@ -678,6 +678,42 @@ app.post('/api/products', async (req, res) => {
 // 3. RUTAS DE CAJERO (MOVIDAS DESDE cajeroRoutes)
 // ===============================================
 
+// ===============================================
+// ⭐️ RUTA DE BÚSQUEDA DEL PDV (FALTANTE) ⭐️
+// ===============================================
+
+/**
+ * RUTA: GET /api/productos/buscar?q=query
+ * Objetivo: Buscar productos en MongoDB por nombre o SKU. Usada por el PDV.
+ */
+app.get('/api/productos/buscar', getUserIdFromToken, async (req, res) => {
+    const query = req.query.q; 
+    
+    if (!query || query.length < 1) {
+        return res.status(200).json([]);
+    }
+    
+    try {
+        // Búsqueda por nombre (insensible a mayúsculas) O por SKU exacto
+        const productos = await Product.find({ 
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { sku: query } 
+            ],
+            active: true // Asume que solo quieres productos activos
+        }).select('_id name price stockQty').limit(20); 
+        
+        return res.status(200).json(productos);
+        
+    } catch (error) {
+        console.error('Error en /api/productos/buscar:', error.message);
+        return res.status(500).json({ 
+            message: 'Error interno al buscar productos en inventario.',
+            details: error.message 
+        });
+    }
+});
+
 /**
  * RUTA: POST /api/caja/abrir (Apertura de Caja)
  */
@@ -751,9 +787,9 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
 });
 
 
-app.post('/api/ventas/finalizar', async (req, res) => {
+app.post('/api/ventas/finalizar',getUserIdFromToken, async (req, res) => {
     // Nota: Asume que el middleware de autenticación ya extrajo el id_cajero
-    const id_cajero = req.user.id; // ID del usuario autenticado (cajero)
+    const id_cajero = req.userId; // ID del usuario autenticado (cajero)
     const { id_corte, total_descuento, total_final, metodo_pago, detalles } = req.body;
 
     // 1. **Transacción de Venta en PostgreSQL**
@@ -801,8 +837,8 @@ app.post('/api/ventas/finalizar', async (req, res) => {
     }
 });
 
-app.post('/api/caja/cerrar', async (req, res) => {
-    const id_cajero = req.user.id; // ID del usuario autenticado (cajero)
+app.post('/api/caja/cerrar', getUserIdFromToken, async (req, res) => {
+    const id_cajero = req.userId; // ID del usuario autenticado (cajero)
     const { id_corte, monto_declarado } = req.body;
 
     if (!id_corte || monto_declarado === undefined) {
