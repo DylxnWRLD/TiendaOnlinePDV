@@ -687,31 +687,31 @@ app.post('/api/products', async (req, res) => {
  * Objetivo: Buscar productos en MongoDB por nombre o SKU. Usada por el PDV.
  */
 app.get('/api/productos/buscar', getUserIdFromToken, async (req, res) => {
-    const query = req.query.q; 
-    
-    if (!query || query.length < 1) {
-        return res.status(200).json([]);
-    }
-    
-    try {
-        // Búsqueda por nombre (insensible a mayúsculas) O por SKU exacto
-        const productos = await Product.find({ 
-            $or: [
-                { name: { $regex: query, $options: 'i' } },
-                { sku: query } 
-            ],
-            active: true // Asume que solo quieres productos activos
-        }).select('_id name price stockQty').limit(20); 
-        
-        return res.status(200).json(productos);
-        
-    } catch (error) {
-        console.error('Error en /api/productos/buscar:', error.message);
-        return res.status(500).json({ 
-            message: 'Error interno al buscar productos en inventario.',
-            details: error.message 
-        });
-    }
+    const query = req.query.q; 
+    
+    if (!query || query.length < 1) {
+        return res.status(200).json([]);
+    }
+    
+    try {
+        // ⭐️ CORRECCIÓN APLICADA: Ahora el SKU usa $regex e 'i' para búsqueda flexible ⭐️
+        const productos = await Product.find({ 
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { sku: { $regex: query, $options: 'i' } } // Búsqueda flexible por SKU/Código
+            ],
+            active: true // Asume que solo quieres productos activos
+        }).select('_id name price stockQty').limit(20); 
+        
+        return res.status(200).json(productos);
+        
+    } catch (error) {
+        console.error('Error en /api/productos/buscar:', error.message);
+        return res.status(500).json({ 
+            message: 'Error interno al buscar productos en inventario.',
+            details: error.message 
+        });
+    }
 });
 
 /**
