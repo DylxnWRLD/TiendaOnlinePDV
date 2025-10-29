@@ -12,7 +12,7 @@ class AdminPanel {
         // Definir la URL base de la API
         this.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://127.0.0.1:3000'
-            : 'https://tiendaonlinepdv-hm20.onrender.com';
+            : 'https://tiendaonlinepdv.onrender.com';
 
         this.init();
     }
