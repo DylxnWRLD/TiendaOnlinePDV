@@ -134,7 +134,7 @@ async function buscarProductos(query) {
         
         if (!response.ok) throw new Error('Error al buscar en inventario.');
         
-        // El backend devuelve un array de productos con campos: _id, name, price, stockQty
+        // El backend devuelve un array de productos con campos: _id, name, price, stockQty
         return await response.json(); 
     } catch (error) {
         console.error('Error buscando productos (Mongo):', error);
@@ -148,8 +148,8 @@ async function buscarProductos(query) {
 // =========================================================================
 
 /**
- * Función que registra la venta en el backend (Postgres + Mongo Stock update).
- */
+ * Función que registra la venta en el backend (Postgres + Mongo Stock update).
+ */
 async function finalizarVenta(metodoPago, montoRecibido = null) {
     if (ventaActual.total <= 0 || ventaActual.productos.length === 0) {
         alert('Venta inválida. Agregue productos.');
@@ -196,8 +196,8 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
 }
 
 /**
- * Función que cierra la sesión de caja y muestra el reporte.
- */
+ * Función que cierra la sesión de caja y muestra el reporte.
+ */
 async function realizarCorteDeCaja(montoContado) {
     if (!corteId) {
         alert('No hay una caja abierta para cerrar.');
@@ -225,23 +225,23 @@ async function realizarCorteDeCaja(montoContado) {
         
         // ⭐️ Muestra el reporte detallado ⭐️
         const reporte = data.reporte;
-        const diferencia = reporte.diferencia;
+        const diferencia = reporte.diferencia;
 
-        const resumenReporte = `
-            ==================================
-            CORTE DE CAJA EXITOSO
-            ==================================
-            Fondo Inicial: $${reporte.monto_inicial.toFixed(2)}
-            Ventas en Efectivo: $${reporte.ventas_efectivo.toFixed(2)}
-            ----------------------------------
-            Monto Teórico (Calculado): $${reporte.monto_calculado.toFixed(2)}
-            Monto Contado (Declarado): $${parseFloat(montoContado).toFixed(2)}
-            ----------------------------------
-            **DIFERENCIA (Faltante/Sobrante):** $${diferencia.toFixed(2)}
-            ==================================
-        `;
+        const resumenReporte = `
+            ==================================
+            CORTE DE CAJA EXITOSO
+            ==================================
+            Fondo Inicial: $${reporte.monto_inicial.toFixed(2)}
+            Ventas en Efectivo: $${reporte.ventas_efectivo.toFixed(2)}
+            ----------------------------------
+            Monto Teórico (Calculado): $${reporte.monto_calculado.toFixed(2)}
+            Monto Contado (Declarado): $${parseFloat(montoContado).toFixed(2)}
+            ----------------------------------
+            **DIFERENCIA (Faltante/Sobrante):** $${diferencia.toFixed(2)}
+            ==================================
+        `;
 
-        alert(resumenReporte); // Mostrar el reporte en una alerta
+        alert(resumenReporte); // Mostrar el reporte en una alerta
         
         // Limpiar la sesión actual y forzar nuevo login
         localStorage.removeItem('currentCorteId');
@@ -258,24 +258,48 @@ async function realizarCorteDeCaja(montoContado) {
 // =========================================================================
 
 function setupEventListeners() {
-    // 5.1. Búsqueda de Productos
-    document.getElementById('input-sku').addEventListener('input', async (e) => {
-        const query = e.target.value;
-        const resultadosDiv = document.getElementById('resultados-busqueda');
-        
-        if (query.length > 2) {
-            const resultados = await buscarProductos(query);
-            // Muestra los resultados obtenidos de MongoDB (_id, name, price)
-            resultadosDiv.innerHTML = resultados.map(p => 
-                `<p onclick="agregarProducto({_id:'${p._id}', name:'${p.name}', price:${p.price}})" class="resultado-item">
-                    ${p.name} - $${p.price.toFixed(2)}
-                 </p>`
-            ).join('');
-        } else {
-            resultadosDiv.innerHTML = '<p class="instruccion">Escribe o escanea para buscar...</p>';
-        }
-    });
+    // 5.1. Búsqueda de Productos ⭐️ CORRECCIÓN APLICADA AQUÍ ⭐️
+    document.getElementById('input-sku').addEventListener('input', async (e) => {
+        const query = e.target.value;
+        const resultadosDiv = document.getElementById('resultados-busqueda');
+        
+        if (query.length > 2) {
+            const resultados = await buscarProductos(query);
+            
+            // Limpiar resultados anteriores
+            resultadosDiv.innerHTML = ''; 
 
+            if (resultados.length > 0) {
+                // Iterar y crear elementos de forma segura
+                resultados.forEach(p => {
+                    const pElement = document.createElement('p');
+                    pElement.className = 'resultado-item';
+                    pElement.textContent = `${p.name} - $${p.price.toFixed(2)}`;
+                    
+                    // Almacenar los datos del producto de forma segura en el DOM
+                    pElement.dataset.producto = JSON.stringify({
+                        _id: p._id,
+                        name: p.name,
+                        price: p.price
+                    });
+
+                    // Asignar el Event Listener para agregar el producto al carrito
+                    pElement.addEventListener('click', function() {
+                        const productoData = JSON.parse(this.dataset.producto);
+                        agregarProducto(productoData); 
+                    });
+
+                    resultadosDiv.appendChild(pElement);
+                });
+            } else {
+                 resultadosDiv.innerHTML = '<p class="instruccion">No se encontraron productos.</p>';
+            }
+
+        } else {
+            resultadosDiv.innerHTML = '<p class="instruccion">Escribe o escanea para buscar...</p>';
+        }
+    });
+// --------------------------------------------------------------------------------------------------
     // 5.2. Pago en Efectivo (Muestra modal)
     document.getElementById('btn-pago-efectivo').addEventListener('click', () => {
         if (ventaActual.total <= 0) {
@@ -342,5 +366,5 @@ function setupEventListeners() {
         }
     });
 
-    // Los botones de búsqueda de ventas, devoluciones y promociones (como estás) son simulaciones
+    // Los botones de búsqueda de ventas, devoluciones y promociones (como estás) son simulaciones
 }
