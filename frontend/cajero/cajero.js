@@ -3,12 +3,11 @@
 // Define la API base URL (Ajustada para Render)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Asegúrate que esta URL sea la correcta de tu servicio Render ⭐️
+    : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
 
-// ⭐️ CORRECCIÓN: Leer el token con la clave correcta ⭐️
+// Obtención de datos de sesión del localStorage
 const token = localStorage.getItem('supabase-token'); 
 const corteId = localStorage.getItem('currentCorteId');
-// ⭐️ CORRECCIÓN: Leer el rol con la clave correcta ⭐️
 const role = localStorage.getItem('user-role'); 
 
 // Estado local de la venta (el "carrito")
@@ -24,18 +23,15 @@ let ventaActual = {
 // =========================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Verificar Sesión y Corte Abierto
-    // La verificación ahora es correcta gracias a las claves 'supabase-token' y 'user-role'
+    // 1. Verificar Sesión y Corte Abierto (Guardrail de seguridad)
     if (!token || role !== 'Cajero' || !corteId) {
         alert('Caja no abierta o sesión inválida. Redirigiendo a Apertura.');
-        // Redirige a la página de apertura para forzar el inicio del turno
         window.location.href = './apertura_caja.html'; 
         return;
     }
 
     // 2. Mostrar información de la sesión
     document.getElementById('corte-id').textContent = corteId.substring(0, 8) + '...';
-    // Se recomienda llamar a una API para obtener el nombre del cajero aquí.
     
     setupEventListeners();
     updateVentaSummary();
@@ -43,19 +39,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // =========================================================================
-// 2. LÓGICA DE CARRITO (Requisitos: Realizar venta, Modificar venta)
+// 2. LÓGICA DE CARRITO Y CÁLCULOS
 // =========================================================================
 
 function agregarProducto(productoMongo) {
-    const index = ventaActual.productos.findIndex(p => p.id_producto_mongo === productoMongo.id);
+    // Busca si el producto ya está en el carrito
+    const index = ventaActual.productos.findIndex(p => p.id_producto_mongo === productoMongo._id);
     
     if (index > -1) {
         ventaActual.productos[index].cantidad += 1;
     } else {
         ventaActual.productos.push({
-            id_producto_mongo: productoMongo.id,
-            nombre_producto: productoMongo.nombre,
-            precio_unitario: productoMongo.precio_venta,
+            id_producto_mongo: productoMongo._id, // Usamos _id de Mongo
+            nombre_producto: productoMongo.name, // Usamos name de Mongo
+            precio_unitario: productoMongo.price, // Usamos price de Mongo
             cantidad: 1,
             monto_descuento: 0 // Inicia sin descuento
         });
@@ -78,7 +75,7 @@ function updateVentaSummary() {
     ventaActual.descuento = descuento;
     ventaActual.total = subtotal - descuento;
     
-    // Actualizar la interfaz
+    // Actualizar la interfaz (toFixed(2) para formato monetario)
     document.getElementById('subtotal').textContent = ventaActual.subtotal.toFixed(2);
     document.getElementById('descuento').textContent = ventaActual.descuento.toFixed(2);
     document.getElementById('total-final').textContent = ventaActual.total.toFixed(2);
@@ -123,38 +120,39 @@ function eliminarProducto(index) {
 
 
 // =========================================================================
-// 3. COMUNICACIÓN CON MONGODB (Vía Backend)
+// 3. COMUNICACIÓN CON BACKEND (MongoDB - Vía Express)
 // =========================================================================
 
 async function buscarProductos(query) {
-    // Requisito: Consultar disponibilidad de productos
     if (query.length < 3) return [];
     
     try {
-        // Llama al endpoint de Express que hace de puente con MongoDB
+        // Llama al endpoint de Express que busca en MongoDB
         const response = await fetch(`${API_BASE_URL}/api/productos/buscar?q=${query}`, {
              headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (!response.ok) throw new Error('Error al buscar en inventario.');
         
-        return await response.json();
+        // El backend devuelve un array de productos con campos: _id, name, price, stockQty
+        return await response.json(); 
     } catch (error) {
         console.error('Error buscando productos (Mongo):', error);
-        // Simulación de datos para desarrollo si Mongo falla
-        return [{ id: 'MON123', nombre: `Test Prod ${query}`, precio_venta: 499.99 }]; 
+        return []; 
     }
 }
 
 
 // =========================================================================
-// 4. COMUNICACIÓN CON POSTGRES (Vía Backend)
+// 4. COMUNICACIÓN CON BACKEND (Postgres - Venta y Corte)
 // =========================================================================
 
-// Requisitos: Realizar venta, Pago Efectivo, Pago Tarjeta
+/**
+ * Función que registra la venta en el backend (Postgres + Mongo Stock update).
+ */
 async function finalizarVenta(metodoPago, montoRecibido = null) {
     if (ventaActual.total <= 0 || ventaActual.productos.length === 0) {
-        alert('Venta inválida.');
+        alert('Venta inválida. Agregue productos.');
         return;
     }
     
@@ -163,7 +161,7 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
         total_descuento: ventaActual.descuento,
         total_final: ventaActual.total,
         metodo_pago: metodoPago,
-        // Detalles para la inserción en la tabla detalle_venta
+        // Los detalles del carrito se mapean para el formato de BD
         detalles: ventaActual.productos.map(p => ({
             id_producto_mongo: p.id_producto_mongo,
             nombre_producto: p.nombre_producto,
@@ -192,11 +190,14 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
         renderCarrito();
         
     } catch (error) {
+        console.error('Error al finalizar venta:', error);
         alert(`❌ Fallo al finalizar la venta: ${error.message}`);
     }
 }
 
-// Requisito: Corte de caja
+/**
+ * Función que cierra la sesión de caja y muestra el reporte.
+ */
 async function realizarCorteDeCaja(montoContado) {
     if (!corteId) {
         alert('No hay una caja abierta para cerrar.');
@@ -222,8 +223,25 @@ async function realizarCorteDeCaja(montoContado) {
         
         if (!response.ok) throw new Error(data.message || 'Error al cerrar la caja.');
         
-        // Cierre exitoso: Mostrar resumen y redirigir
-        alert(`Corte Exitoso. Diferencia: $${data.diferencia.toFixed(2)}. Redirigiendo...`);
+        // ⭐️ Muestra el reporte detallado ⭐️
+        const reporte = data.reporte;
+        const diferencia = reporte.diferencia;
+
+        const resumenReporte = `
+            ==================================
+            CORTE DE CAJA EXITOSO
+            ==================================
+            Fondo Inicial: $${reporte.monto_inicial.toFixed(2)}
+            Ventas en Efectivo: $${reporte.ventas_efectivo.toFixed(2)}
+            ----------------------------------
+            Monto Teórico (Calculado): $${reporte.monto_calculado.toFixed(2)}
+            Monto Contado (Declarado): $${parseFloat(montoContado).toFixed(2)}
+            ----------------------------------
+            **DIFERENCIA (Faltante/Sobrante):** $${diferencia.toFixed(2)}
+            ==================================
+        `;
+
+        alert(resumenReporte); // Mostrar el reporte en una alerta
         
         // Limpiar la sesión actual y forzar nuevo login
         localStorage.removeItem('currentCorteId');
@@ -247,9 +265,10 @@ function setupEventListeners() {
         
         if (query.length > 2) {
             const resultados = await buscarProductos(query);
+            // Muestra los resultados obtenidos de MongoDB (_id, name, price)
             resultadosDiv.innerHTML = resultados.map(p => 
-                `<p onclick="agregarProducto({id:'${p.id}', nombre:'${p.nombre}', precio_venta:${p.precio_venta}})" class="resultado-item">
-                    ${p.nombre} - $${p.precio_venta.toFixed(2)}
+                `<p onclick="agregarProducto({_id:'${p._id}', name:'${p.name}', price:${p.price}})" class="resultado-item">
+                    ${p.name} - $${p.price.toFixed(2)}
                  </p>`
             ).join('');
         } else {
@@ -264,7 +283,9 @@ function setupEventListeners() {
             return;
         }
         document.getElementById('modal-efectivo').style.display = 'block';
-        document.getElementById('monto-recibido').value = ventaActual.total.toFixed(2);
+        // Asegura que el input de recibido inicie con el total (para pagos exactos rápidos)
+        document.getElementById('monto-recibido').value = ventaActual.total.toFixed(2); 
+        document.getElementById('monto-recibido').dispatchEvent(new Event('input')); // Dispara cálculo de cambio
     });
 
     // 5.3. Pago con Tarjeta
@@ -273,7 +294,7 @@ function setupEventListeners() {
         else alert('Agrega productos para pagar.');
     });
 
-    // 5.4. Lógica del modal de efectivo para calcular cambio (Requisito: Calcula cambio)
+    // 5.4. Lógica del modal de efectivo para calcular cambio
     const montoRecibidoInput = document.getElementById('monto-recibido');
     if (montoRecibidoInput) {
         montoRecibidoInput.addEventListener('input', (e) => {
@@ -296,7 +317,7 @@ function setupEventListeners() {
     
     // 5.6. Botones de Acción (Panel Izquierdo)
     
-    // Corte de Caja (Muestra modal/prompt para el monto contado)
+    // Corte de Caja
     document.getElementById('btn-corte-caja').addEventListener('click', () => {
         const montoContado = prompt("Ingrese el monto TOTAL en efectivo contado en la caja:");
         if (montoContado !== null && !isNaN(parseFloat(montoContado))) {
@@ -312,7 +333,7 @@ function setupEventListeners() {
         window.location.href = '../login/login.html';
     });
     
-    // Otros botones (simulación de funcionalidad)
+    // Cancelar Venta
     document.getElementById('btn-cancelar-venta').addEventListener('click', () => {
         if (confirm('¿Seguro que deseas CANCELAR la venta actual?')) {
             ventaActual.productos = [];
@@ -320,7 +341,6 @@ function setupEventListeners() {
             renderCarrito();
         }
     });
-    document.getElementById('btn-buscar-ventas').addEventListener('click', () => alert('Búsqueda de ventas activa. Se requiere modal y API /ventas/buscar.'));
-    document.getElementById('btn-devolucion').addEventListener('click', () => alert('Devoluciones activa. Se requiere modal y lógica de reversa.'));
-    document.getElementById('btn-aplicar-promo').addEventListener('click', () => alert('Aplicar Promociones activa. Se requiere lógica de descuento.'));
+
+    // Los botones de búsqueda de ventas, devoluciones y promociones (como estás) son simulaciones
 }

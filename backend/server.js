@@ -751,6 +751,97 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
 });
 
 
+app.post('/api/ventas/finalizar', async (req, res) => {
+    // Nota: Asume que el middleware de autenticación ya extrajo el id_cajero
+    const id_cajero = req.user.id; // ID del usuario autenticado (cajero)
+    const { id_corte, total_descuento, total_final, metodo_pago, detalles } = req.body;
+
+    // 1. **Transacción de Venta en PostgreSQL**
+    try {
+        // Llama a la función PL/pgSQL
+        const { data, error } = await supabase
+            .rpc('registrar_venta', {
+                p_id_cajero: id_cajero,
+                p_id_corte: id_corte,
+                p_total_descuento: total_descuento,
+                p_total_final: total_final,
+                p_metodo_pago: metodo_pago,
+                p_detalles: detalles // Pasa el array de detalles como JSONB
+            })
+            .single();
+
+        if (error) throw new Error(error.message);
+
+        const id_venta = data.id_v;
+        const ticket_numero = data.ticket_num;
+
+        // 2. **Actualización de Stock en MongoDB (CRÍTICO)**
+        // Esto debería envolverse en una transacción de MongoDB si es posible.
+        const bulkOps = detalles.map(d => ({
+            updateOne: {
+                filter: { _id: d.id_producto_mongo, stockQty: { $gte: d.cantidad } }, // Condición para evitar stock negativo
+                update: { $inc: { stockQty: -d.cantidad } }
+            }
+        }));
+
+        const result = await Product.bulkWrite(bulkOps);
+
+        // 3. Respuesta Exitosa
+        return res.status(200).json({ 
+            message: 'Venta registrada y stock actualizado.', 
+            id_venta, 
+            ticket_numero 
+        });
+
+    } catch (error) {
+        console.error('Error al finalizar la venta:', error);
+        // ⚠️ En un sistema real, si el stock falla, DEBES revertir la venta de PostgreSQL.
+        // Esto se logra con una función transaccional más compleja o un sistema de colas.
+        res.status(500).json({ message: 'Fallo al procesar la venta.', error: error.message });
+    }
+});
+
+app.post('/api/caja/cerrar', async (req, res) => {
+    const id_cajero = req.user.id; // ID del usuario autenticado (cajero)
+    const { id_corte, monto_declarado } = req.body;
+
+    if (!id_corte || monto_declarado === undefined) {
+        return res.status(400).json({ message: 'Faltan parámetros de corte.' });
+    }
+
+    // 1. **Ejecutar la función PL/pgSQL para el cierre**
+    try {
+        const { data, error } = await supabase
+            .rpc('cerrar_corte_caja', {
+                p_id_corte: id_corte,
+                p_monto_declarado: monto_declarado
+            })
+            .single();
+
+        if (error) {
+            // Captura el error de la función (ej: CORTE_NO_ACTIVO)
+            return res.status(400).json({ message: error.message });
+        }
+        
+        // El resultado 'data' contiene el reporte de la función:
+        // monto_inicial, ventas_efectivo, monto_calculado, diferencia
+        
+        // 2. Respuesta Exitosa con el reporte final
+        return res.status(200).json({ 
+            message: 'Corte de caja cerrado con éxito.',
+            reporte: data,
+            diferencia: data.diferencia
+        });
+
+    } catch (error) {
+        console.error('Error al cerrar el corte de caja:', error);
+        res.status(500).json({ message: 'Fallo interno al cerrar la caja.', error: error.message });
+    }
+});
+
+
+
+
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
 // ===============================================
