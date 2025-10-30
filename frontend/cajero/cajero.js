@@ -387,7 +387,7 @@ function setupEventListeners() {
         if (!corteId) {
             // No hay corte abierto, solo cierra sesión
             localStorage.clear();
-            window.location.href = '../login/login.html';
+            window.location.href = '../frontend/login/login.html';
             return;
         }
         
