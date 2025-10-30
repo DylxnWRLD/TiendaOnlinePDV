@@ -12,7 +12,7 @@ const role = localStorage.getItem('user-role');
 
 // Estado local de la venta (el "carrito")
 let ventaActual = {
-    productos: [], // Contiene {id_producto_mongo, nombre_producto, precio_unitario, cantidad, monto_descuento}
+    productos: [], // Contiene {id_producto_mongo, nombre_producto, precio_unitario, cantidad, monto_descuento, stock_disponible}
     subtotal: 0,
     descuento: 0,
     total: 0
@@ -57,18 +57,34 @@ document.addEventListener('DOMContentLoaded', () => {
 // 2. LÓGICA DE CARRITO Y CÁLCULOS
 // =========================================================================
 
+/**
+ * Agrega un producto al carrito, incluyendo la verificación de stock.
+ * Se asume que productoMongo contiene el campo stockQty.
+ */
 function agregarProducto(productoMongo) {
     const index = ventaActual.productos.findIndex(p => p.id_producto_mongo === productoMongo._id);
-    
+    const stockDisponible = productoMongo.stockQty; // Asumimos que viene del backend
+
     if (index > -1) {
+        // Validación al incrementar cantidad
+        if (ventaActual.productos[index].cantidad + 1 > stockDisponible) {
+            alert(`⚠️ Stock insuficiente. Solo quedan ${stockDisponible} unidades de ${productoMongo.name}.`);
+            return;
+        }
         ventaActual.productos[index].cantidad += 1;
     } else {
+        // Validación al agregar la primera unidad
+        if (stockDisponible <= 0) {
+            alert(`❌ ${productoMongo.name} no tiene stock disponible.`);
+            return;
+        }
         ventaActual.productos.push({
             id_producto_mongo: productoMongo._id, 
             nombre_producto: productoMongo.name, 
             precio_unitario: productoMongo.price, 
             cantidad: 1,
-            monto_descuento: 0 
+            monto_descuento: 0,
+            stock_disponible: stockDisponible // Guardamos el stock para validaciones posteriores
         });
     }
     
@@ -115,11 +131,25 @@ function renderCarrito() {
     window.eliminarProducto = eliminarProducto;
 }
 
+/**
+ * Modifica la cantidad de un producto, verificando contra el stock disponible.
+ */
 function modificarCantidad(index, nuevaCantidad) {
     const cant = parseInt(nuevaCantidad);
+    const producto = ventaActual.productos[index];
+
     if (cant > 0) {
-        ventaActual.productos[index].cantidad = cant;
+        // Validación de stock al modificar manualmente
+        if (cant > producto.stock_disponible) {
+            alert(`⚠️ La cantidad máxima para ${producto.nombre_producto} es ${producto.stock_disponible}.`);
+            // Mantiene el valor anterior en el input (renderCarrito lo actualizará si es necesario)
+            return;
+        }
+
+        producto.cantidad = cant;
         updateVentaSummary();
+    } else if (cant === 0) {
+        eliminarProducto(index);
     }
 }
 
@@ -144,6 +174,7 @@ async function buscarProductos(query) {
         
         if (!response.ok) throw new Error('Error al buscar en inventario.');
         
+        // Retorna productos que deben incluir _id, name, price, y stockQty
         return await response.json(); 
     } catch (error) {
         console.error('Error buscando productos (Mongo):', error);
@@ -250,6 +281,7 @@ async function realizarCorteDeCaja(montoContado) {
         const diferenciaSpan = document.getElementById('reporte-diferencia');
         diferenciaSpan.closest('td').style.color = diferencia < 0 ? '#f44336' : (diferencia > 0.01 ? '#ffc107' : '#4caf50');
         
+        // ESTO MUESTRA EL MODAL Y ES LA PAUSA ANTES DEL LOGIN
         document.getElementById('modal-reporte-corte').style.display = 'block'; 
 
     } catch (error) {
@@ -294,12 +326,14 @@ function setupEventListeners() {
                 resultados.forEach(p => {
                     const pElement = document.createElement('p');
                     pElement.className = 'resultado-item';
-                    pElement.textContent = `${p.name} - $${p.price.toFixed(2)}`;
+                    // Asumimos que p.stockQty existe para mostrarlo en los resultados
+                    pElement.textContent = `${p.name} - $${p.price.toFixed(2)} (${p.stockQty > 0 ? 'Stock: ' + p.stockQty : 'Sin Stock'})`; 
                     
                     pElement.dataset.producto = JSON.stringify({
                         _id: p._id,
                         name: p.name,
-                        price: p.price
+                        price: p.price,
+                        stockQty: p.stockQty // Pasamos el stock disponible
                     });
 
                     pElement.addEventListener('click', function() {
