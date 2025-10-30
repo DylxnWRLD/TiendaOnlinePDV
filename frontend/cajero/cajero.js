@@ -21,9 +21,12 @@ let ventaActual = {
 // ⭐️ VARIABLE: Guarda el último monto declarado temporalmente para modificación
 let montoDeclaradoTemporal = 0; 
 
+// ⭐️ NUEVO: ID ÚNICO DE ESTA INSTANCIA/PESTAÑA ⭐️
+const INSTANCE_ID = Date.now() + Math.random().toString(36).substring(2);
+
 
 // =========================================================================
-// 0. LÓGICA DE RESTRICCIÓN DE SESIÓN ÚNICA (CANDADO) ⭐️ NUEVO ⭐️
+// 0. LÓGICA DE RESTRICCIÓN DE SESIÓN ÚNICA (CANDADO) ⭐️ CORREGIDO ⭐️
 // =========================================================================
 
 const SESSION_LOCK_KEY = 'pdv_lock_active';
@@ -33,34 +36,34 @@ let lockHeartbeat = null;
 
 /**
  * Intenta adquirir o verificar la propiedad del candado de sesión.
- * Si el candado está activo por otra sesión (corteId), redirige al login.
+ * La verificación se hace usando el INSTANCE_ID único por pestaña.
  * @returns {boolean} True si el candado fue adquirido o ya era nuestro.
  */
 function acquireLock() {
     // 1. Obtener el estado actual del candado
     const lockDataString = localStorage.getItem(SESSION_LOCK_KEY);
-    const myLockId = corteId;
 
     if (lockDataString) {
         try {
             const lockData = JSON.parse(lockDataString);
             const isLockExpired = (Date.now() - lockData.timestamp) > LOCK_TIMEOUT;
 
-            if (!isLockExpired && lockData.id !== myLockId) {
-                // Candado fresco y pertenece a otra persona (otro corteId)
-                alert('🚫 Solo se permite una sesión de cajero (corte) activa a la vez. Redirigiendo.');
+            // CRUCIAL: Si el lock está fresco Y NO es nuestro INSTANCE_ID, bloqueamos.
+            if (!isLockExpired && lockData.instanceId !== INSTANCE_ID) {
+                alert('🚫 Solo se permite una sesión de cajero activa a la vez. Redirigiendo.');
                 window.location.href = '../login/login.html';
                 return false;
             }
-            // Si el candado expiró o nos pertenece, continuamos y lo refrescamos.
+            // Si expiró o nos pertenece, continuamos y lo refrescamos.
         } catch (e) {
             // Error de parseo: asumimos que el candado está corrupto y lo sobrescribimos.
         }
     }
     
-    // 2. Adquirir/Refrescar el candado con nuestra información
+    // 2. Adquirir/Refrescar el candado con nuestra INSTANCE_ID
     const newLockData = JSON.stringify({
-        id: myLockId,
+        instanceId: INSTANCE_ID,
+        corteId: corteId, // Se mantiene por contexto
         timestamp: Date.now()
     });
     localStorage.setItem(SESSION_LOCK_KEY, newLockData);
@@ -68,17 +71,16 @@ function acquireLock() {
 }
 
 /**
- * Libera el candado si le pertenece a esta sesión.
+ * Libera el candado si le pertenece a esta INSTANCIA.
  */
 function releaseLock() {
     const lockDataString = localStorage.getItem(SESSION_LOCK_KEY);
-    const myLockId = corteId;
 
     if (lockDataString) {
         try {
             const lockData = JSON.parse(lockDataString);
             // Solo liberamos el candado si fuimos nosotros quienes lo establecimos.
-            if (lockData.id === myLockId) {
+            if (lockData.instanceId === INSTANCE_ID) {
                 localStorage.removeItem(SESSION_LOCK_KEY);
             }
         } catch (e) {
@@ -534,6 +536,9 @@ function setupEventListeners() {
         document.getElementById('modal-reporte-corte').style.display = 'none';
         localStorage.removeItem('currentCorteId');
         localStorage.removeItem('supabase-token'); 
+        // Detener heartbeat y liberar lock antes de redirigir
+        if (lockHeartbeat) clearInterval(lockHeartbeat);
+        releaseLock(); 
         // CAMBIO: Redirige al login en lugar de a la apertura de caja
         window.location.href = '../login/login.html';
     });
