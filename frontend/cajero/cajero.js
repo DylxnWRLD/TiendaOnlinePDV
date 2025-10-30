@@ -23,26 +23,83 @@ let montoDeclaradoTemporal = 0;
 
 
 // =========================================================================
+// 0. LÓGICA DE RESTRICCIÓN DE SESIÓN ÚNICA (CANDADO) ⭐️ NUEVO ⭐️
+// =========================================================================
+
+const SESSION_LOCK_KEY = 'pdv_lock_active';
+// El candado expira si no se refresca en 15 segundos
+const LOCK_TIMEOUT = 15000; 
+let lockHeartbeat = null; 
+
+/**
+ * Intenta adquirir o verificar la propiedad del candado de sesión.
+ * Si el candado está activo por otra sesión (corteId), redirige al login.
+ * @returns {boolean} True si el candado fue adquirido o ya era nuestro.
+ */
+function acquireLock() {
+    // 1. Obtener el estado actual del candado
+    const lockDataString = localStorage.getItem(SESSION_LOCK_KEY);
+    const myLockId = corteId;
+
+    if (lockDataString) {
+        try {
+            const lockData = JSON.parse(lockDataString);
+            const isLockExpired = (Date.now() - lockData.timestamp) > LOCK_TIMEOUT;
+
+            if (!isLockExpired && lockData.id !== myLockId) {
+                // Candado fresco y pertenece a otra persona (otro corteId)
+                alert('🚫 Solo se permite una sesión de cajero (corte) activa a la vez. Redirigiendo.');
+                window.location.href = '../login/login.html';
+                return false;
+            }
+            // Si el candado expiró o nos pertenece, continuamos y lo refrescamos.
+        } catch (e) {
+            // Error de parseo: asumimos que el candado está corrupto y lo sobrescribimos.
+        }
+    }
+    
+    // 2. Adquirir/Refrescar el candado con nuestra información
+    const newLockData = JSON.stringify({
+        id: myLockId,
+        timestamp: Date.now()
+    });
+    localStorage.setItem(SESSION_LOCK_KEY, newLockData);
+    return true;
+}
+
+/**
+ * Libera el candado si le pertenece a esta sesión.
+ */
+function releaseLock() {
+    const lockDataString = localStorage.getItem(SESSION_LOCK_KEY);
+    const myLockId = corteId;
+
+    if (lockDataString) {
+        try {
+            const lockData = JSON.parse(lockDataString);
+            // Solo liberamos el candado si fuimos nosotros quienes lo establecimos.
+            if (lockData.id === myLockId) {
+                localStorage.removeItem(SESSION_LOCK_KEY);
+            }
+        } catch (e) {
+            // Ignorar errores de parseo al liberar
+        }
+    }
+}
+
+// =========================================================================
 // UTILIDAD: Decodificar Token para obtener Email
 // =========================================================================
 
-/**
- * Decodifica la carga útil (payload) del JWT para extraer información del usuario.
- * @param {string} token - El JWT completo (header.payload.signature).
- * @returns {object} Objeto con la información del usuario (al menos el email).
- */
 function getUserInfoFromToken(token) {
     if (!token) return { email: 'Cajero Desconocido' };
     try {
-        // El payload es el segundo segmento del JWT
         const payloadBase64 = token.split('.')[1];
         if (!payloadBase64) return { email: 'Token Inválido' };
 
-        // Decodificación Base64URL
         const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
         const payload = JSON.parse(payloadJson);
 
-        // Se asume que el email está en el campo 'email' o 'sub' del payload del JWT
         return {
             email: payload.email || payload.sub || 'Email no encontrado'
         };
@@ -63,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('popstate', function () {
         window.history.pushState(null, null, window.location.href);
     });
-    // -----------------------------------------------------------
     
     // 1.2. Verificar Sesión y Corte Abierto (Guardrail de seguridad)
     if (!token || role !== 'Cajero' || !corteId) {
@@ -72,8 +128,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 2. Mostrar información de la sesión
-    // ⭐️ MOSTRAR EMAIL DEL CAJERO ⭐️
+    // ⭐️ 1.3. INTENTAR ADQUIRIR EL CANDADO DE SESIÓN ÚNICA ⭐️
+    if (!acquireLock()) {
+        // La redirección ya ocurrió dentro de acquireLock si falló
+        return;
+    }
+
+    // Iniciar Heartbeat para mantener el candado fresco
+    lockHeartbeat = setInterval(acquireLock, LOCK_TIMEOUT / 2);
+
+    // 3. Mostrar información de la sesión
     const cajeroInfo = getUserInfoFromToken(token);
     const cajeroNombreSpan = document.getElementById('cajero-nombre');
     if (cajeroNombreSpan) {
@@ -89,6 +153,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateVentaSummary();
 });
 
+// ⭐️ Liberar el candado al cerrar o salir de la página ⭐️
+window.addEventListener('beforeunload', () => {
+    // Detener el Heartbeat
+    if (lockHeartbeat) clearInterval(lockHeartbeat);
+    // Liberar el candado
+    releaseLock();
+});
+
 
 // =========================================================================
 // 2. LÓGICA DE CARRITO Y CÁLCULOS
@@ -100,17 +172,15 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function agregarProducto(productoMongo) {
     const index = ventaActual.productos.findIndex(p => p.id_producto_mongo === productoMongo._id);
-    const stockDisponible = productoMongo.stockQty; // Asumimos que viene del backend
+    const stockDisponible = productoMongo.stockQty; 
 
     if (index > -1) {
-        // Validación al incrementar cantidad
         if (ventaActual.productos[index].cantidad + 1 > stockDisponible) {
             alert(`⚠️ Stock insuficiente. Solo quedan ${stockDisponible} unidades de ${productoMongo.name}.`);
             return;
         }
         ventaActual.productos[index].cantidad += 1;
     } else {
-        // Validación al agregar la primera unidad
         if (stockDisponible <= 0) {
             alert(`❌ ${productoMongo.name} no tiene stock disponible.`);
             return;
@@ -121,7 +191,7 @@ function agregarProducto(productoMongo) {
             precio_unitario: productoMongo.price, 
             cantidad: 1,
             monto_descuento: 0,
-            stock_disponible: stockDisponible // Guardamos el stock para validaciones posteriores
+            stock_disponible: stockDisponible 
         });
     }
     
@@ -176,10 +246,8 @@ function modificarCantidad(index, nuevaCantidad) {
     const producto = ventaActual.productos[index];
 
     if (cant > 0) {
-        // Validación de stock al modificar manualmente
         if (cant > producto.stock_disponible) {
             alert(`⚠️ La cantidad máxima para ${producto.nombre_producto} es ${producto.stock_disponible}.`);
-            // Mantiene el valor anterior en el input (renderCarrito lo actualizará si es necesario)
             return;
         }
 
@@ -211,7 +279,6 @@ async function buscarProductos(query) {
         
         if (!response.ok) throw new Error('Error al buscar en inventario.');
         
-        // Retorna productos que deben incluir _id, name, price, y stockQty
         return await response.json(); 
     } catch (error) {
         console.error('Error buscando productos (Mongo):', error);
@@ -295,7 +362,6 @@ async function realizarCorteDeCaja(montoContado) {
         const data = await response.json();
         
         if (!response.ok) {
-            // Si el backend responde con error, lanzamos la excepción para el bloque catch.
             throw new Error(data.message || 'Error al cerrar la caja.');
         }
 
@@ -363,14 +429,13 @@ function setupEventListeners() {
                 resultados.forEach(p => {
                     const pElement = document.createElement('p');
                     pElement.className = 'resultado-item';
-                    // Asumimos que p.stockQty existe para mostrarlo en los resultados
                     pElement.textContent = `${p.name} - $${p.price.toFixed(2)} (${p.stockQty > 0 ? 'Stock: ' + p.stockQty : 'Sin Stock'})`; 
                     
                     pElement.dataset.producto = JSON.stringify({
                         _id: p._id,
                         name: p.name,
                         price: p.price,
-                        stockQty: p.stockQty // Pasamos el stock disponible
+                        stockQty: p.stockQty 
                     });
 
                     pElement.addEventListener('click', function() {
@@ -476,6 +541,9 @@ function setupEventListeners() {
     // Lógica de Logout MODIFICADA: Ahora obliga a realizar corte a través del modal
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (!corteId) {
+            // Detener heartbeat y liberar lock antes de limpiar y redirigir
+            if (lockHeartbeat) clearInterval(lockHeartbeat);
+            releaseLock(); 
             localStorage.clear();
             window.location.href = '../login/login.html'; 
             return;
