@@ -38,7 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2. Mostrar información de la sesión
-    document.getElementById('corte-id').textContent = corteId.substring(0, 8) + '...';
+    // ⭐️ CORRECCIÓN APLICADA AQUÍ: Se verifica la existencia del elemento ⭐️
+    const corteIdSpan = document.getElementById('corte-id');
+    if (corteIdSpan) {
+        // Aseguramos que corteId no sea nulo antes de usar substring
+        corteIdSpan.textContent = corteId ? corteId.substring(0, 8) + '...' : 'N/A';
+    }
     
     setupEventListeners();
     updateVentaSummary();
@@ -245,7 +250,8 @@ async function realizarCorteDeCaja(montoContado) {
 
         // 2. Estilo para diferencia (sobrante/faltante)
         const diferenciaSpan = document.getElementById('reporte-diferencia');
-        diferenciaSpan.closest('td').style.color = diferencia < 0 ? '#ff4d4d' : (diferencia > 0.01 ? '#ffcc66' : '#99ff99');
+        // Los colores deben coincidir con la estética oscura/clara, usaré un estilo de destaque simple aquí
+        diferenciaSpan.closest('td').style.color = diferencia < 0 ? '#f44336' : (diferencia > 0.01 ? '#ffc107' : '#4caf50');
         
         // 3. Ocultar modal de entrada y mostrar modal de reporte
         document.getElementById('modal-corte-caja').style.display = 'none'; 
