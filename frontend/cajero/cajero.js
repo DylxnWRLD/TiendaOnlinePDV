@@ -393,14 +393,14 @@ function setupEventListeners() {
         document.getElementById('modal-reporte-corte').style.display = 'none';
         localStorage.removeItem('currentCorteId');
         localStorage.removeItem('supabase-token'); 
-        window.location.href = '../frontend/login/login.html';
+        window.location.href = '../login/login.html';
     });
     
     // Lógica de Logout MODIFICADA: Ahora obliga a realizar corte a través del modal
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (!corteId) {
             localStorage.clear();
-            window.location.href = '../frontend/login/login.html';
+            window.location.href = '../login/login.html';
             return;
         }
         
