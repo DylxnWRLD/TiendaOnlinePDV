@@ -18,7 +18,7 @@ let ventaActual = {
     total: 0
 };
 
-// ⭐️ NUEVA VARIABLE: Guarda el último monto declarado temporalmente
+// ⭐️ VARIABLE: Guarda el último monto declarado temporalmente para modificación
 let montoDeclaradoTemporal = 0; 
 
 
@@ -226,8 +226,14 @@ async function realizarCorteDeCaja(montoContado) {
         
         const data = await response.json();
         
-        if (!response.ok) throw new Error(data.message || 'Error al cerrar la caja.');
-        
+        if (!response.ok) {
+            // Si el backend responde con error, lanzamos la excepción para el bloque catch.
+            throw new Error(data.message || 'Error al cerrar la caja.');
+        }
+
+        // Si la llamada fue exitosa (solo la primera vez), cerramos el modal de entrada
+        document.getElementById('modal-corte-caja').style.display = 'none';
+
         // ⭐️ GUARDAR VALOR TEMPORAL PARA POSIBLES MODIFICACIONES ⭐️
         montoDeclaradoTemporal = montoContadoFloat;
 
@@ -244,12 +250,11 @@ async function realizarCorteDeCaja(montoContado) {
         const diferenciaSpan = document.getElementById('reporte-diferencia');
         diferenciaSpan.closest('td').style.color = diferencia < 0 ? '#f44336' : (diferencia > 0.01 ? '#ffc107' : '#4caf50');
         
-        document.getElementById('modal-corte-caja').style.display = 'none'; 
         document.getElementById('modal-reporte-corte').style.display = 'block'; 
 
     } catch (error) {
         console.error('Error al realizar corte:', error);
-        document.getElementById('modal-corte-caja').style.display = 'none';
+        // El modal de entrada (`modal-corte-caja`) permanece abierto para corregir.
         alert(`❌ Fallo al realizar el corte: ${error.message}`);
     }
 }
@@ -393,6 +398,7 @@ function setupEventListeners() {
         document.getElementById('modal-reporte-corte').style.display = 'none';
         localStorage.removeItem('currentCorteId');
         localStorage.removeItem('supabase-token'); 
+        // CAMBIO: Redirige al login en lugar de a la apertura de caja
         window.location.href = '../login/login.html';
     });
     
@@ -400,7 +406,7 @@ function setupEventListeners() {
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (!corteId) {
             localStorage.clear();
-            window.location.href = '../login/login.html';
+            window.location.href = '../login/login.html'; 
             return;
         }
         
