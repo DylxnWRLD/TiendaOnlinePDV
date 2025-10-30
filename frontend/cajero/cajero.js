@@ -23,6 +23,37 @@ let montoDeclaradoTemporal = 0;
 
 
 // =========================================================================
+// UTILIDAD: Decodificar Token para obtener Email
+// =========================================================================
+
+/**
+ * Decodifica la carga útil (payload) del JWT para extraer información del usuario.
+ * @param {string} token - El JWT completo (header.payload.signature).
+ * @returns {object} Objeto con la información del usuario (al menos el email).
+ */
+function getUserInfoFromToken(token) {
+    if (!token) return { email: 'Cajero Desconocido' };
+    try {
+        // El payload es el segundo segmento del JWT
+        const payloadBase64 = token.split('.')[1];
+        if (!payloadBase64) return { email: 'Token Inválido' };
+
+        // Decodificación Base64URL
+        const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+        const payload = JSON.parse(payloadJson);
+
+        // Se asume que el email está en el campo 'email' o 'sub' del payload del JWT
+        return {
+            email: payload.email || payload.sub || 'Email no encontrado'
+        };
+    } catch (e) {
+        console.error("Error decodificando JWT:", e);
+        return { email: 'Error de Decodificación' };
+    }
+}
+
+
+// =========================================================================
 // 1. INICIALIZACIÓN Y VERIFICACIÓN
 // =========================================================================
 
@@ -42,7 +73,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2. Mostrar información de la sesión
-    // ⭐️ CORRECCIÓN DE SEGURIDAD PARA EVITAR TypeError ⭐️
+    // ⭐️ MOSTRAR EMAIL DEL CAJERO ⭐️
+    const cajeroInfo = getUserInfoFromToken(token);
+    const cajeroNombreSpan = document.getElementById('cajero-nombre');
+    if (cajeroNombreSpan) {
+        cajeroNombreSpan.textContent = cajeroInfo.email;
+    }
+    
     const corteIdSpan = document.getElementById('corte-id');
     if (corteIdSpan) {
         corteIdSpan.textContent = corteId ? corteId.substring(0, 8) + '...' : 'N/A';
