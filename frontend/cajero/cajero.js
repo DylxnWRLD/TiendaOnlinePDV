@@ -21,17 +21,17 @@ let ventaActual = {
 // ⭐️ VARIABLE: Guarda el último monto declarado temporalmente para modificación
 let montoDeclaradoTemporal = 0; 
 
-// ⭐️ NUEVO: ID ÚNICO DE ESTA INSTANCIA/PESTAÑA ⭐️
+// ⭐️ ID ÚNICO DE ESTA INSTANCIA/PESTAÑA ⭐️
 const INSTANCE_ID = Date.now() + Math.random().toString(36).substring(2);
 
 
 // =========================================================================
-// 0. LÓGICA DE RESTRICCIÓN DE SESIÓN ÚNICA (CANDADO) ⭐️ CORREGIDO ⭐️
+// 0. LÓGICA DE RESTRICCIÓN DE SESIÓN ÚNICA (CANDADO)
 // =========================================================================
 
 const SESSION_LOCK_KEY = 'pdv_lock_active';
-// El candado expira si no se refresca en 15 segundos
-const LOCK_TIMEOUT = 15000; 
+// El candado expira si no se refresca en 10 segundos
+const LOCK_TIMEOUT = 10000; 
 let lockHeartbeat = null; 
 
 /**
@@ -136,8 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Iniciar Heartbeat para mantener el candado fresco
-    lockHeartbeat = setInterval(acquireLock, LOCK_TIMEOUT / 2);
+    // Iniciar Heartbeat para mantener el candado fresco (Cada 3 segundos)
+    lockHeartbeat = setInterval(acquireLock, 3000);
 
     // 3. Mostrar información de la sesión
     const cajeroInfo = getUserInfoFromToken(token);
@@ -560,6 +560,31 @@ function setupEventListeners() {
             document.getElementById('monto-contado').focus();
         } else {
             alert("Cierre de sesión cancelado por el usuario.");
+        }
+    });
+
+    // ⭐️ Listener para detectar si el candado fue robado por otra pestaña ⭐️
+    window.addEventListener('storage', (event) => {
+        if (event.key === SESSION_LOCK_KEY) {
+            // Check if our lock was overwritten by a different instance
+            const currentLockDataString = localStorage.getItem(SESSION_LOCK_KEY);
+            if (currentLockDataString) {
+                try {
+                    const lockData = JSON.parse(currentLockDataString);
+                    // If the new lock doesn't have our INSTANCE_ID, we lose the race/surrender.
+                    if (lockData.instanceId !== INSTANCE_ID) {
+                        // Stop our heartbeat and redirect immediately.
+                        if (lockHeartbeat) clearInterval(lockHeartbeat);
+                        alert('🚫 Control de sesión perdido. Otra pestaña ha tomado el mando.');
+                        // Limpiamos la sesión actual del navegador para evitar conflictos futuros.
+                        localStorage.removeItem('currentCorteId');
+                        localStorage.removeItem('supabase-token');
+                        window.location.href = '../login/login.html';
+                    }
+                } catch (e) {
+                    // Ignorar errores de parseo
+                }
+            }
         }
     });
     
