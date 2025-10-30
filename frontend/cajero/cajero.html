@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Punto de Venta (PDV) - Level One</title>
-    <!-- Asegúrate de que este archivo CSS contenga la versión que deseas usar (oscura o clara) -->
+    <!-- Incluir los estilos CSS que generamos -->
     <link rel="stylesheet" href="cajero.css"> 
 </head>
 <body>
@@ -30,13 +30,11 @@
             
             <h4 class="section-title">Gestión de Turno</h4>
             
-            <!-- Este botón activa el modal de solicitud de monto -->
             <button id="btn-corte-caja" class="btn-accion btn-danger"> Corte de Caja</button>
             <button id="btn-buscar-ventas" class="btn-accion"> Buscar Ventas Anteriores</button>
 
             <hr>
             
-            <!-- Este botón activa el flujo de corte si hay caja abierta -->
             <button id="btn-logout" class="btn-accion btn-logout"> Cerrar Sesión</button>
         </aside>
 
@@ -64,6 +62,7 @@
                             </tr>
                         </thead>
                         <tbody id="carrito-body">
+                            <!-- Filas de productos se renderizan aquí -->
                         </tbody>
                     </table>
                 </div>
@@ -99,7 +98,8 @@
     <!-- 1. MODAL DE PAGO EN EFECTIVO-->
     <div id="modal-efectivo" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" onclick="document.getElementById('modal-efectivo').style.display='none'">&times;</span>
+            <!-- ASIGNAR ID: Manejado en JS para evitar lógica de negocio -->
+            <span class="close" id="close-modal-efectivo">&times;</span>
             <h2>Cobro en Efectivo</h2>
             
             <div class="modal-linea">
@@ -126,7 +126,8 @@
     <!-- 2. NUEVO MODAL: Corte de Caja (Solicitud de Monto Contado) -->
     <div id="modal-corte-caja" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" onclick="document.getElementById('modal-corte-caja').style.display='none'">&times;</span>
+            <!-- ASIGNAR ID: Manejado en JS para evitar lógica de negocio -->
+            <span class="close" id="close-modal-corte">&times;</span>
             <h2>Realizar Corte de Caja</h2>
             <p class="instruccion">Por favor, ingrese el monto total en efectivo contado en la caja.</p>
             
@@ -144,9 +145,10 @@
     <!-- 3. NUEVO MODAL: Reporte Final del Corte -->
     <div id="modal-reporte-corte" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" onclick="document.getElementById('modal-reporte-corte').style.display='none'">&times;</span>
+            <!-- ASIGNAR ID: Manejado en JS para evitar lógica de negocio -->
+            <span class="close" id="close-modal-reporte">&times;</span>
             <h2>✅ Corte de Caja Exitoso</h2>
-            <p class="instruccion">A continuación, se muestra el resumen del corte. Se cerrará la sesión al aceptar.</p>
+            <p class="instruccion">¡Cuidado! Si acepta, la sesión se cerrará y deberá volver a iniciar.</p>
 
             <table class="reporte-tabla">
                 <tr><th>Fondo Inicial:</th><td>$<span id="reporte-inicial">0.00</span></td></tr>
@@ -156,9 +158,16 @@
                 <tr class="linea-final"><th>DIFERENCIA:</th><td class="monto-diferencia">$<span id="reporte-diferencia">0.00</span></td></tr>
             </table>
 
-            <button id="btn-aceptar-reporte" class="btn-pago btn-primary btn-full">
-                Aceptar y Finalizar Sesión
-            </button>
+            <!-- Contenedor Flex para los botones de Modificar y Aceptar -->
+            <div class="flex-buttons-reporte">
+                <!-- ⭐️ NUEVO BOTÓN PARA MODIFICAR ⭐️ -->
+                <button id="btn-modificar-corte" class="btn-pago btn-warning">
+                    Modificar Monto Contado
+                </button>
+                <button id="btn-aceptar-reporte" class="btn-pago btn-success">
+                    Aceptar y Finalizar Sesión
+                </button>
+            </div>
         </div>
     </div>
     

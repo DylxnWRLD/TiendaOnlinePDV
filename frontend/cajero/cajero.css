@@ -1,17 +1,16 @@
 /* =========================================================================
-   ESTILOS GENERALES Y VARIABLES (Adaptados al tema #2c3e50)
+   ESTILOS GENERALES Y LAYOUT
    ========================================================================= */
 
 :root {
-    --color-primary: #2c3e50;    /* Azul Profundo (Dark) */
-    --color-secondary: #3498db;  /* Azul Claro (Secondary/Highlight) */
-    --color-success: #27ae60;    /* Verde (Success) */
-    --color-danger: #e74c3c;     /* Rojo (Danger) */
-    --color-warning: #f39c12;    /* Amarillo/Naranja (Warning) */
-    --color-bg-light: #f8f9fa;   /* Fondo general claro (de tu tema) */
-    --color-bg-dark: #ecf0f1;    /* Fondo de secciones/tarjetas */
-    --color-border: #bdc3c7;     /* Borde suave */
-    --color-text-dark: #2c3e50;  /* Texto principal oscuro */
+    --color-bg-dark: #1f1f1f; /* Fondo principal oscuro */
+    --color-primary: #00bcd4; /* Azul cian brillante (para botones/énfasis) */
+    --color-success: #4caf50; /* Verde para acciones positivas (Finalizar Venta) */
+    --color-danger: #f44336; /* Rojo para acciones peligrosas (Corte/Eliminar) */
+    --color-text-light: #e0e0e0;
+    --color-text-dark: #333;
+    --color-border: #333;
+    --color-highlight: #ffc107; /* Amarillo para descuentos/total */
 }
 
 * {
@@ -22,64 +21,52 @@
 }
 
 body {
-    background-color: var(--color-bg-light);
-    color: var(--color-text-dark);
+    background-color: var(--color-bg-dark);
+    color: var(--color-text-light);
     line-height: 1.6;
     height: 100vh;
-    overflow: hidden; 
+    overflow: hidden; /* Previene scroll en la vista de PDV */
 }
 
-/* =========================================================================
-   LAYOUT PRINCIPAL
-   ========================================================================= */
-
-/* Estructura de 3 columnas del Punto de Venta */
+/* Layout principal de tres columnas (PDV) */
 .pdv-layout {
     display: grid;
-    grid-template-columns: 250px 1fr 300px; /* Acciones | Venta | Pago Final */
+    grid-template-columns: 250px 1fr 300px; /* Columna Izq | Venta Central | Pago Final */
     height: 100vh;
-    background-color: var(--color-bg-light);
 }
 
 section, aside {
     padding: 20px;
     border-right: 1px solid var(--color-border);
-    background-color: white; /* Fondo blanco/claro para las secciones */
+    background-color: #2a2a2a;
     display: flex;
     flex-direction: column;
 }
 
-/* Columna de Acciones (Sidebar style) */
-.col-acciones-caja {
-    background-color: var(--color-primary); /* Fondo azul oscuro del sidebar */
-    color: white;
-    border-right: 1px solid var(--color-primary);
-}
+/* =========================================================================
+   ESTILOS DE TÍTULOS Y ACCIONES (COLUMNA IZQUIERDA Y CENTRAL)
+   ========================================================================= */
 
 .cyber-glow {
-    color: var(--color-secondary);
-    font-weight: 700;
+    color: var(--color-primary);
+    text-shadow: 0 0 5px var(--color-primary), 0 0 10px rgba(0, 188, 212, 0.5);
     margin-bottom: 10px;
     font-size: 1.5em;
-    /* Quitamos el glow para que se parezca más al diseño plano de tu tema */
-}
-
-.title-venta-actual {
-    color: var(--color-text-dark);
-    font-weight: 600;
-    font-size: 1.8em;
 }
 
 .section-title {
     margin-top: 15px;
     margin-bottom: 8px;
-    color: var(--color-primary);
+    color: #ccc;
     font-size: 1.1em;
-    font-weight: 600;
+}
+
+.col-acciones-caja {
+    padding-right: 15px;
 }
 
 .info-caja-sesion {
-    background-color: rgba(0,0,0,0.2);
+    background-color: #333;
     padding: 10px;
     border-radius: 4px;
     margin-bottom: 15px;
@@ -89,39 +76,32 @@ section, aside {
 hr {
     border: none;
     height: 1px;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--color-border);
     margin: 15px 0;
 }
-
-/* =========================================================================
-   BOTONES DE ACCIÓN (Adaptados al estilo .btn y .btn-accion)
-   ========================================================================= */
 
 .btn-accion {
     padding: 10px 15px;
     margin-bottom: 8px;
     border: none;
-    border-radius: 5px; /* De tu estilo */
+    border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
-    font-weight: 500; /* De tu estilo */
-    transition: all 0.3s;
-    background-color: #44607a; /* Un tono más claro que el primary */
-    color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-weight: bold;
+    transition: background-color 0.2s;
+    background-color: #444;
+    color: var(--color-text-light);
 }
 
 .btn-accion:hover {
-    background-color: var(--color-secondary);
-    transform: translateY(-1px);
+    background-color: #555;
 }
 
 .btn-cancelar {
-    background-color: var(--color-warning); 
-    color: white;
+    background-color: #d35400; /* Naranja */
 }
 .btn-cancelar:hover {
-    opacity: 0.9;
+    background-color: #e67e22;
 }
 
 .btn-danger, .btn-logout {
@@ -129,65 +109,72 @@ hr {
     color: white;
 }
 .btn-danger:hover, .btn-logout:hover {
-    opacity: 0.9;
+    background-color: #c0392b;
 }
 
 /* =========================================================================
-   COLUMNA CENTRAL: BÚSQUEDA Y CARRITO
+   ESTILOS DE BÚSQUEDA Y CARRITO (COLUMNA CENTRAL)
    ========================================================================= */
+
+.col-venta-principal {
+    gap: 20px;
+}
+
+.seccion-busqueda {
+    margin-bottom: 20px;
+}
 
 #input-sku {
     width: 100%;
-    padding: 12px;
+    padding: 15px;
     font-size: 1.1em;
-    border: 1px solid var(--color-border);
-    border-radius: 5px;
-    background-color: var(--color-bg-dark);
-    color: var(--color-text-dark);
+    border: 2px solid var(--color-primary);
+    border-radius: 6px;
+    background-color: #333;
+    color: var(--color-text-light);
     margin-bottom: 10px;
     outline: none;
-    transition: border-color 0.3s;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    transition: border-color 0.2s;
 }
 #input-sku:focus {
-    border-color: var(--color-secondary);
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    border-color: var(--color-highlight);
 }
 
 .resultados-area {
-    background-color: var(--color-bg-dark);
+    background-color: #333;
     max-height: 150px;
     overflow-y: auto;
-    border-radius: 5px;
-    border: 1px solid var(--color-border);
+    border-radius: 4px;
     padding: 5px;
 }
 
 .resultado-item {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
+    padding: 8px;
+    border-bottom: 1px solid #444;
     cursor: pointer;
     transition: background-color 0.1s;
-    color: var(--color-text-dark);
 }
 .resultado-item:hover {
-    background-color: #eaf6ff; /* Tono de hover claro */
-    color: var(--color-primary);
+    background-color: #444;
 }
 .instruccion {
-    padding: 10px;
-    color: #95a5a6;
+    padding: 8px;
+    color: #999;
     font-style: italic;
 }
 
-
-/* Carrito - Tabla de Venta (Estilo de tabla de tu tema) */
+/* Carrito - Tabla de Venta */
+.seccion-carrito {
+    flex-grow: 1; /* Para ocupar el espacio restante */
+    overflow: hidden;
+}
 
 .carrito-area {
     flex-grow: 1;
     overflow-y: auto;
+    max-height: calc(100vh - 300px); /* Ajuste basado en la altura de la vista */
     border: 1px solid var(--color-border);
-    border-radius: 5px;
+    border-radius: 4px;
 }
 
 #detalle-venta-tabla {
@@ -196,33 +183,25 @@ hr {
 }
 
 #detalle-venta-tabla th {
-    background-color: #f8f9fa; /* Fondo claro de tabla */
-    padding: 12px 15px;
+    background-color: #333;
+    padding: 10px;
     text-align: left;
     position: sticky;
     top: 0;
     z-index: 10;
-    font-weight: 600;
-    color: var(--color-primary);
-    border-bottom: 2px solid var(--color-border);
 }
 
 #detalle-venta-tabla td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #eee;
-    color: var(--color-text-dark);
-}
-
-#detalle-venta-tabla tr:hover {
-    background: #f8f9fa;
+    padding: 10px;
+    border-bottom: 1px solid #333;
 }
 
 #detalle-venta-tabla input[type="number"] {
     width: 60px;
     padding: 5px;
-    background-color: white;
-    color: var(--color-text-dark);
-    border: 1px solid #ccc;
+    background-color: #444;
+    color: var(--color-text-light);
+    border: 1px solid #555;
     border-radius: 3px;
     text-align: center;
 }
@@ -232,12 +211,11 @@ hr {
     color: white;
     border: none;
     padding: 5px 10px;
-    border-radius: 5px;
+    border-radius: 3px;
     cursor: pointer;
-    font-weight: 500;
 }
 .btn-eliminar:hover {
-    opacity: 0.9;
+    background-color: #c0392b;
 }
 
 
@@ -246,73 +224,64 @@ hr {
    ========================================================================= */
 
 .col-pago-final {
-    border-right: none;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .totales-resumen {
-    background-color: var(--color-bg-dark);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    background-color: #333;
+    padding: 15px;
+    border-radius: 6px;
 }
 
 .totales-resumen p {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 1.1em;
+    margin-bottom: 5px;
 }
 
 .total-final-line {
-    border-top: 1px solid #ccc;
-    padding-top: 15px;
-    margin-top: 15px;
+    border-top: 2px solid var(--color-border);
+    padding-top: 10px;
+    margin-top: 10px;
     display: flex;
     justify-content: space-between;
 }
 
-.total-final-line h4 {
-    font-weight: 700;
-    color: var(--color-primary);
-}
-
 .monto-total {
-    font-size: 2.2em;
+    font-size: 2em;
     font-weight: bold;
-    color: var(--color-danger); /* Usamos danger o warning para el total */
+    color: var(--color-highlight);
 }
 
 .btn-pago {
     width: 100%;
-    padding: 18px;
+    padding: 20px;
     margin-bottom: 10px;
-    font-size: 1.1em;
+    font-size: 1.2em;
     font-weight: bold;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: opacity 0.2s;
 }
 
 .btn-pago:hover {
     opacity: 0.9;
-    transform: translateY(-1px);
 }
 
 .btn-success {
     background-color: var(--color-success);
-    color: white;
+    color: var(--color-text-light);
 }
 
 .btn-primary {
-    background-color: var(--color-secondary);
-    color: white;
+    background-color: var(--color-primary);
+    color: var(--color-text-dark);
 }
 
-
 /* =========================================================================
-   ESTILOS DE MODALES (Aesthetic de tu tema)
+   ESTILOS DE MODALES (MEJORA ESTÉTICA)
    ========================================================================= */
 
 .modal {
@@ -323,43 +292,48 @@ hr {
     top: 0;
     width: 100%; 
     height: 100%; 
-    background-color: rgba(0,0,0,0.5); /* Sombra estándar */
-    align-items: center;
-    justify-content: center;
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.8); /* Fondo más oscuro para enfoque */
+    backdrop-filter: blur(3px);
 }
 
 .modal-content {
-    background-color: white; 
-    color: var(--color-text-dark);
+    background-color: #2a2a2a; /* Fondo oscuro del modal */
+    color: var(--color-text-light);
     margin: 10% auto; 
     padding: 30px;
-    border-radius: 10px; 
+    border: 2px solid var(--color-primary); /* Borde de énfasis */
     width: 90%; 
-    max-width: 500px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2); /* Sombra elegante */
+    max-width: 450px; /* Tamaño fijo para formularios de cobro/corte */
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 188, 212, 0.4);
     position: relative;
     animation: fadeIn 0.3s;
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .close {
-    color: #666;
+    color: #aaa;
     float: right;
-    font-size: 1.5em;
+    font-size: 30px;
     font-weight: bold;
     line-height: 1;
-    cursor: pointer;
-    transition: color 0.3s;
+    text-decoration: none;
 }
 .close:hover, .close:focus {
     color: var(--color-danger);
+    cursor: pointer;
 }
 
 .modal-content h2 {
-    color: var(--color-primary);
-    border-bottom: 1px solid #eee;
+    border-bottom: 2px solid #555;
     padding-bottom: 10px;
     margin-bottom: 20px;
-    font-size: 1.3em;
+    color: var(--color-primary);
 }
 
 .modal-linea {
@@ -371,7 +345,7 @@ hr {
 }
 
 .modal-linea label {
-    font-weight: 600;
+    font-weight: bold;
 }
 
 .modal-content input[type="number"] {
@@ -379,19 +353,35 @@ hr {
     width: 50%;
     font-size: 1.2em;
     text-align: right;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: white;
-    color: var(--color-text-dark);
+    border: 1px solid #555;
+    border-radius: 4px;
+    background-color: #333;
+    color: var(--color-highlight);
     outline: none;
 }
+
 .modal-content input[type="number"]:focus {
-    border-color: var(--color-secondary);
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    border-color: var(--color-primary);
 }
 
+.monto-cambio {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #99ff99; /* Inicialmente verde */
+}
+
+.btn-full {
+    width: 100%;
+    margin-top: 20px;
+}
 
 /* **ESTILOS ESPECÍFICOS DEL REPORTE DE CORTE** */
+
+#modal-reporte-corte .modal-content {
+    max-width: 550px; 
+    border-color: #555;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
 
 .reporte-tabla {
     width: 100%;
@@ -402,29 +392,28 @@ hr {
 .reporte-tabla th, .reporte-tabla td {
     padding: 10px 0;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #444;
 }
 
 .reporte-tabla th {
-    font-weight: 500;
-    color: #666;
+    font-weight: normal;
+    color: #ccc;
 }
 .reporte-tabla td {
     text-align: right;
-    font-weight: 600;
-    color: var(--color-primary);
+    font-weight: bold;
 }
 
 .reporte-tabla .linea-separadora th,
 .reporte-tabla .linea-separadora td {
-    border-top: 2px solid var(--color-border);
+    border-top: 2px solid #555;
     color: var(--color-primary);
     font-weight: bold;
 }
 
 .reporte-tabla .linea-final th, 
 .reporte-tabla .linea-final td {
-    border-top: 3px double var(--color-primary); 
+    border-top: 3px double var(--color-text-light); 
     font-size: 1.2em;
     font-weight: bold;
 }
@@ -433,16 +422,27 @@ hr {
     text-align: right;
     font-size: 1.4em;
     font-weight: bold;
-    /* Los colores se asignan en JS */
 }
 
-.btn-full {
-    width: 100%;
-    margin-top: 20px;
+/* Añadir estilos para el layout de botones en el reporte (Necesario para el HTML modificado) */
+.flex-buttons-reporte {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
 }
 
-/* Animaciones */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Hacer que los botones dentro del contenedor flex ocupen el mismo espacio */
+.flex-buttons-reporte .btn-pago {
+    flex: 1;
+    width: auto; /* Anula el width: 100% de .btn-full */
+    padding: 15px;
+}
+
+/* Estilo para el botón de Modificar (usamos warning para distinguirlo) */
+.btn-warning {
+    background-color: #ffc107; /* Usando el highlight color */
+    color: #333;
+}
+.btn-warning:hover {
+    opacity: 0.9;
 }

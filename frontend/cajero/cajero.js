@@ -18,6 +18,10 @@ let ventaActual = {
     total: 0
 };
 
+// ⭐️ NUEVA VARIABLE: Guarda el último monto declarado temporalmente
+let montoDeclaradoTemporal = 0; 
+
+
 // =========================================================================
 // 1. INICIALIZACIÓN Y VERIFICACIÓN
 // =========================================================================
@@ -38,10 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2. Mostrar información de la sesión
-    // ⭐️ CORRECCIÓN APLICADA AQUÍ: Se verifica la existencia del elemento ⭐️
+    // ⭐️ CORRECCIÓN DE SEGURIDAD PARA EVITAR TypeError ⭐️
     const corteIdSpan = document.getElementById('corte-id');
     if (corteIdSpan) {
-        // Aseguramos que corteId no sea nulo antes de usar substring
         corteIdSpan.textContent = corteId ? corteId.substring(0, 8) + '...' : 'N/A';
     }
     
@@ -51,22 +54,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // =========================================================================
-// 2. LÓGICA DE CARRITO Y CÁLCULOS (SIN CAMBIOS)
+// 2. LÓGICA DE CARRITO Y CÁLCULOS
 // =========================================================================
 
 function agregarProducto(productoMongo) {
-    // Busca si el producto ya está en el carrito
     const index = ventaActual.productos.findIndex(p => p.id_producto_mongo === productoMongo._id);
     
     if (index > -1) {
         ventaActual.productos[index].cantidad += 1;
     } else {
         ventaActual.productos.push({
-            id_producto_mongo: productoMongo._id, // Usamos _id de Mongo
-            nombre_producto: productoMongo.name, // Usamos name de Mongo
-            precio_unitario: productoMongo.price, // Usamos price de Mongo
+            id_producto_mongo: productoMongo._id, 
+            nombre_producto: productoMongo.name, 
+            precio_unitario: productoMongo.price, 
             cantidad: 1,
-            monto_descuento: 0 // Inicia sin descuento
+            monto_descuento: 0 
         });
     }
     
@@ -87,12 +89,10 @@ function updateVentaSummary() {
     ventaActual.descuento = descuento;
     ventaActual.total = subtotal - descuento;
     
-    // Actualizar la interfaz (toFixed(2) para formato monetario)
     document.getElementById('subtotal').textContent = ventaActual.subtotal.toFixed(2);
     document.getElementById('descuento').textContent = ventaActual.descuento.toFixed(2);
     document.getElementById('total-final').textContent = ventaActual.total.toFixed(2);
     
-    // Actualizar el total en el modal de efectivo
     const modalTotal = document.getElementById('modal-total');
     if (modalTotal) modalTotal.textContent = ventaActual.total.toFixed(2);
 }
@@ -111,7 +111,6 @@ function renderCarrito() {
         `;
         tbody.appendChild(tr);
     });
-    // Exportar al scope global para que los eventos onclick en el HTML funcionen
     window.modificarCantidad = modificarCantidad;
     window.eliminarProducto = eliminarProducto;
 }
@@ -132,21 +131,19 @@ function eliminarProducto(index) {
 
 
 // =========================================================================
-// 3. COMUNICACIÓN CON BACKEND (MongoDB - Vía Express) (SIN CAMBIOS)
+// 3. COMUNICACIÓN CON BACKEND (MongoDB - Vía Express)
 // =========================================================================
 
 async function buscarProductos(query) {
     if (query.length < 3) return [];
     
     try {
-        // Llama al endpoint de Express que busca en MongoDB
         const response = await fetch(`${API_BASE_URL}/api/productos/buscar?q=${query}`, {
              headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (!response.ok) throw new Error('Error al buscar en inventario.');
         
-        // El backend devuelve un array de productos con campos: _id, name, price, stockQty
         return await response.json(); 
     } catch (error) {
         console.error('Error buscando productos (Mongo):', error);
@@ -156,12 +153,9 @@ async function buscarProductos(query) {
 
 
 // =========================================================================
-// 4. COMUNICACIÓN CON BACKEND (Postgres - Venta y Corte) ⭐️ MODIFICADO ⭐️
+// 4. COMUNICACIÓN CON BACKEND (Postgres - Venta y Corte)
 // =========================================================================
 
-/**
- * Función que registra la venta en el backend (Postgres + Mongo Stock update).
- */
 async function finalizarVenta(metodoPago, montoRecibido = null) {
     if (ventaActual.total <= 0 || ventaActual.productos.length === 0) {
         alert('Venta inválida. Agregue productos.');
@@ -173,7 +167,6 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
         total_descuento: ventaActual.descuento,
         total_final: ventaActual.total,
         metodo_pago: metodoPago,
-        // Los detalles del carrito se mapean para el formato de BD
         detalles: ventaActual.productos.map(p => ({
             id_producto_mongo: p.id_producto_mongo,
             nombre_producto: p.nombre_producto,
@@ -196,7 +189,6 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
         
         alert(`✅ Venta Finalizada con éxito. Ticket: ${data.ticket_numero}`);
         
-        // Resetear la venta
         ventaActual.productos = [];
         updateVentaSummary();
         renderCarrito();
@@ -216,7 +208,6 @@ async function realizarCorteDeCaja(montoContado) {
         return;
     }
     
-    // Convertir a float y validar
     const montoContadoFloat = parseFloat(montoContado);
     if (isNaN(montoContadoFloat) || montoContadoFloat < 0) {
         alert('Monto inválido. El corte ha sido cancelado.');
@@ -237,27 +228,24 @@ async function realizarCorteDeCaja(montoContado) {
         
         if (!response.ok) throw new Error(data.message || 'Error al cerrar la caja.');
         
-        // **NUEVA LÓGICA DE VISUALIZACIÓN DEL REPORTE EN MODAL**
+        // ⭐️ GUARDAR VALOR TEMPORAL PARA POSIBLES MODIFICACIONES ⭐️
+        montoDeclaradoTemporal = montoContadoFloat;
+
+        // Lógica de visualización del reporte en modal
         const reporte = data.reporte;
         const diferencia = reporte.diferencia;
 
-        // 1. Llenar el modal de reporte
         document.getElementById('reporte-inicial').textContent = reporte.monto_inicial.toFixed(2);
         document.getElementById('reporte-ventas').textContent = reporte.ventas_efectivo.toFixed(2);
         document.getElementById('reporte-teorico').textContent = reporte.monto_calculado.toFixed(2);
         document.getElementById('reporte-contado').textContent = montoContadoFloat.toFixed(2);
         document.getElementById('reporte-diferencia').textContent = diferencia.toFixed(2);
 
-        // 2. Estilo para diferencia (sobrante/faltante)
         const diferenciaSpan = document.getElementById('reporte-diferencia');
-        // Los colores deben coincidir con la estética oscura/clara, usaré un estilo de destaque simple aquí
         diferenciaSpan.closest('td').style.color = diferencia < 0 ? '#f44336' : (diferencia > 0.01 ? '#ffc107' : '#4caf50');
         
-        // 3. Ocultar modal de entrada y mostrar modal de reporte
         document.getElementById('modal-corte-caja').style.display = 'none'; 
         document.getElementById('modal-reporte-corte').style.display = 'block'; 
-
-        // El cierre de sesión y la limpieza del localStorage se harán con el botón 'Aceptar Reporte'
 
     } catch (error) {
         console.error('Error al realizar corte:', error);
@@ -268,10 +256,25 @@ async function realizarCorteDeCaja(montoContado) {
 
 
 // =========================================================================
-// 5. EVENT LISTENERS ⭐️ MODIFICADO ⭐️
+// 5. EVENT LISTENERS Y MANEJO DE MODALES
 // =========================================================================
 
+/**
+ * Función genérica para cerrar cualquier modal de forma segura.
+ */
+function cerrarModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
 function setupEventListeners() {
+    // ⭐️ 5.A. Manejo Seguro de Botones de Cierre de Modales (Usando IDs) ⭐️
+    document.getElementById('close-modal-efectivo')?.addEventListener('click', () => cerrarModal('modal-efectivo'));
+    document.getElementById('close-modal-corte')?.addEventListener('click', () => cerrarModal('modal-corte-caja'));
+    document.getElementById('close-modal-reporte')?.addEventListener('click', () => cerrarModal('modal-reporte-corte'));
+    
     // 5.1. Búsqueda de Productos 
     document.getElementById('input-sku').addEventListener('input', async (e) => {
         const query = e.target.value;
@@ -309,7 +312,7 @@ function setupEventListeners() {
             resultadosDiv.innerHTML = '<p class="instruccion">Escribe o escanea para buscar...</p>';
         }
     });
-// --------------------------------------------------------------------------------------------------
+
     // 5.2. Pago en Efectivo (Muestra modal)
     document.getElementById('btn-pago-efectivo').addEventListener('click', () => {
         if (ventaActual.total <= 0) {
@@ -350,19 +353,18 @@ function setupEventListeners() {
     
     // 5.6. Botones de Acción (Panel Izquierdo)
     
-    // **NUEVO:** Mostrar modal de Corte de Caja
+    // Mostrar modal de Corte de Caja
     document.getElementById('btn-corte-caja').addEventListener('click', () => {
         if (!corteId) {
              alert('No hay una caja abierta para cerrar.');
              return;
         }
-        // Limpiar el input y mostrar el modal
         document.getElementById('monto-contado').value = ''; 
         document.getElementById('modal-corte-caja').style.display = 'block';
         document.getElementById('monto-contado').focus();
     });
 
-    // **NUEVO:** Confirmar Corte de Caja desde el modal
+    // Confirmar Corte de Caja desde el modal
     document.getElementById('btn-confirmar-corte')?.addEventListener('click', () => {
         const montoContado = document.getElementById('monto-contado').value;
         if (montoContado !== null && !isNaN(parseFloat(montoContado))) {
@@ -373,26 +375,36 @@ function setupEventListeners() {
         }
     });
 
-    // **NUEVO:** Aceptar Reporte y Cerrar Sesión Definitivamente
+    // ⭐️ LÓGICA DE MODIFICAR MONTO DECLARADO ⭐️
+    document.getElementById('btn-modificar-corte')?.addEventListener('click', () => {
+        // 1. Cerrar el modal de reporte
+        cerrarModal('modal-reporte-corte');
+        
+        // 2. Abrir el modal de entrada de datos
+        document.getElementById('modal-corte-caja').style.display = 'block';
+        
+        // 3. Precargar el último monto declarado y enfocar
+        document.getElementById('monto-contado').value = montoDeclaradoTemporal.toFixed(2);
+        document.getElementById('monto-contado').focus();
+    });
+
+    // Aceptar Reporte y Cerrar Sesión Definitivamente
     document.getElementById('btn-aceptar-reporte')?.addEventListener('click', () => {
         document.getElementById('modal-reporte-corte').style.display = 'none';
-        // Limpiar la sesión actual y forzar nuevo login
         localStorage.removeItem('currentCorteId');
-        localStorage.removeItem('supabase-token'); // Limpiar token
+        localStorage.removeItem('supabase-token'); 
         window.location.href = './apertura_caja.html';
     });
     
     // Lógica de Logout MODIFICADA: Ahora obliga a realizar corte a través del modal
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (!corteId) {
-            // No hay corte abierto, solo cierra sesión
             localStorage.clear();
-            window.location.href = '../frontend/login/login.html';
+            window.location.href = '../login/login.html';
             return;
         }
         
         if (confirm('Al cerrar sesión se realizará el Corte de Caja. ¿Continuar?')) {
-            // Muestra el modal de corte, el flujo continúa desde ahí
             document.getElementById('monto-contado').value = ''; 
             document.getElementById('modal-corte-caja').style.display = 'block';
             document.getElementById('monto-contado').focus();
@@ -409,6 +421,4 @@ function setupEventListeners() {
             renderCarrito();
         }
     });
-
-    // Los botones de búsqueda de ventas, devoluciones y promociones (como estás) son simulaciones
 }
