@@ -232,3 +232,10 @@ body {
   margin-bottom: 5px;
   color: #222;
 }
+
+.before {
+  text-decoration: line-through;
+  color: gray;
+  font-size: 14px;
+  margin-left: 5px;
+}
