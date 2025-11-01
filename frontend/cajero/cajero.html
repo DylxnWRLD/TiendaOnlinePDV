@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Punto de Venta (PDV) - Level One</title>
-    <link rel="stylesheet" href="cajero.css">
+    <!-- Incluir los estilos CSS que generamos -->
+    <link rel="stylesheet" href="cajero.css"> 
 </head>
 <body>
     <div class="pdv-layout">
         
+        <!-- Columna Izquierda: Acciones de Caja -->
         <aside class="col-acciones-caja">
             <h3 class="cyber-glow">Cajero Activo</h3>
             <div class="info-caja-sesion">
@@ -36,8 +38,9 @@
             <button id="btn-logout" class="btn-accion btn-logout"> Cerrar Sesión</button>
         </aside>
 
+        <!-- Columna Central: Venta Principal y Carrito -->
         <main class="col-venta-principal">
-            <h3 class="cyber-glow title-venta-actual">1. Iniciar Venta / Agregar Productos 🛒</h3>
+            <h3 class="cyber-glow title-venta-actual">Iniciar Venta / Agregar Productos 🛒</h3>
 
             <section class="seccion-busqueda">
                 <input type="text" id="input-sku" placeholder="Escanear o buscar SKU / Nombre" autofocus>
@@ -59,14 +62,16 @@
                             </tr>
                         </thead>
                         <tbody id="carrito-body">
-                            </tbody>
+                            <!-- Filas de productos se renderizan aquí -->
+                        </tbody>
                     </table>
                 </div>
             </section>
         </main>
 
+        <!-- Columna Derecha: Resumen de Pago -->
         <section class="col-pago-final">
-            <h3 class="cyber-glow">2. Finalizar Venta / Cobro </h3>
+            <h3 class="cyber-glow">Cobro </h3>
             <div class="totales-resumen">
                 <h3>Resumen de Cobro</h3>
                 <p>Subtotal: $<span id="subtotal" class="monto">0.00</span></p>
@@ -86,9 +91,15 @@
         </section>
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- MODALES -->
+    <!-- ========================================================================= -->
+
+    <!-- 1. MODAL DE PAGO EN EFECTIVO-->
     <div id="modal-efectivo" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close" onclick="document.getElementById('modal-efectivo').style.display='none'">&times;</span>
+            <!-- ASIGNAR ID: Manejado en JS para evitar lógica de negocio -->
+            <span class="close" id="close-modal-efectivo">&times;</span>
             <h2>Cobro en Efectivo</h2>
             
             <div class="modal-linea">
@@ -109,6 +120,54 @@
             <button id="btn-finalizar-efectivo" class="btn-pago btn-success btn-full">
                 Finalizar Venta en Efectivo
             </button>
+        </div>
+    </div>
+    
+    <!-- 2. NUEVO MODAL: Corte de Caja (Solicitud de Monto Contado) -->
+    <div id="modal-corte-caja" class="modal" style="display: none;">
+        <div class="modal-content">
+            <!-- ASIGNAR ID: Manejado en JS para evitar lógica de negocio -->
+            <span class="close" id="close-modal-corte">&times;</span>
+            <h2>Realizar Corte de Caja</h2>
+            <p class="instruccion">Por favor, ingrese el monto total en efectivo contado en la caja.</p>
+            
+            <div class="modal-linea">
+                <label for="monto-contado">Monto Contado ($):</label>
+                <input type="number" id="monto-contado" min="0" value="0.00" step="0.01" autofocus>
+            </div>
+
+            <button id="btn-confirmar-corte" class="btn-pago btn-danger btn-full">
+                Confirmar y Cerrar Caja
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. NUEVO MODAL: Reporte Final del Corte -->
+    <div id="modal-reporte-corte" class="modal" style="display: none;">
+        <div class="modal-content">
+            <!-- ASIGNAR ID: Manejado en JS para evitar lógica de negocio -->
+            <span class="close" id="close-modal-reporte">&times;</span>
+            <h2>✅ Corte de Caja Exitoso</h2>
+            <p class="instruccion">¡Cuidado! Si acepta, la sesión se cerrará y deberá volver a iniciar.</p>
+
+            <table class="reporte-tabla">
+                <tr><th>Fondo Inicial:</th><td>$<span id="reporte-inicial">0.00</span></td></tr>
+                <tr><th>Ventas en Efectivo:</th><td>$<span id="reporte-ventas">0.00</span></td></tr>
+                <tr class="linea-separadora"><th>Monto Teórico (Calculado):</th><td>$<span id="reporte-teorico">0.00</span></td></tr>
+                <tr><th>Monto Contado (Declarado):</th><td>$<span id="reporte-contado">0.00</span></td></tr>
+                <tr class="linea-final"><th>DIFERENCIA:</th><td class="monto-diferencia">$<span id="reporte-diferencia">0.00</span></td></tr>
+            </table>
+
+            <!-- Contenedor Flex para los botones de Modificar y Aceptar -->
+            <div class="flex-buttons-reporte">
+                <!-- ⭐️ NUEVO BOTÓN PARA MODIFICAR ⭐️ -->
+                <button id="btn-modificar-corte" class="btn-pago btn-warning">
+                    Modificar Monto Contado
+                </button>
+                <button id="btn-aceptar-reporte" class="btn-pago btn-success">
+                    Aceptar y Finalizar Sesión
+                </button>
+            </div>
         </div>
     </div>
     
