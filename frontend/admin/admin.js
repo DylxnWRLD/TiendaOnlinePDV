@@ -78,6 +78,8 @@ class AdminPanel {
         document.getElementById('editUserForm').addEventListener('submit', (e) => this.handleEditUser(e));
         document.getElementById('addPromotionForm').addEventListener('submit', (e) => this.handleAddPromotion(e));
 
+        document.getElementById('editPromotionForm').addEventListener('submit', (e) => this.handleEditPromotion(e));
+
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
@@ -212,8 +214,7 @@ class AdminPanel {
         }
     }
 
-    // --- CORREGIDO: renderPromotionsTable ---
-    // Actualizado para usar los nombres de columna correctos de tu DB
+  
     renderPromotionsTable() {
         const tbody = document.getElementById('promotionsTableBody');
 
@@ -243,10 +244,11 @@ class AdminPanel {
                     <td>${inicio} - ${fin}</td>
                     <td>${estado}</td>
                     <td>
-                        <button class="btn btn-warning btn-sm" disabled>
+                        <button class="btn btn-warning btn-sm" onclick="abrirModalEditar(${promo.id})">
                             <i class="fas fa-edit"></i> Editar
                         </button>
-                        <button class="btn btn-danger btn-sm" disabled>
+                        
+                        <button class="btn btn-danger btn-sm" onclick="adminPanel.eliminarPromocion(${promo.id})">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
                     </td>
@@ -328,6 +330,139 @@ class AdminPanel {
         document.getElementById('addPromotionModal').style.display = 'none';
         document.getElementById('addPromotionForm').reset();
     }
+
+
+
+
+
+
+
+
+
+
+
+
+// Abrir modal de edición
+abrirModalEditar(id) {
+    const promo = this.promotions.find(p => p.id === id);
+    if (!promo) return alert('Promoción no encontrada');
+
+    document.getElementById('editPromotionId').value = promo.id;
+    document.getElementById('editPromotionName').value = promo.nombre;
+    document.getElementById('editPromotionDescription').value = promo.descripcion || '';
+    document.getElementById('editPromotionType').value = promo.tipo_descuento;
+    document.getElementById('editPromotionValue').value = promo.valor;
+    document.getElementById('editPromotionRuleType').value = promo.tipo_regla;
+    document.getElementById('editPromotionRuleValue').value = promo.valor_regla || '';
+    document.getElementById('editPromotionStart').value = promo.fecha_inicio.slice(0,16);
+    document.getElementById('editPromotionEnd').value = promo.fecha_fin ? promo.fecha_fin.slice(0,16) : '';
+    document.getElementById('editPromotionActive').checked = promo.activa;
+
+    document.getElementById('editPromotionModal').style.display = 'flex';
+}
+
+// Cerrar modal de edición
+cerrarModalEditar() {
+    document.getElementById('editPromotionModal').style.display = 'none';
+    document.getElementById('editPromotionForm').reset();
+}
+
+// Enviar cambios al backend
+async handleEditPromotion(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('editPromotionId').value;
+    const token = localStorage.getItem('supabase-token');
+    if (!token) { this.logout(true); return; }
+
+    const data = {
+        nombre: document.getElementById('editPromotionName').value,
+        descripcion: document.getElementById('editPromotionDescription').value || null,
+        tipo_descuento: document.getElementById('editPromotionType').value,
+        valor: parseFloat(document.getElementById('editPromotionValue').value),
+        tipo_regla: document.getElementById('editPromotionRuleType').value,
+        valor_regla: document.getElementById('editPromotionRuleValue').value || null,
+        fecha_inicio: document.getElementById('editPromotionStart').value,
+        fecha_fin: document.getElementById('editPromotionEnd').value || null,
+        activa: document.getElementById('editPromotionActive').checked
+    };
+
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Actualizando...';
+
+    try {
+        const response = await fetch(`${this.API_BASE_URL}/api/promociones/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            alert('Promoción actualizada con éxito');
+            this.cerrarModalEditar();
+            this.loadPromotions();
+        } else {
+            alert(`Error al actualizar: ${result.message || 'Desconocido'}`);
+        }
+    } catch (error) {
+        console.error('Error de red al actualizar promoción:', error);
+        alert('Error de red. Inténtalo de nuevo.');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Actualizar Promoción';
+    }
+}
+
+// Eliminar promoción
+async eliminarPromocion(id) {
+    if (!confirm("¿Deseas eliminar esta promoción?")) return;
+
+    const token = localStorage.getItem('supabase-token');
+    if (!token) { this.logout(true); return; }
+
+    try {
+        const response = await fetch(`${this.API_BASE_URL}/api/promociones/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert('Promoción eliminada con éxito');
+            this.loadPromotions();
+        } else {
+            alert(`Error al eliminar la promoción: ${data.message || 'Desconocido'}`);
+        }
+    } catch (error) {
+        console.error('Error al eliminar promoción:', error);
+        alert('Error de red. Inténtalo de nuevo.');
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Form Handlers
     async handleAddUser(e) {

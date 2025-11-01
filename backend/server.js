@@ -623,6 +623,79 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
     }
 });
 
+
+
+
+
+
+
+
+/**
+ * RUTA: Editar una promoción existente
+ * PUT /promociones/:id
+ * Objetivo: Editar una promoción en la tabla "promociones".
+ * Creado para: Panel de Administración
+ */
+app.put("/promociones/:id", async (req, res) => {
+  const { id } = req.params;
+  const { nombre, descripcion, tipo_descuento, descuento, tipo_regla, valor_regla, fecha_inicio, fecha_fin, activa} = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("promociones")
+      .update({
+        nombre,
+        descripcion,
+        tipo_descuento,
+        valor,
+        tipo_regla,
+        valor_regla,
+        fecha_inicio,
+        fecha_fin,
+        activa
+      })
+      .eq("id", id)
+      .select();
+
+    if (error) throw error;
+    res.status(200).json({ mensaje: "Promoción actualizada", data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al editar promoción" });
+  }
+});
+
+// Eliminar una promoción
+app.delete("/promociones/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { error } = await supabase
+      .from("promociones")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+    res.status(200).json({ mensaje: "Promoción eliminada" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al eliminar promoción" });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ===============================================
 // ⭐️ NUEVO: RUTAS DE API (INVENTARIO - MONGODB) ⭐️
 // ===============================================
