@@ -158,7 +158,14 @@ class AdminPanel {
     renderUsersTable() {
         const tbody = document.getElementById('usersTableBody');
         if (this.users.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #666;"><i class="fas fa-users" style="font-size: 3em; margin-bottom: 10px; display: block; opacity: 0.5;"></i>No hay usuarios registrados</td></tr>`;
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-users" style="font-size: 3em; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                        No hay usuarios registrados
+                    </td>
+                </tr>
+            `;
         } else {
             tbody.innerHTML = '';
             this.users.forEach(user => {
@@ -166,19 +173,19 @@ class AdminPanel {
                 const roleClass = this.getRoleBadgeClass(user.role);
                 row.innerHTML = `
                     <td>${user.id}</td>
-                    <td>${user.email}</td>
-                    <td><span class="badge ${roleClass}">${user.role}</span></td>
-                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                    <td>${user.status}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="openEditUserModal('${user.id}')">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                                                <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.id}')">
-                            <i class="fas fa-ban"></i> Desactivar
-                        </button>
-                    </td>
-                `;
+                    <td>${user.email}</td>
+                    <td><span class="badge ${roleClass}">${user.role}</span></td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>${user.status}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="openEditUserModal('${user.id}')">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.id}')">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                `;
                 tbody.appendChild(row);
             });
         }
@@ -187,7 +194,14 @@ class AdminPanel {
     renderPromotionsTable() {
         const tbody = document.getElementById('promotionsTableBody');
         if (this.promotions.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;"><i class="fas fa-tags" style="font-size: 3em; margin-bottom: 10px; display: block; opacity: 0.5;"></i>No hay promociones creadas</td></tr>`;
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-tags" style="font-size: 3em; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                        No hay promociones creadas
+                    </td>
+                </tr>
+            `;
         } else {
             tbody.innerHTML = '';
             this.promotions.forEach(promo => {
@@ -198,20 +212,21 @@ class AdminPanel {
                 const estado = promo.activa ? '<span class="badge badge-success">Activa</span>' : '<span class="badge badge-secondary">Inactiva</span>';
                 row.innerHTML = `
                     <td>${promo.nombre}</td>
-                    <td>${promo.descripcion || '-'}</td>
-                    <td>${promo.tipo_regla}</td>
-                    <td>${valor}</td>
-                    <td>${inicio} - ${fin}</td>
-                    <td>${estado}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="abrirModalEditar(${promo.id})">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="adminPanel.eliminarPromocion(${promo.id})">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    </td>
-                `;
+                    <td>${promo.descripcion || '-'}</td>
+                    <td>${promo.tipo_regla}</td>
+                    <td>${valor}</td>
+                    <td>${inicio} - ${fin}</td>
+                    <td>${estado}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="abrirModalEditar(${promo.id})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        
+                        <button class="btn btn-danger btn-sm" onclick="adminPanel.eliminarPromocion(${promo.id})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                `;
                 tbody.appendChild(row);
             });
         }
