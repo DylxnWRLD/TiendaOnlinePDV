@@ -31,7 +31,7 @@ process.on('uncaughtException', (err) => {
     console.error('--- EXCEPCIÓN NO CAPTURADA (CRASH) ---');
     console.error('Error:', err);
     // Intenta un cierre limpio, pero garantiza que el error se logre.
-    process.exit(1); 
+    process.exit(1);
 });
 
 // ⭐️ SOLUCIÓN CRÍTICA: Deshabilita la verificación de SSL.
@@ -192,9 +192,9 @@ app.get('/api/products', async (req, res) => {
         res.status(200).json({ items, total });
     } catch (error) {
         console.error('Error al listar productos:', error.message);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error interno del servidor al listar productos.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -207,21 +207,21 @@ app.delete('/api/products/:id', async (req, res) => {
     // NOTA: Añadir seguridad de AdminInventario aquí
     try {
         const id = req.params.id;
-        
+
         // Busca el producto por su ID de Mongo y elimínalo
         const productoEliminado = await Product.findByIdAndDelete(id);
-        
+
         if (!productoEliminado) {
             return res.status(404).json({ message: 'Producto no encontrado.' });
         }
-        
+
         res.status(200).json({ message: 'Producto eliminado exitosamente.' });
-        
+
     } catch (error) {
         console.error('Error al eliminar producto:', error.message);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error interno del servidor al eliminar.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -235,19 +235,19 @@ app.put('/api/products/:id', async (req, res) => {
     try {
         const id = req.params.id;
         const datosActualizados = req.body;
-        
+
         // Evitar que el _id se sobrescriba
-        delete datosActualizados._id; 
+        delete datosActualizados._id;
 
         // 1. Validar si el SKU se está cambiando a uno que ya existe
         if (datosActualizados.sku) {
-            const skuExistente = await Product.findOne({ 
-                sku: datosActualizados.sku, 
+            const skuExistente = await Product.findOne({
+                sku: datosActualizados.sku,
                 _id: { $ne: id } // Busca SKU en productos que NO sean este
             });
             if (skuExistente) {
-                return res.status(400).json({ 
-                    message: `Error: El SKU "${datosActualizados.sku}" ya está en uso por otro producto.` 
+                return res.status(400).json({
+                    message: `Error: El SKU "${datosActualizados.sku}" ya está en uso por otro producto.`
                 });
             }
         }
@@ -255,25 +255,25 @@ app.put('/api/products/:id', async (req, res) => {
         // 2. Buscar y actualizar el producto
         // { new: true } devuelve el documento ya actualizado
         const productoActualizado = await Product.findByIdAndUpdate(
-            id, 
-            datosActualizados, 
+            id,
+            datosActualizados,
             { new: true, runValidators: true }
         );
 
         if (!productoActualizado) {
             return res.status(404).json({ message: 'Producto no encontrado.' });
         }
-        
-        res.status(200).json({ 
+
+        res.status(200).json({
             message: 'Producto actualizado exitosamente.',
-            producto: productoActualizado 
+            producto: productoActualizado
         });
-        
+
     } catch (error) {
         console.error('Error al actualizar producto:', error.message);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error interno del servidor al actualizar.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -384,7 +384,7 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
         // 2. Obtener perfiles de public.users (para rol y STATUS REAL)
         const { data: profilesData, error: profileError } = await supabase
             .from('users')
-            .select('id, role_id, status'); 
+            .select('id, role_id, status');
 
         if (profileError) {
             console.error('Error al obtener perfiles/roles:', profileError.message);
@@ -395,8 +395,8 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
         const profileMap = new Map();
         profilesData.forEach(profile => {
             profileMap.set(profile.id, {
-                role: roleIdToName[profile.role_id] || 'Cliente', 
-                status: profile.status 
+                role: roleIdToName[profile.role_id] || 'Cliente',
+                status: profile.status
             });
         });
 
@@ -410,12 +410,12 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
                 return {
                     id: authUser.id,
                     email: authUser.email,
-                    role: profile.role, 
+                    role: profile.role,
                     created_at: authUser.created_at,
-                    status: profile.status 
+                    status: profile.status
                 };
             })
-            .filter(user => user !== null && user.status === 'Activo'); 
+            .filter(user => user !== null && user.status === 'Activo');
 
         res.status(200).json(combinedUsers);
 
@@ -468,7 +468,7 @@ app.post('/api/users', authenticateAdmin, async (req, res) => {
  */
 app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
     const userId = req.params.id;
-    const { role_id } = req.body; 
+    const { role_id } = req.body;
 
     if (!role_id) {
         return res.status(400).json({ message: 'El ID del rol es obligatorio.' });
@@ -477,10 +477,10 @@ app.put('/api/users/:id', authenticateAdmin, async (req, res) => {
     try {
         // Actualizamos 'public.users'.
         const { data, error } = await supabase
-            .from('users') 
+            .from('users')
             .update({ role_id: parseInt(role_id, 10) })
-            .eq('id', userId) 
-            .select(); 
+            .eq('id', userId)
+            .select();
 
         if (error) {
             console.error('Error al actualizar rol en public.users:', error.message);
@@ -508,10 +508,10 @@ app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
 
     try {
         const { data, error } = await supabase
-            .from('users') 
-            .update({ status: 'Inactivo' }) 
-            .eq('id', userId) 
-            .select(); 
+            .from('users')
+            .update({ status: 'Inactivo' })
+            .eq('id', userId)
+            .select();
 
         if (error) {
             console.error('Error al desactivar usuario en public.users:', error.message);
@@ -544,7 +544,7 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
         const { data, error } = await supabase
             .from('promociones')
             .select('*') // Traer todas las columnas
-            //.order('created_at', { ascending: false }); // Mostrar las más nuevas primero
+        //.order('created_at', { ascending: false }); // Mostrar las más nuevas primero
 
         // Manejar error de la base de datos
         if (error) {
@@ -569,15 +569,15 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
 
 app.post('/api/promociones', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para crear promoción (Admin) recibida!');
-    
-    const { 
-        nombre, 
-        descripcion, 
-        tipo_descuento, 
-        valor, 
-        tipo_regla, 
-        valor_regla, 
-        fecha_inicio, 
+
+    const {
+        nombre,
+        descripcion,
+        tipo_descuento,
+        valor,
+        tipo_regla,
+        valor_regla,
+        fecha_inicio,
         fecha_fin,
         activa
     } = req.body;
@@ -591,7 +591,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
 
     try {
         const { data, error } = await supabase
-            .from('promociones') 
+            .from('promociones')
             .insert([
                 {
                     nombre: nombre,
@@ -599,13 +599,13 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
                     tipo_descuento: tipo_descuento,
                     valor: valor,
                     tipo_regla: tipo_regla,
-                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'REBAJAS' || tipo_regla === 'FECHA ESPECIAL') ? null : valor_regla, 
+                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'REBAJAS' || tipo_regla === 'FECHA ESPECIAL') ? null : valor_regla,
                     fecha_inicio: fecha_inicio,
-                    fecha_fin: fecha_fin || null, 
+                    fecha_fin: fecha_fin || null,
                     activa: activa
                 }
             ])
-            .select(); 
+            .select();
 
         if (error) {
             console.error('Error de Supabase al insertar promoción:', error.message);
@@ -615,7 +615,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             return res.status(500).json({ message: 'Error al guardar la promoción.', details: error.message });
         }
 
-        res.status(201).json(data[0]); 
+        res.status(201).json(data[0]);
 
     } catch (error) {
         console.error('Error inesperado en /api/admin/promociones:', error.message);
@@ -637,50 +637,50 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
  * Creado para: Panel de Administración
  */
 app.put("/promociones/:id", async (req, res) => {
-  const { id } = req.params;
-  const { nombre, descripcion, tipo_descuento, descuento, tipo_regla, valor_regla, fecha_inicio, fecha_fin, activa} = req.body;
+    const { id } = req.params;
+    const { nombre, descripcion, tipo_descuento, descuento, tipo_regla, valor_regla, fecha_inicio, fecha_fin, activa } = req.body;
 
-  try {
-    const { data, error } = await supabase
-      .from("promociones")
-      .update({
-        nombre,
-        descripcion,
-        tipo_descuento,
-        valor,
-        tipo_regla,
-        valor_regla,
-        fecha_inicio,
-        fecha_fin,
-        activa
-      })
-      .eq("id", id)
-      .select();
+    try {
+        const { data, error } = await supabase
+            .from("promociones")
+            .update({
+                nombre,
+                descripcion,
+                tipo_descuento,
+                valor,
+                tipo_regla,
+                valor_regla,
+                fecha_inicio,
+                fecha_fin,
+                activa
+            })
+            .eq("id", id)
+            .select();
 
-    if (error) throw error;
-    res.status(200).json({ mensaje: "Promoción actualizada", data });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al editar promoción" });
-  }
+        if (error) throw error;
+        res.status(200).json({ mensaje: "Promoción actualizada", data });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error al editar promoción" });
+    }
 });
 
 // Eliminar una promoción
 app.delete("/promociones/:id", async (req, res) => {
-  const { id } = req.params;
+    const { id } = req.params;
 
-  try {
-    const { error } = await supabase
-      .from("promociones")
-      .delete()
-      .eq("id", id);
+    try {
+        const { error } = await supabase
+            .from("promociones")
+            .delete()
+            .eq("id", id);
 
-    if (error) throw error;
-    res.status(200).json({ mensaje: "Promoción eliminada" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al eliminar promoción" });
-  }
+        if (error) throw error;
+        res.status(200).json({ mensaje: "Promoción eliminada" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error al eliminar promoción" });
+    }
 });
 
 
@@ -709,39 +709,39 @@ app.delete("/promociones/:id", async (req, res) => {
 app.post('/api/products', async (req, res) => {
     // NOTA: Aquí deberíamos añadir un middleware de seguridad 
     // (como authenticateAdminInventario) más adelante.
-    
+
     console.log('Recibida petición para CREAR producto:', req.body);
-    
+
     try {
         // req.body contiene los datos del formulario (sku, name, price, etc.)
         const newProductData = req.body;
-        
+
         // 1. Validar si el SKU ya existe (para evitar duplicados)
         const skuExistente = await Product.findOne({ sku: newProductData.sku });
         if (skuExistente) {
-            return res.status(400).json({ 
-                message: `Error: El SKU "${newProductData.sku}" ya está registrado.` 
+            return res.status(400).json({
+                message: `Error: El SKU "${newProductData.sku}" ya está registrado.`
             });
         }
-        
+
         // 2. Crear el nuevo producto usando el "molde"
         const producto = new Product(newProductData);
-        
+
         // 3. Guardar en la base de datos
         await producto.save();
-        
+
         // 4. Enviar respuesta de éxito
-        res.status(201).json({ 
+        res.status(201).json({
             message: 'Producto agregado exitosamente.',
-            producto: producto 
+            producto: producto
         });
-        
+
     } catch (error) {
         // Manejo de errores (ej. campos requeridos faltantes)
         console.error('Error al guardar producto:', error.message);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error interno del servidor al guardar el producto.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -760,31 +760,31 @@ app.post('/api/products', async (req, res) => {
  * Objetivo: Buscar productos en MongoDB por nombre o SKU. Usada por el PDV.
  */
 app.get('/api/productos/buscar', getUserIdFromToken, async (req, res) => {
-    const query = req.query.q; 
-    
-    if (!query || query.length < 1) {
-        return res.status(200).json([]);
-    }
-    
-    try {
-        // ⭐️ CORRECCIÓN APLICADA: Ahora el SKU usa $regex e 'i' para búsqueda flexible ⭐️
-        const productos = await Product.find({ 
-            $or: [
-                { name: { $regex: query, $options: 'i' } },
-                { sku: { $regex: query, $options: 'i' } } // Búsqueda flexible por SKU/Código
-            ],
-            active: true // Asume que solo quieres productos activos
-        }).select('_id name price stockQty').limit(20); 
-        
-        return res.status(200).json(productos);
-        
-    } catch (error) {
-        console.error('Error en /api/productos/buscar:', error.message);
-        return res.status(500).json({ 
-            message: 'Error interno al buscar productos en inventario.',
-            details: error.message 
-        });
-    }
+    const query = req.query.q;
+
+    if (!query || query.length < 1) {
+        return res.status(200).json([]);
+    }
+
+    try {
+        // ⭐️ CORRECCIÓN APLICADA: Ahora el SKU usa $regex e 'i' para búsqueda flexible ⭐️
+        const productos = await Product.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { sku: { $regex: query, $options: 'i' } } // Búsqueda flexible por SKU/Código
+            ],
+            active: true // Asume que solo quieres productos activos
+        }).select('_id name price stockQty').limit(20);
+
+        return res.status(200).json(productos);
+
+    } catch (error) {
+        console.error('Error en /api/productos/buscar:', error.message);
+        return res.status(500).json({
+            message: 'Error interno al buscar productos en inventario.',
+            details: error.message
+        });
+    }
 });
 
 /**
@@ -797,40 +797,40 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
     if (typeof monto_inicial !== 'number' || monto_inicial < 0) {
         return res.status(400).json({ message: 'Monto inicial inválido o faltante.' });
     }
-    
+
     // 1. VERIFICACIÓN DE ROL CONTRA LA BD (role_id = 3)
     try {
         const { data: userData, error: roleError } = await supabase
             .from('users')
             .select('role_id')
             .eq('id', userId)
-            .maybeSingle(); 
+            .maybeSingle();
 
         if (roleError || !userData || userData.role_id !== 3) {
             if (roleError) console.error('[ROLE DB ERROR]:', roleError.message);
-            
+
             // Devolver 403 (Permiso Denegado) si no es Cajero
-            return res.status(403).json({ 
-                message: 'Permiso denegado. Se requiere el rol Cajero.' 
+            return res.status(403).json({
+                message: 'Permiso denegado. Se requiere el rol Cajero.'
             });
         }
-        
+
     } catch (error) {
         console.error('[FATAL ERROR]: Role verification failed:', error.message);
         return res.status(500).json({ message: 'Error interno: Fallo al verificar permisos.' });
     }
-    
+
     // 2. LLAMADA A LA FUNCIÓN DE APERTURA
-    
+
     try {
         const { data: corteData, error } = await supabase.rpc('abrir_caja_cajero', {
             p_id_cajero: userId,
             p_monto_inicial: monto_inicial
         });
-        
+
         if (error) {
             console.error('[RPC ERROR]: Error en abrir_caja_cajero:', error.message);
-            
+
             if (error.message.includes('CAJA_ACTIVA_EXISTENTE')) {
                 const { data: existingCorte } = await supabase
                     .from('cortes_caja')
@@ -838,19 +838,19 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
                     .eq('id_cajero', userId)
                     .eq('estado', 'ABIERTA')
                     .maybeSingle();
-                    
-                return res.status(409).json({ 
+
+                return res.status(409).json({
                     message: 'Ya tienes una caja abierta. Redirigiendo a tu turno activo.',
-                    corteId: existingCorte ? existingCorte.id_corte : null 
+                    corteId: existingCorte ? existingCorte.id_corte : null
                 });
             }
 
             return res.status(500).json({ message: 'Error en la base de datos al registrar la apertura.', details: error.message });
         }
 
-        res.status(200).json({ 
-            message: 'Caja abierta exitosamente.', 
-            corteId: corteData 
+        res.status(200).json({
+            message: 'Caja abierta exitosamente.',
+            corteId: corteData
         });
 
     } catch (error) {
@@ -860,7 +860,7 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
 });
 
 
-app.post('/api/ventas/finalizar',getUserIdFromToken, async (req, res) => {
+app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     // Nota: Asume que el middleware de autenticación ya extrajo el id_cajero
     const id_cajero = req.userId; // ID del usuario autenticado (cajero)
     const { id_corte, total_descuento, total_final, metodo_pago, detalles } = req.body;
@@ -896,10 +896,10 @@ app.post('/api/ventas/finalizar',getUserIdFromToken, async (req, res) => {
         const result = await Product.bulkWrite(bulkOps);
 
         // 3. Respuesta Exitosa
-        return res.status(200).json({ 
-            message: 'Venta registrada y stock actualizado.', 
-            id_venta, 
-            ticket_numero 
+        return res.status(200).json({
+            message: 'Venta registrada y stock actualizado.',
+            id_venta,
+            ticket_numero
         });
 
     } catch (error) {
@@ -931,12 +931,12 @@ app.post('/api/caja/cerrar', getUserIdFromToken, async (req, res) => {
             // Captura el error de la función (ej: CORTE_NO_ACTIVO)
             return res.status(400).json({ message: error.message });
         }
-        
+
         // El resultado 'data' contiene el reporte de la función:
         // monto_inicial, ventas_efectivo, monto_calculado, diferencia
-        
+
         // 2. Respuesta Exitosa con el reporte final
-        return res.status(200).json({ 
+        return res.status(200).json({
             message: 'Corte de caja cerrado con éxito.',
             reporte: data,
             diferencia: data.diferencia
