@@ -166,31 +166,30 @@ class AdminPanel {
                 </td>
             </tr>
         `;
-            return;
+        } else {
+            tbody.innerHTML = '';
+            this.users.forEach(user => {
+                const row = document.createElement('tr');
+                const roleClass = this.getRoleBadgeClass(user.role);
+                row.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.email}</td>
+                <td><span class="badge ${roleClass}">${user.role}</span></td>
+                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                <td>${user.status}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="openEditUserModal('${user.id}')">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.id}')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </td>
+            `;
+                tbody.appendChild(row);
+            });
         }
-        tbody.innerHTML = '';
-        this.users.forEach(user => {
-            const row = document.createElement('tr');
-            const roleClass = this.getRoleBadgeClass(user.role);
-            row.innerHTML = `
-            <td>${user.id}</td>
-            <td>${user.email}</td>
-            <td><span class="badge ${roleClass}">${user.role}</span></td>
-            <td>${new Date(user.created_at).toLocaleDateString()}</td>
-            <td>${user.status}</td>
-            <td>
-                <button class="btn btn-warning btn-sm" onclick="openEditUserModal('${user.id}')">
-                    <i class="fas fa-edit"></i> Editar
-                </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.id}')">
-                    <i class="fas fa-trash"></i> Eliminar
-                </button>
-            </td>
-        `;
-            tbody.appendChild(row);
-        });
     }
-
 
     renderPromotionsTable() {
         const tbody = document.getElementById('promotionsTableBody');
@@ -204,37 +203,38 @@ class AdminPanel {
                 </td>
             </tr>
         `;
-            return;
-        }
-        tbody.innerHTML = '';
-        this.promotions.forEach(promo => {
-            const row = document.createElement('tr');
-            const valor = promo.tipo_descuento === 'PORCENTAJE' ? `${promo.valor}%` : `$${promo.valor}`;
-            const inicio = new Date(promo.fecha_inicio).toLocaleDateString();
-            const fin = promo.fecha_fin ? new Date(promo.fecha_fin).toLocaleDateString() : 'Indefinido';
-            const estado = promo.activa
-                ? '<span class="badge badge-success">Activa</span>'
-                : '<span class="badge badge-secondary">Inactiva</span>';
+        } else {
+            tbody.innerHTML = '';
+            this.promotions.forEach(promo => {
+                const row = document.createElement('tr');
+                const valor = promo.tipo_descuento === 'PORCENTAJE' ? `${promo.valor}%` : `$${promo.valor}`;
+                const inicio = new Date(promo.fecha_inicio).toLocaleDateString();
+                const fin = promo.fecha_fin ? new Date(promo.fecha_fin).toLocaleDateString() : 'Indefinido';
+                const estado = promo.activa
+                    ? '<span class="badge badge-success">Activa</span>'
+                    : '<span class="badge badge-secondary">Inactiva</span>';
 
-            row.innerHTML = `
-            <td>${promo.nombre}</td>
-            <td>${promo.descripcion || '-'}</td>
-            <td>${promo.tipo_regla}</td>
-            <td>${valor}</td>
-            <td>${inicio} - ${fin}</td>
-            <td>${estado}</td>
-            <td>
-                <button class="btn btn-warning btn-sm" onclick="abrirModalEditar(${promo.id})">
-                    <i class="fas fa-edit"></i> Editar
-                </button>
-                <button class="btn btn-danger btn-sm" onclick="adminPanel.eliminarPromocion(${promo.id})">
-                    <i class="fas fa-trash"></i> Eliminar
-                </button>
-            </td>
-        `;
-            tbody.appendChild(row);
-        });
+                row.innerHTML = `
+                <td>${promo.nombre}</td>
+                <td>${promo.descripcion || '-'}</td>
+                <td>${promo.tipo_regla}</td>
+                <td>${valor}</td>
+                <td>${inicio} - ${fin}</td>
+                <td>${estado}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="abrirModalEditar(${promo.id})">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="adminPanel.eliminarPromocion(${promo.id})">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </td>
+            `;
+                tbody.appendChild(row);
+            });
+        }
     }
+
 
 
     renderRecentActivity() {
