@@ -8,6 +8,7 @@ class AdminPanel {
         this.users = [];
         this.promotions = [];
         this.activity = [];
+        this.performanceChartInstance = null;
 
         // Definir la URL base de la API
         this.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -72,7 +73,7 @@ class AdminPanel {
                 this.switchReportTab(reportTab);
             });
         });
-        
+
         // Formularios
         document.getElementById('addUserForm').addEventListener('submit', (e) => this.handleAddUser(e));
         document.getElementById('editUserForm').addEventListener('submit', (e) => this.handleEditUser(e));
@@ -83,7 +84,7 @@ class AdminPanel {
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
 
-    
+
         const ruleTypeSelect = document.getElementById('promotionRuleType');
         const ruleValueGroup = document.getElementById('promotionRuleValueGroup');
         const ruleValueInput = document.getElementById('promotionRuleValue');
@@ -121,10 +122,11 @@ class AdminPanel {
         this.renderUsersTable();
         this.renderPromotionsTable();
         this.renderRecentActivity();
+        this.loadAllStats();
     }
 
     switchTab(tabName) {
-       
+
         console.log('Cambiando a tab:', tabName);
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.sidebar-menu a').forEach(link => link.classList.remove('active'));
@@ -144,11 +146,14 @@ class AdminPanel {
             case 'promotions':
                 this.loadPromotions();
                 break;
+            case 'performance':
+                this.loadAllStats();
+                break;
         }
     }
 
     switchReportTab(tabName) {
-       
+
         console.log('Cambiando a report tab:', tabName);
         document.querySelectorAll('.report-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('[data-report-tab]').forEach(tab => tab.classList.remove('active'));
@@ -165,7 +170,7 @@ class AdminPanel {
     }
 
     updateDashboardStats(stats) {
-        
+
         document.getElementById('totalSales').textContent = `$${stats.totalSales.toLocaleString()}`;
         document.getElementById('totalUsers').textContent = stats.totalUsers.toLocaleString();
         document.getElementById('totalProducts').textContent = stats.totalProducts.toLocaleString();
@@ -214,7 +219,7 @@ class AdminPanel {
         }
     }
 
-  
+
     renderPromotionsTable() {
         const tbody = document.getElementById('promotionsTableBody');
 
@@ -342,107 +347,107 @@ class AdminPanel {
 
 
 
-// Abrir modal de edición
-abrirModalEditar(id) {
-    const promo = this.promotions.find(p => p.id === id);
-    if (!promo) return alert('Promoción no encontrada');
+    // Abrir modal de edición
+    abrirModalEditar(id) {
+        const promo = this.promotions.find(p => p.id === id);
+        if (!promo) return alert('Promoción no encontrada');
 
-    document.getElementById('editPromotionId').value = promo.id;
-    document.getElementById('editPromotionName').value = promo.nombre;
-    document.getElementById('editPromotionDescription').value = promo.descripcion || '';
-    document.getElementById('editPromotionType').value = promo.tipo_descuento;
-    document.getElementById('editPromotionValue').value = promo.valor;
-    document.getElementById('editPromotionRuleType').value = promo.tipo_regla;
-    document.getElementById('editPromotionRuleValue').value = promo.valor_regla || '';
-    document.getElementById('editPromotionStart').value = promo.fecha_inicio.slice(0,16);
-    document.getElementById('editPromotionEnd').value = promo.fecha_fin ? promo.fecha_fin.slice(0,16) : '';
-    document.getElementById('editPromotionActive').checked = promo.activa;
+        document.getElementById('editPromotionId').value = promo.id;
+        document.getElementById('editPromotionName').value = promo.nombre;
+        document.getElementById('editPromotionDescription').value = promo.descripcion || '';
+        document.getElementById('editPromotionType').value = promo.tipo_descuento;
+        document.getElementById('editPromotionValue').value = promo.valor;
+        document.getElementById('editPromotionRuleType').value = promo.tipo_regla;
+        document.getElementById('editPromotionRuleValue').value = promo.valor_regla || '';
+        document.getElementById('editPromotionStart').value = promo.fecha_inicio.slice(0, 16);
+        document.getElementById('editPromotionEnd').value = promo.fecha_fin ? promo.fecha_fin.slice(0, 16) : '';
+        document.getElementById('editPromotionActive').checked = promo.activa;
 
-    document.getElementById('editPromotionModal').style.display = 'flex';
-}
-
-// Cerrar modal de edición
-cerrarModalEditar() {
-    document.getElementById('editPromotionModal').style.display = 'none';
-    document.getElementById('editPromotionForm').reset();
-}
-
-// Enviar cambios al backend
-async handleEditPromotion(e) {
-    e.preventDefault();
-
-    const id = document.getElementById('editPromotionId').value;
-    const token = localStorage.getItem('supabase-token');
-    if (!token) { this.logout(true); return; }
-
-    const data = {
-        nombre: document.getElementById('editPromotionName').value,
-        descripcion: document.getElementById('editPromotionDescription').value || null,
-        tipo_descuento: document.getElementById('editPromotionType').value,
-        valor: parseFloat(document.getElementById('editPromotionValue').value),
-        tipo_regla: document.getElementById('editPromotionRuleType').value,
-        valor_regla: document.getElementById('editPromotionRuleValue').value || null,
-        fecha_inicio: document.getElementById('editPromotionStart').value,
-        fecha_fin: document.getElementById('editPromotionEnd').value || null,
-        activa: document.getElementById('editPromotionActive').checked
-    };
-
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = 'Actualizando...';
-
-    try {
-        const response = await fetch(`${this.API_BASE_URL}/api/promociones/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-        if (response.ok) {
-            alert('Promoción actualizada con éxito');
-            this.cerrarModalEditar();
-            this.loadPromotions();
-        } else {
-            alert(`Error al actualizar: ${result.message || 'Desconocido'}`);
-        }
-    } catch (error) {
-        console.error('Error de red al actualizar promoción:', error);
-        alert('Error de red. Inténtalo de nuevo.');
-    } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Actualizar Promoción';
+        document.getElementById('editPromotionModal').style.display = 'flex';
     }
-}
 
-// Eliminar promoción
-async eliminarPromocion(id) {
-    if (!confirm("¿Deseas eliminar esta promoción?")) return;
-
-    const token = localStorage.getItem('supabase-token');
-    if (!token) { this.logout(true); return; }
-
-    try {
-        const response = await fetch(`${this.API_BASE_URL}/api/promociones/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            alert('Promoción eliminada con éxito');
-            this.loadPromotions();
-        } else {
-            alert(`Error al eliminar la promoción: ${data.message || 'Desconocido'}`);
-        }
-    } catch (error) {
-        console.error('Error al eliminar promoción:', error);
-        alert('Error de red. Inténtalo de nuevo.');
+    // Cerrar modal de edición
+    cerrarModalEditar() {
+        document.getElementById('editPromotionModal').style.display = 'none';
+        document.getElementById('editPromotionForm').reset();
     }
-}
+
+    // Enviar cambios al backend
+    async handleEditPromotion(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('editPromotionId').value;
+        const token = localStorage.getItem('supabase-token');
+        if (!token) { this.logout(true); return; }
+
+        const data = {
+            nombre: document.getElementById('editPromotionName').value,
+            descripcion: document.getElementById('editPromotionDescription').value || null,
+            tipo_descuento: document.getElementById('editPromotionType').value,
+            valor: parseFloat(document.getElementById('editPromotionValue').value),
+            tipo_regla: document.getElementById('editPromotionRuleType').value,
+            valor_regla: document.getElementById('editPromotionRuleValue').value || null,
+            fecha_inicio: document.getElementById('editPromotionStart').value,
+            fecha_fin: document.getElementById('editPromotionEnd').value || null,
+            activa: document.getElementById('editPromotionActive').checked
+        };
+
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Actualizando...';
+
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/api/promociones/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('Promoción actualizada con éxito');
+                this.cerrarModalEditar();
+                this.loadPromotions();
+            } else {
+                alert(`Error al actualizar: ${result.message || 'Desconocido'}`);
+            }
+        } catch (error) {
+            console.error('Error de red al actualizar promoción:', error);
+            alert('Error de red. Inténtalo de nuevo.');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Actualizar Promoción';
+        }
+    }
+
+    // Eliminar promoción
+    async eliminarPromocion(id) {
+        if (!confirm("¿Deseas eliminar esta promoción?")) return;
+
+        const token = localStorage.getItem('supabase-token');
+        if (!token) { this.logout(true); return; }
+
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/api/promociones/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert('Promoción eliminada con éxito');
+                this.loadPromotions();
+            } else {
+                alert(`Error al eliminar la promoción: ${data.message || 'Desconocido'}`);
+            }
+        } catch (error) {
+            console.error('Error al eliminar promoción:', error);
+            alert('Error de red. Inténtalo de nuevo.');
+        }
+    }
 
 
 
@@ -590,7 +595,7 @@ async eliminarPromocion(id) {
         };
 
         console.log('Enviando promoción:', promotionData);
-        
+
         // Desactivar botón (buena práctica)
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
@@ -606,12 +611,12 @@ async eliminarPromocion(id) {
                 },
                 body: JSON.stringify(promotionData),
             });
-            
+
             const data = await response.json(); // Leer respuesta JSON
 
             if (response.ok) {
                 alert('¡Promoción creada con éxito!');
-                this.closeAddPromotionModal(); 
+                this.closeAddPromotionModal();
                 this.loadPromotions(); // <-- Recargar la tabla de promociones
             } else {
                 alert(`Error al crear la promoción: ${data.message || 'Error desconocido'}`);
@@ -725,7 +730,7 @@ async eliminarPromocion(id) {
 
     setupPerformanceChart() {
         const ctx = document.getElementById('performanceChart').getContext('2d');
-        new Chart(ctx, {
+        this.performanceChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
@@ -807,7 +812,7 @@ async eliminarPromocion(id) {
         }
     }
 
-   
+
     async loadPromotions() {
         console.log('Cargando promociones desde la API...');
 
@@ -815,12 +820,12 @@ async eliminarPromocion(id) {
         if (!token) { this.logout(true); return; }
 
         try {
-            
+
             const response = await fetch(`${this.API_BASE_URL}/api/promociones`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -835,6 +840,37 @@ async eliminarPromocion(id) {
             }
         } catch (error) {
             console.error('Error de red al cargar promociones:', error);
+        }
+    }
+
+    async loadAllStats() {
+        console.log('Cargando todas las estadísticas...');
+        const token = localStorage.getItem('supabase-token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${this.API_BASE_URL}/api/stats/full`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const stats = await response.json();
+            if (!response.ok) throw new Error(stats.message);
+
+            // 1. Actualizar TODAS las 8 tarjetas (Dashboard y Performance)
+            // La función updateDashboardStats ya maneja todos los IDs
+            this.updateDashboardStats(stats);
+
+            // 2. Actualizar el gráfico de rendimiento
+            if (this.performanceChartInstance && stats.chartData) {
+                this.performanceChartInstance.data.labels = stats.chartData.labels;
+                this.performanceChartInstance.data.datasets[0].data = stats.chartData.sales; // Ventas Físicas
+                this.performanceChartInstance.data.datasets[1].data = new Array(stats.chartData.labels.length).fill(0); // Ventas Online (siempre 0)
+                this.performanceChartInstance.update();
+            }
+
+        } catch (error) {
+            console.error('Error al cargar estadísticas completas:', error.message);
+            alert(`No se pudieron cargar las estadísticas: ${error.message}`);
         }
     }
 
