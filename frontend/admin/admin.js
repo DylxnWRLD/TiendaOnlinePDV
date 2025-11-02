@@ -186,6 +186,14 @@ class AdminPanel {
                         </button>
                     </td>
                 `;
+
+                const idCell = row.querySelector('td:first-child');
+                if (idCell) {
+                    idCell.style.maxWidth = '150px';
+                    idCell.style.overflowX = 'auto';
+                    idCell.style.whiteSpace = 'nowrap';
+                }
+
                 tbody.appendChild(row);
             });
         }
@@ -227,6 +235,20 @@ class AdminPanel {
                         </button>
                     </td>
                 `;
+
+                const descCell = row.querySelector('td:nth-child(2)');
+                if (descCell) {
+                    descCell.style.maxWidth = '200px';
+                    descCell.style.overflowX = 'auto';
+                    descCell.style.whiteSpace = 'nowrap';
+                }
+
+                // Buscamos la celda de Vigencia (la quinta)
+                const vigenciaCell = row.querySelector('td:nth-child(5)');
+                if (vigenciaCell) {
+                    vigenciaCell.style.whiteSpace = 'nowrap';
+                }
+
                 tbody.appendChild(row);
             });
         }
