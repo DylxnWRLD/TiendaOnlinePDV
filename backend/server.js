@@ -684,7 +684,49 @@ app.delete("/promociones/:id", async (req, res) => {
 });
 
 // ===============================================
-// ⭐️ RUTA DE ESTADÍSTICAS
+// NUEVO: RUTA DE REPORTE DE VENTAS (DINÁMICO)
+// ===============================================
+
+app.get('/api/reports/sales', authenticateAdmin, async (req, res) => {
+    const { startDate, endDate } = req.query;
+    console.log(`Petición de Reporte de Ventas de ${startDate} a ${endDate}`);
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Se requieren fechas de inicio y fin.' });
+    }
+    
+    try {
+        // Llamar a la nueva función SQL que acepta fechas
+        const { data, error } = await supabase.rpc('get_sales_by_date_range', {
+            start_date: startDate,
+            end_date: endDate
+        });
+
+        if (error) {
+             console.error('Error en RPC get_sales_by_date_range:', error.message);
+             // Error común si la función no se creó:
+             if (error.message.includes('function get_sales_by_date_range')) {
+                 return res.status(500).json({ message: 'Error Crítico: La función SQL "get_sales_by_date_range" no existe en Supabase. Asegúrate de crearla en el SQL Editor.' });
+             }
+             throw error;
+        }
+
+        // Formato para Chart.js
+        const report = {
+            labels: data.map(d => d.day_label),
+            data: data.map(d => d.total_sales)
+        };
+
+        res.status(200).json(report);
+
+    } catch (error) {
+        console.error('Error en /api/reports/sales:', error.message);
+        res.status(500).json({ message: 'Error al generar reporte de ventas.' });
+    }
+});
+
+// ===============================================
+// ⭐️ RUTA DE ESTADÍSTICAS (ACTUALIZADA CON REPORTES)
 // ===============================================
 app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
     console.log('Petición para obtener TODAS las estadísticas (Admin) recibida.');
@@ -700,33 +742,57 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
             activeUsers,     
             activeCustomers, 
             activePromos,    
-            chartData        
+            chartData,
+            usersReportData
         ] = await Promise.all([
             supabase.from('ventas').select('total_final, fecha_hora'),
             supabase.from('ventas').select('*', { count: 'exact', head: true }),
             supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'Activo'),
-            supabase.from('users').select('*', { count: 'exact', head: true }).eq('role_id', 2).eq('status', 'Activo'), // Asumiendo 2 = Cliente
+            supabase.from('users').select('*', { count: 'exact', head: true }).eq('role_id', 2).eq('status', 'Activo'),
             supabase.from('promociones').select('*', { count: 'exact', head: true }).eq('activa', true),
-            supabase.rpc('get_daily_sales_last_7_days') // ⚠️ Esta también la corregiremos (Paso 2)
+            supabase.rpc('get_daily_sales_last_7_days'),
+            supabase.from('users').select('role_id, status').eq('status', 'Activo')
         ]);
 
-        // --- Consulta a MongoDB ---
-        const totalProducts = await Product.countDocuments(); 
+        // --- Consultas a MongoDB ---
+        const [
+            totalProducts,
+            productsReportData
+        ] = await Promise.all([
+            Product.countDocuments(),
+            Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
+        ]);
 
         // --- Procesar datos de Supabase ---
         const allSales = salesData.data || [];
         
-        // Ingresos Mensuales (Rendimiento)
         const monthlyRevenue = allSales
             .filter(sale => new Date(sale.fecha_hora) >= firstDayOfMonth)
             .reduce((acc, v) => acc + v.total_final, 0);
         
-        // Ventas Totales (Dashboard)
         const totalSales = allSales.reduce((acc, v) => acc + v.total_final, 0);
 
-        // --- Procesar Gráfico ---
+        // --- Procesar Gráfico (Rendimiento) ---
         const labels = chartData.data ? chartData.data.map(d => d.day_label) : [];
         const sales = chartData.data ? chartData.data.map(d => d.total_sales) : [];
+
+        // Procesar Reporte de Usuarios
+        const roleIdToName = { 1: 'Admin', 2: 'Cliente', 3: 'Cajero', 4: 'AdminInventario' };
+        const userCounts = (usersReportData.data || []).reduce((acc, user) => {
+            const roleName = roleIdToName[user.role_id] || 'Cliente';
+            acc[roleName] = (acc[roleName] || 0) + 1;
+            return acc;
+        }, {});
+        const usersReport = {
+            labels: Object.keys(userCounts),
+            data: Object.values(userCounts)
+        };
+
+        //Procesar Reporte de Productos
+        const productsReport = {
+            labels: productsReportData.map(p => p.name),
+            data: productsReportData.map(p => p.stockQty)
+        };
 
         // --- Enviar respuesta completa ---
         res.status(200).json({
@@ -740,11 +806,14 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
             totalOrders: totalOrders.count || 0,
             activeCustomers: activeCustomers.count || 0,
             conversionRate: 0, 
-            // Chart Data
+            // Chart Data (Rendimiento)
             chartData: {
                 labels: labels,
                 sales: sales
-            }
+            },
+            // Report Data (Reportes)
+            usersReport: usersReport,
+            productsReport: productsReport
         });
 
     } catch (error) {

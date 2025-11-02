@@ -711,12 +711,12 @@ class AdminPanel {
 
     setupProductsChart() {
         const ctx = document.getElementById('productsChart').getContext('2d');
-        new Chart(ctx, {
+        this.productsChartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Producto A', 'Producto B', 'Producto C', 'Producto D', 'Producto E'],
                 datasets: [{
-                    label: 'Unidades Vendidas',
+                    label: 'Cantidad en Stock',
                     data: [0, 0, 0, 0, 0],
                     backgroundColor: '#9b59b6'
                 }]
@@ -754,9 +754,45 @@ class AdminPanel {
         });
     }
 
-    generateReports() {
-        console.log('Generando reportes...');
+    async generateSalesReport() { 
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
 
+        if (!startDate || !endDate) {
+            alert('Por favor selecciona ambas fechas');
+            return;
+        }
+
+        console.log('Generando reporte de ventas...');
+        const token = localStorage.getItem('supabase-token');
+        if (!token) return;
+
+        const button = document.querySelector('#salesReport button');
+        button.disabled = true;
+        button.textContent = 'Generando...';
+
+        try {
+            // Llama a la nueva ruta de reporte de ventas
+            const response = await fetch(`${this.API_BASE_URL}/api/reports/sales?startDate=${startDate}&endDate=${endDate}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const report = await response.json();
+            if (!response.ok) throw new Error(report.message);
+
+            // Actualizar el gráfico de ventas
+            if (this.salesChartInstance) {
+                this.salesChartInstance.data.labels = report.labels;
+                this.salesChartInstance.data.datasets[0].data = report.data;
+                this.salesChartInstance.update();
+            }
+
+        } catch (error) {
+            console.error('Error al generar reporte de ventas:', error.message);
+            alert(`No se pudo generar el reporte: ${error.message}`);
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Generar Reporte';
+        }
     }
 
     generateSalesReport() {
@@ -868,6 +904,20 @@ class AdminPanel {
                 this.performanceChartInstance.update();
             }
 
+            // 3. Actualizar gráfico de Reporte de Usuarios
+            if (this.usersChartInstance && stats.usersReport) {
+                this.usersChartInstance.data.labels = stats.usersReport.labels;
+                this.usersChartInstance.data.datasets[0].data = stats.usersReport.data;
+                this.usersChartInstance.update();
+            }
+
+            // 4. Actualizar gráfico de Reporte de Productos
+            if (this.productsChartInstance && stats.productsReport) {
+                this.productsChartInstance.data.labels = stats.productsReport.labels;
+                this.productsChartInstance.data.datasets[0].data = stats.productsReport.data;
+                this.productsChartInstance.update();
+            }
+
         } catch (error) {
             console.error('Error al cargar estadísticas completas:', error.message);
             alert(`No se pudieron cargar las estadísticas: ${error.message}`);
@@ -883,8 +933,6 @@ class AdminPanel {
             localStorage.removeItem('user-email');
             localStorage.removeItem('user-role');
 
-            // Asumiendo que login.html está en una carpeta 'login'
-            // al mismo nivel que la carpeta 'admin'
             window.location.href = '../login/login.html';
         };
 
