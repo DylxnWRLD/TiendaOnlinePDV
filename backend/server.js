@@ -684,42 +684,41 @@ app.delete("/promociones/:id", async (req, res) => {
 });
 
 // ===============================================
-// ⭐️ NUEVO: RUTA DE ESTADÍSTICAS (DASHBOARD Y RENDIMIENTO) ⭐️
+// ⭐️ RUTA DE ESTADÍSTICAS
 // ===============================================
 app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
     console.log('Petición para obtener TODAS las estadísticas (Admin) recibida.');
     try {
         // --- Fechas ---
         const today = new Date();
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
         // --- Consultas a Supabase (PostgreSQL) ---
-        // Usamos Promise.all para correrlas en paralelo y ahorrar tiempo
         const [
-            salesData,       // Para calcular ingresos
-            totalOrders,     // Pedidos totales (Rendimiento)
-            activeUsers,     // Usuarios Activos (Dashboard)
-            activeCustomers, // Clientes Activos (Rendimiento)
-            activePromos,    // Promociones Activas (Dashboard)
-            chartData        // Gráfico (Rendimiento)
+            salesData,       
+            totalOrders,     
+            activeUsers,     
+            activeCustomers, 
+            activePromos,    
+            chartData        
         ] = await Promise.all([
-            supabase.from('ventas').select('total_final, created_at'),
+            supabase.from('ventas').select('total_final, fecha_hora'),
             supabase.from('ventas').select('*', { count: 'exact', head: true }),
             supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'Activo'),
             supabase.from('users').select('*', { count: 'exact', head: true }).eq('role_id', 2).eq('status', 'Activo'), // Asumiendo 2 = Cliente
             supabase.from('promociones').select('*', { count: 'exact', head: true }).eq('activa', true),
-            supabase.rpc('get_daily_sales_last_7_days'),
+            supabase.rpc('get_daily_sales_last_7_days') // ⚠️ Esta también la corregiremos (Paso 2)
         ]);
 
         // --- Consulta a MongoDB ---
-        const totalProducts = await Product.countDocuments(); // Productos (Dashboard)
+        const totalProducts = await Product.countDocuments(); 
 
         // --- Procesar datos de Supabase ---
         const allSales = salesData.data || [];
         
         // Ingresos Mensuales (Rendimiento)
         const monthlyRevenue = allSales
-            .filter(sale => new Date(sale.created_at) >= new Date(firstDayOfMonth))
+            .filter(sale => new Date(sale.fecha_hora) >= firstDayOfMonth)
             .reduce((acc, v) => acc + v.total_final, 0);
         
         // Ventas Totales (Dashboard)
@@ -740,7 +739,7 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
             monthlyRevenue: monthlyRevenue,
             totalOrders: totalOrders.count || 0,
             activeCustomers: activeCustomers.count || 0,
-            conversionRate: 0, // No tenemos datos de visitantes para esto
+            conversionRate: 0, 
             // Chart Data
             chartData: {
                 labels: labels,
@@ -750,7 +749,6 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
 
     } catch (error) {
         console.error('Error al cargar estadísticas completas:', error.message);
-        // Si el error es por la función RPC, notificarlo
         if (error.message.includes('function get_daily_sales_last_7_days does not exist')) {
              return res.status(500).json({ message: 'Error Crítico: La función SQL "get_daily_sales_last_7_days" no existe en la base de datos Supabase. Por favor, créala usando el SQL Editor.' });
         }
