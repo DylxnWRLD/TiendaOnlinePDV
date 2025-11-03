@@ -1,4 +1,4 @@
-/* --- CSS GENERAL (TUYO) --- */
+/* --- CSS GENERAL --- */
 * {
   margin: 0;
   padding: 0;
@@ -132,14 +132,18 @@ body {
   scroll-behavior: smooth;
 }
 
+/* ✅ TODAS LAS CARDS MISMO TAMAÑO */
 .product-card {
-  min-width: 160px;
+  width: 160px;
+  min-height: 220px;
   margin: 10px;
   background-color: #fcfcff;
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 2px 6px rgba(41, 23, 75, 0.3);
   transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card:hover {
@@ -147,16 +151,22 @@ body {
   box-shadow: 0 4px 12px rgba(41, 23, 75, 0.4);
 }
 
+/* ✅ IMAGEN AJUSTADA SIN DEFORMARSE */
 .product-card img {
   width: 100%;
+  height: 120px;
+  object-fit: cover;
   border-radius: 10px 10px 0 0;
 }
 
+/* ✅ TEXTO QUE CABE Y NO SE SALE */
 .product-card p {
   padding: 10px;
   color: #3f3d56;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  word-wrap: break-word;
+  white-space: normal;
 }
 
 .arrow {
@@ -183,7 +193,7 @@ body {
 
 @media (max-width: 700px) {
   .carousel-section { width: 95%; padding: 15px; }
-  .product-card { min-width: 130px; }
+  .product-card { width: 130px; min-height: 200px; }
   .arrow { font-size: 1.4rem; padding: 8px; }
 }
 
@@ -225,21 +235,10 @@ body {
   margin-left: 5px;
 }
 
-/* ✅ SOLO LAS ÚLTIMAS 3 CARDS EN LA SECCIÓN "card" SERÁN MÁS PEQUEÑAS */
-.card .product-card:nth-last-child(-n + 3) {
-  min-width: 110px;
-  max-width: 110px;
-  padding: 6px;
-}
-
-.card .product-card:nth-last-child(-n + 3) img {
-  height: 80px;
-}
-
 .card {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 10px; /* separa visualmente las cards */
-  flex-wrap: nowrap; /* evita que hagan salto de línea */
+  gap: 10px;
+  flex-wrap: nowrap;
 }
