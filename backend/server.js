@@ -278,6 +278,39 @@ app.put('/api/products/:id', async (req, res) => {
     }
 });
 
+/**
+ * RUTA: GET /api/products/:id
+ * Objetivo: Obtener un solo producto por su ID de Mongo.
+ * Creado para: Llenar el formulario de "Editar producto".
+ */
+app.get('/api/products/:id', async (req, res) => {
+    // NOTA: Añadir seguridad de AdminInventario aquí
+    try {
+        const id = req.params.id;
+
+        // Busca el producto por su ID de Mongo
+        const producto = await Product.findById(id);
+
+        if (!producto) {
+            return res.status(404).json({ message: 'Producto no encontrado.' });
+        }
+
+        // Devuelve el producto encontrado
+        res.status(200).json(producto);
+
+    } catch (error) {
+        console.error('Error al obtener producto por ID:', error.message);
+        // Maneja el caso de un ID de Mongo mal formado
+        if (error.kind === 'ObjectId') {
+             return res.status(404).json({ message: 'ID de producto no válido.' });
+        }
+        res.status(500).json({ 
+            message: 'Error interno del servidor.',
+            details: error.message 
+        });
+    }
+});
+
 // Ruta de LOGIN PRINCIPAL
 app.post('/api/login', async (req, res) => {
     console.log('¡Petición de Login Recibida!');
