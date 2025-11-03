@@ -329,7 +329,6 @@ function fillForm(p){
   $("#stock").value = p?.stockQty ?? 0;
   $("#minStock").value = p?.minStock ?? 0;
   $("#desc").value = p?.description || "";
-  $("#image").value = p?.images?.[0] || "";
   $("#active").checked = !!(p?.active ?? true);
 }
 
