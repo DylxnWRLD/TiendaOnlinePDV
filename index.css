@@ -235,3 +235,11 @@ body {
 .card .product-card:nth-last-child(-n + 3) img {
   height: 80px;
 }
+
+.card {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px; /* separa visualmente las cards */
+  flex-wrap: nowrap; /* evita que hagan salto de línea */
+}
