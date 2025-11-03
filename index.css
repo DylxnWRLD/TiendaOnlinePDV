@@ -160,6 +160,21 @@ body {
   font-size: 0.95rem;
 }
 
+/* ✅ SOLO LAS ÚLTIMAS 3 TARJETAS MÁS PEQUEÑAS */
+.product-card:nth-last-child(-n + 3) {
+  min-width: 110px;
+  max-width: 110px;
+  margin: 6px;
+}
+
+.product-card:nth-last-child(-n + 3) img {
+  height: 80px;
+}
+
+.product-card:nth-last-child(-n + 3) p {
+  font-size: 0.75rem;
+}
+
 /* Flechas laterales */
 .arrow {
   background-color: rgba(33, 25, 73, 0.8);
@@ -238,4 +253,20 @@ body {
   color: gray;
   font-size: 14px;
   margin-left: 5px;
+}
+
+/*Tarjetas más pequeñas*/
+.small-cards .product-card {
+  min-width: 110px;
+  max-width: 110px;
+}
+
+.small-cards .product-card img {
+  height: 80px;
+}
+
+/* Mantener las últimas 3 juntas en una fila */
+.carousel-container {
+  display: flex;
+  flex-wrap: nowrap;
 }
