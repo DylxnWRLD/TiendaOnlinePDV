@@ -61,11 +61,11 @@ class HttpAdapter {
     if(!r.ok) throw new Error((await r.json()).message||"Error creando");
     return r.json();
   }
-  async update(id, patch){
-    // ⬇️ CORRECCIÓN: Añadir /${id} al final de la URL ⬇️
+  async update(id, patch){ // 'patch' ahora es FormData
+    // ⭐️ CORRECCIÓN: Enviar como FormData, quitando cabeceras JSON
     const r = await fetch(`${RENDER_SERVER_URL}/api/products/${id}`, {
-      method:"PUT", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(patch)
+      method:"PUT", 
+      body: patch // Enviar FormData directamente
     });
     if(!r.ok) throw new Error((await r.json()).message||"Error actualizando");
     return r.json();
@@ -259,8 +259,14 @@ $$("[data-close]").forEach(b=>b.addEventListener("click", closeModals));
 el.save.addEventListener("click", async ()=>{
   const payload = collectForm();
   try{
-    if(payload._id){ await api.update(payload._id, payload); toast("Producto actualizado","ok"); }
-    else{ await api.create(payload); toast("Producto creado","ok"); }
+      if(payload.get('_id')){ 
+          await api.update(payload.get('_id'), payload); 
+          toast("Producto actualizado","ok"); 
+      }
+      else{ 
+          await api.create(payload); 
+          toast("Producto creado","ok"); 
+      }
     closeModals(); refresh();
   }catch(err){ toast(err.message||"Error", "err"); }
 });

@@ -229,21 +229,55 @@ app.delete('/api/products/:id', async (req, res) => {
         });
     }
 });
+
 /**
- * RUTA: PUT /api/products/:id
+ * RUTA: PUT /api/products/:id (Modificada para subir imágenes)
  * Objetivo: Actualizar un producto existente en MongoDB.
- * Creado para: Sprint 1 - HU "Editar productos"
  */
-app.put('/api/products/:id', async (req, res) => {
-    // NOTA: Añadir seguridad de AdminInventario aquí
+app.put('/api/products/:id', upload.single('imageUpload'), async (req, res) => {
     try {
         const id = req.params.id;
         const datosActualizados = req.body;
+        const file = req.file; // El nuevo archivo de imagen (si se subió)
 
-        // Evitar que el _id se sobrescriba
+        // 1. Convertir FormData strings a tipos correctos
+        datosActualizados.price = parseFloat(datosActualizados.price);
+        datosActualizados.stockQty = parseInt(datosActualizados.stockQty, 10);
+        datosActualizados.minStock = parseInt(datosActualizados.minStock, 10);
+        datosActualizados.active = datosActualizados.active === 'true';
+
+        // 2. Manejar la subida de una NUEVA imagen (si se envió una)
+        if (file) {
+            console.log('Actualizando imagen en Supabase Storage...');
+            const fileName = `product-${datosActualizados.sku}-${Date.now()}${path.extname(file.originalname)}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('products')
+                .upload(fileName, file.buffer, {
+                    contentType: file.mimetype,
+                    cacheControl: '3600'
+                });
+
+            if (uploadError) {
+                throw new Error(`Error al subir nueva imagen a Supabase: ${uploadError.message}`);
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from('products')
+                .getPublicUrl(fileName);
+
+            // Reemplazar/agregar la imagen en el array
+            if (publicUrlData) {
+                datosActualizados.images = [publicUrlData.publicUrl];
+            }
+        }
+        // Si no se subió un archivo (file es null),
+        // 'datosActualizados.images' no se tocará y Mongo mantendrá la imagen antigua.
+
+        // 3. Evitar que el _id se sobrescriba
         delete datosActualizados._id;
 
-        // 1. Validar si el SKU se está cambiando a uno que ya existe
+        // 4. Validar si el SKU se está cambiando a uno que ya existe
         if (datosActualizados.sku) {
             const skuExistente = await Product.findOne({
                 sku: datosActualizados.sku,
@@ -256,8 +290,7 @@ app.put('/api/products/:id', async (req, res) => {
             }
         }
 
-        // 2. Buscar y actualizar el producto
-        // { new: true } devuelve el documento ya actualizado
+        // 5. Buscar y actualizar el producto
         const productoActualizado = await Product.findByIdAndUpdate(
             id,
             datosActualizados,
@@ -887,6 +920,12 @@ app.post('/api/products', upload.single('imageUpload'), async (req, res) => {
         const newProductData = req.body; 
         // 'req.file' contiene el archivo de imagen (si se envió)
         const file = req.file; 
+
+        // Convertir los datos de FormData de string a Number/Boolean
+        newProductData.price = parseFloat(newProductData.price);
+        newProductData.stockQty = parseInt(newProductData.stockQty, 10);
+        newProductData.minStock = parseInt(newProductData.minStock, 10);
+        newProductData.active = newProductData.active === 'true'; 
 
         let imageUrls = [];
 
