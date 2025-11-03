@@ -282,11 +282,22 @@ function openCreate(){
   el.modalForm.classList.remove("hidden");
 }
 
-function openEdit(id){
-  const p = (USE_HTTP ? null : api.get(id)); // en HTTP puedes cargar on-demand si quieres
-  fillForm(p);
-  $("#formTitle").textContent = "Editar producto";
-  el.modalForm.classList.remove("hidden");
+async function openEdit(id){
+  try {
+    // 1. Llama a la API y espera (await) a que lleguen los datos del producto
+    const p = await api.get(id); 
+
+    // 2. Llena el formulario con los datos recibidos
+    fillForm(p); 
+
+    // 3. Muestra el modal
+    $("#formTitle").textContent = "Editar producto";
+    el.modalForm.classList.remove("hidden");
+
+  } catch (err) {
+    // 4. Muestra un error si no se pudo cargar el producto
+    toast(err.message || "Error al cargar el producto", "err");
+  }
 }
 
 function removeProduct(id){
