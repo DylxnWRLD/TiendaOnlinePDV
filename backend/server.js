@@ -927,6 +927,10 @@ app.post('/api/products', upload.single('imageUpload'), async (req, res) => {
         newProductData.minStock = parseInt(newProductData.minStock, 10);
         newProductData.active = newProductData.active === 'true'; 
 
+        // ⬇️ ⭐️ AGREGA ESTA LÍNEA ⭐️ ⬇️
+        console.log('--- ¡¡VERIFICACIÓN DE TIPO EXITOSA!! Tipo de precio:', typeof newProductData.price);
+        // ⬆️ ⭐️ AGREGA ESTA LÍNEA ⭐️ ⬆️
+
         let imageUrls = [];
 
         // --- 1. Lógica de Subida de Imagen ---
