@@ -706,7 +706,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
  * Objetivo: Editar una promoción en la tabla "promociones".
  * Creado para: Panel de Administración
  */
-app.put("/promociones/:id", async (req, res) => {
+app.put("/api/promociones/:id", async (req, res) => {
     const { id } = req.params;
     const { nombre, descripcion, tipo_descuento, descuento, tipo_regla, valor_regla, fecha_inicio, fecha_fin, activa } = req.body;
 
@@ -736,7 +736,7 @@ app.put("/promociones/:id", async (req, res) => {
 });
 
 // Eliminar una promoción
-app.delete("/promociones/:id", async (req, res) => {
+app.delete("/api/promociones/:id", async (req, res) => {
     const { id } = req.params;
 
     try {
