@@ -50,11 +50,14 @@ class HttpAdapter {
     if(!r.ok) throw new Error("No encontrado");
     return r.json();
   }
-  async create(input){
-  const r = await fetch(`${RENDER_SERVER_URL}/api/products`, {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(input)
-  });
+  async create(input){ // 'input' ahora es el FormData
+    // ⭐️ CAMBIO: quitamos headers['Content-Type'] y JSON.stringify ⭐️
+    const r = await fetch(`${RENDER_SERVER_URL}/api/products`, {
+      method:"POST",
+      body: input // Enviamos el FormData directamente
+    });
+    // El navegador pondrá el 'Content-Type: multipart/form-data' automáticamente
+
     if(!r.ok) throw new Error((await r.json()).message||"Error creando");
     return r.json();
   }
@@ -331,22 +334,40 @@ function fillForm(p){
 }
 
 function collectForm(){
-  const payload = {
-    _id: $("#id").value || undefined,
-    sku: $("#sku").value.trim(),
-    name: $("#name").value.trim(),
-    brand: $("#brand").value.trim(),
-    price: Number($("#price").value),
-    stockQty: Number($("#stock").value),
-    minStock: Number($("#minStock").value||0),
-    description: $("#desc").value.trim(),
-    images: $("#image").value.trim() ? [$("#image").value.trim()] : [],
-    active: $("#active").checked
-  };
-  if(!payload.sku || !payload.name || !Number.isFinite(payload.price)) {
+  // 1. Primero validamos los datos de texto (como antes)
+  const sku = $("#sku").value.trim();
+  const name = $("#name").value.trim();
+  const price = Number($("#price").value);
+
+  if(!sku || !name || !Number.isFinite(price)) {
     throw new Error("Completa SKU, Nombre y Precio");
   }
-  return payload;
+
+  // 2. ⭐️ CAMBIO: Creamos un objeto FormData ⭐️
+  const formData = new FormData();
+
+  // 3. Agregamos todos los campos de texto al FormData
+  formData.append('_id', $("#id").value || undefined);
+  formData.append('sku', sku);
+  formData.append('name', name);
+  formData.append('brand', $("#brand").value.trim());
+  formData.append('price', price);
+  formData.append('stockQty', Number($("#stock").value));
+  formData.append('minStock', Number($("#minStock").value||0));
+  formData.append('description', $("#desc").value.trim());
+  formData.append('active', $("#active").checked);
+
+  // 4. ⭐️ CAMBIO: Buscamos el archivo de imagen ⭐️
+  const imageFile = $("#imageUpload").files[0];
+
+  if (imageFile) {
+    // Y lo agregamos al FormData. El nombre 'imageUpload'
+    // debe coincidir con el de multer: upload.single('imageUpload')
+    formData.append('imageUpload', imageFile);
+  }
+
+  // 5. Devolvemos el FormData
+  return formData;
 }
 
 /********** Helpers **********/

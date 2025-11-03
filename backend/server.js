@@ -5,7 +5,11 @@ const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
 const Product = require('./models/product.model'); // ⭐️ NUEVO: Importa el modelo
+const multer = require('multer');
 
+// Configuración de Multer
+const storage = multer.memoryStorage(); // Guarda el archivo en la RAM temporalmente
+const upload = multer({ storage: storage });
 
 // ⭐️ SE ELIMINÓ: const cajeroRoutes = require('./routes/cajeroRoutes');
 // Importar dotenv y cargar las variables de entorno
@@ -870,17 +874,54 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
  * Creado para: Sprint 1 - HU "Agregar productos"
  * Panel: admin_inv
  */
-app.post('/api/products', async (req, res) => {
-    // NOTA: Aquí deberíamos añadir un middleware de seguridad 
-    // (como authenticateAdminInventario) más adelante.
-
-    console.log('Recibida petición para CREAR producto:', req.body);
+/**
+ * RUTA: POST /api/products (Modificada para subir imágenes)
+ * Objetivo: Crear un nuevo producto, subiendo la imagen a Supabase
+ */
+// ⭐️ CAMBIO: Usamos upload.single('imageUpload') para atrapar el archivo
+app.post('/api/products', upload.single('imageUpload'), async (req, res) => {
+    console.log('Recibida petición para CREAR producto (con imagen)');
 
     try {
-        // req.body contiene los datos del formulario (sku, name, price, etc.)
-        const newProductData = req.body;
+        // 'req.body' ahora contiene los campos de texto
+        const newProductData = req.body; 
+        // 'req.file' contiene el archivo de imagen (si se envió)
+        const file = req.file; 
 
-        // 1. Validar si el SKU ya existe (para evitar duplicados)
+        let imageUrls = [];
+
+        // --- 1. Lógica de Subida de Imagen ---
+        if (file) {
+            console.log('Subiendo archivo a Supabase Storage...');
+            // Damos un nombre único al archivo
+            const fileName = `product-${newProductData.sku}-${Date.now()}${path.extname(file.originalname)}`;
+
+            // Subimos el archivo al bucket 'products'
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('products') // El bucket que creamos en el Paso 1
+                .upload(fileName, file.buffer, {
+                    contentType: file.mimetype,
+                    cacheControl: '3600'
+                });
+
+            if (uploadError) {
+                throw new Error(`Error al subir imagen a Supabase: ${uploadError.message}`);
+            }
+
+            // --- 2. Obtenemos la URL Pública ---
+            const { data: publicUrlData } = supabase.storage
+                .from('products')
+                .getPublicUrl(fileName);
+
+            if (publicUrlData) {
+                imageUrls.push(publicUrlData.publicUrl);
+            }
+        }
+
+        // Asignamos la URL (si existe) a los datos que guardaremos en Mongo
+        newProductData.images = imageUrls;
+
+        // --- 3. Lógica de Guardado en MongoDB (como antes) ---
         const skuExistente = await Product.findOne({ sku: newProductData.sku });
         if (skuExistente) {
             return res.status(400).json({
@@ -888,21 +929,19 @@ app.post('/api/products', async (req, res) => {
             });
         }
 
-        // 2. Crear el nuevo producto usando el "molde"
-        const producto = new Product(newProductData);
+        
 
-        // 3. Guardar en la base de datos
+        const producto = new Product(newProductData);
         await producto.save();
 
-        // 4. Enviar respuesta de éxito
+
         res.status(201).json({
-            message: 'Producto agregado exitosamente.',
+            message: 'Producto agregado exitosamente (con imagen).',
             producto: producto
         });
 
     } catch (error) {
-        // Manejo de errores (ej. campos requeridos faltantes)
-        console.error('Error al guardar producto:', error.message);
+        console.error('Error al guardar producto con imagen:', error.message);
         res.status(500).json({
             message: 'Error interno del servidor al guardar el producto.',
             details: error.message
