@@ -352,7 +352,6 @@ function collectForm(){
   const formData = new FormData();
 
   // 3. Agregamos todos los campos de texto al FormData
-  formData.append('_id', $("#id").value || "");
   formData.append('sku', sku);
   formData.append('name', name);
   formData.append('brand', $("#brand").value.trim());
