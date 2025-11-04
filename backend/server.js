@@ -1121,7 +1121,7 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     try {
 
         // 1. Consultar MongoDB para detalles de producto Y STOCK
-        const productoIds = items.map(item => new mongoose.Types.ObjectId(item.producto_id_mongo));
+        const productoIds = detalles.map(item => new mongoose.Types.ObjectId(item.producto_id_mongo));
         const productosMongo = await Product.find({ _id: { $in: productoIds } });
 
         // 2. Consultar Promociones (Postgres)
@@ -1140,7 +1140,7 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
         let totalDescuentoVenta = 0;
         const detallesParaSupabase = []; 
 
-        for (const item of items) {
+        for (const item of detalles) {
             const productoInfo = productosMongo.find(p => p._id.toString() === item.producto_id_mongo);
             if (!productoInfo) {
                 throw new Error(`Producto ${item.producto_id_mongo} no encontrado en inventario.`);
