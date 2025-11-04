@@ -68,3 +68,50 @@ document.querySelectorAll(".product-card a").forEach(card => {
     e.stopPropagation(); // evita que otro evento bloquee el click
   });
 });
+
+// ===========================================
+// Conexion a la base de datos
+// ==========================================
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:3000'
+    : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
+
+// Obtención de datos de sesión del localStorage
+const token = localStorage.getItem('supabase-token'); 
+const corteId = localStorage.getItem('currentCorteId');
+const role = localStorage.getItem('user-role'); 
+
+// Estado local de la venta (el "carrito")
+let ventaActual = {
+    productos: [], // Contiene {id_producto_mongo, nombre_producto, precio_unitario, cantidad, monto_descuento, stock_disponible}
+    subtotal: 0,
+    descuento: 0,
+    total: 0
+};
+
+// =========================
+// Funcionalidad de Bsuqueda
+// =========================
+
+const searchInput = document.getElementById("search");
+const searchBtn = document.getElementById("searchBtn");
+
+function filtrarProductos() {
+  const texto = searchInput.value.toLowerCase().trim();
+  const productos = document.querySelectorAll(".product-card");
+
+  productos.forEach(card => {
+    const contenido = card.innerText.toLowerCase();
+    card.style.display = contenido.includes(texto) ? "flex" : "none";
+  });
+}
+
+// Filtrar mientras escribe
+if (searchInput) {
+  searchInput.addEventListener("input", filtrarProductos);
+}
+
+// Filtrar al presionar el botón
+if (searchBtn) {
+  searchBtn.addEventListener("click", filtrarProductos);
+}
