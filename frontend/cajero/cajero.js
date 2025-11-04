@@ -207,7 +207,7 @@ function updateVentaSummary() {
     
     ventaActual.productos.forEach(p => {
         subtotal += p.precio_unitario * p.cantidad;
-        descuento += p.monto_descuento * p.cantidad; 
+        //descuento += p.monto_descuento * p.cantidad; 
     });
     
     ventaActual.subtotal = subtotal;
@@ -215,7 +215,7 @@ function updateVentaSummary() {
     ventaActual.total = subtotal - descuento;
     
     document.getElementById('subtotal').textContent = ventaActual.subtotal.toFixed(2);
-    document.getElementById('descuento').textContent = ventaActual.descuento.toFixed(2);
+    document.getElementById('descuento').textContent = "Calculado al cobrar";
     document.getElementById('total-final').textContent = ventaActual.total.toFixed(2);
     
     const modalTotal = document.getElementById('modal-total');
@@ -301,15 +301,12 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
     
     const payload = {
         id_corte: corteId,
-        total_descuento: ventaActual.descuento,
-        total_final: ventaActual.total,
         metodo_pago: metodoPago,
-        detalles: ventaActual.productos.map(p => ({
+        items: ventaActual.productos.map(p => ({
             id_producto_mongo: p.id_producto_mongo,
-            nombre_producto: p.nombre_producto,
+            
             cantidad: p.cantidad,
-            precio_unitario_venta: p.precio_unitario,
-            monto_descuento: p.monto_descuento
+            
         }))
     };
     
@@ -431,7 +428,10 @@ function setupEventListeners() {
                 resultados.forEach(p => {
                     const pElement = document.createElement('p');
                     pElement.className = 'resultado-item';
-                    pElement.textContent = `${p.name} - $${p.price.toFixed(2)} (${p.stockQty > 0 ? 'Stock: ' + p.stockQty : 'Sin Stock'})`; 
+                    //pElement.textContent = `${p.name} - $${p.price.toFixed(2)} (${p.stockQty > 0 ? 'Stock: ' + p.stockQty : 'Sin Stock'})`; 
+                    let displayText = `${p.name} - $${p.price.toFixed(2)} (${p.stockQty > 0 ? 'Stock: ' + p.stockQty : 'Sin Stock'})`;
+
+                    pElement.textContent = displayText;
                     
                     pElement.dataset.producto = JSON.stringify({
                         _id: p._id,
@@ -443,6 +443,8 @@ function setupEventListeners() {
                     pElement.addEventListener('click', function() {
                         const productoData = JSON.parse(this.dataset.producto);
                         agregarProducto(productoData); 
+                        document.getElementById('input-sku').value = '';
+                        resultadosDiv.innerHTML = '<p class="instruccion">Escribe o escanea para buscar...</p>';
                     });
 
                     resultadosDiv.appendChild(pElement);
@@ -465,6 +467,7 @@ function setupEventListeners() {
         document.getElementById('modal-efectivo').style.display = 'block';
         document.getElementById('monto-recibido').value = ventaActual.total.toFixed(2); 
         document.getElementById('monto-recibido').dispatchEvent(new Event('input')); 
+        document.getElementById('monto-recibido').focus();
     });
 
     // 5.3. Pago con Tarjeta
