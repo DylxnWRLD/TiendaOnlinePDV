@@ -288,6 +288,20 @@ el.search.addEventListener("keydown", e => { if (e.key === "Enter") { state.sear
 el.prev.addEventListener("click", () => { if (state.page > 1) { state.page--; refresh(); } });
 el.next.addEventListener("click", () => { state.page++; refresh(); });
 
+$("#btnLogout").addEventListener("click", () => {
+  if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+    
+    // Limpiamos los datos de sesión guardados por si acaso
+    localStorage.removeItem('supabase-token');
+    localStorage.removeItem('user-email');
+    localStorage.removeItem('user-role');
+    
+    // Redirigimos a la página principal.
+    // Usamos ../../ para subir dos niveles (desde /frontend/admin_inv/ hasta la raíz)
+    window.location.href = '../../index.html';
+  }
+});
+
 $$("[data-close]").forEach(b => b.addEventListener("click", closeModals));
 [el.modalForm, el.modalStock].forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
 
