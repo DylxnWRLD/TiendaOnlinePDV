@@ -251,10 +251,10 @@ body {
 }
 
 .badge--off {
-  /* Fondo rojo oscuro o rojo intenso */
-  background: #f44336; /* Color rojo intenso (Danger) */
-  color: #fff; /* Texto blanco para alto contraste */
-  border-color: #d32f2f; /* Borde rojo más oscuro */
+  /* Fondo y borde copiados del botón de eliminar (.btn--danger) */
+  background: #fee2e2; /* Rojo muy claro (Fondo del botón de eliminar) */
+  color: #7f1d1d; /* Rojo oscuro (Mismo color de texto que el botón de eliminar) */
+  border-color: #fecaca; /* Rojo claro (Borde del botón de eliminar) */
 }
 
 .inv-footer {
