@@ -249,11 +249,6 @@ function paginate(total) {
   el.meta.textContent = `${total} producto${total === 1 ? '' : 's'}`;
 }
 
-async function refresh() {
-  const { items, total } = await api.list(state);
-  renderRows(items); paginate(total); updateLast();
-  checkLowStock(); // Llamada a la nueva función
-}
 
 // ⭐️ NUEVA FUNCIÓN: Verificar y mostrar alerta de stock bajo ⭐️
 async function checkLowStock() {
