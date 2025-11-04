@@ -1,0 +1,203 @@
+/* --- CSS GENERAL --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  background-color: #56565a;
+}
+
+/*ENCABEZADO GENERAL */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #211949;
+  color: white;
+  padding: 10px 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/*MENÚ HAMBURGUESA */
+.menu-icon {
+  font-size: 1.8rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+/*NOMBRE DE LA TIENDA */
+.logo {
+  font-size: 1.6rem;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+/*BARRA DE BÚSQUEDA */
+.search-bar {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  margin: 0 20px;
+}
+
+.search-bar input {
+  width: 60%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 5px 0 0 5px;
+  outline: none;
+}
+
+.search-bar button {
+  background-color: white;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/*BOTONES DE USUARIO */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-actions button {
+  background-color: rgb(255, 255, 255);
+  color: #3f64ad;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.user-actions button:hover {
+  background-color: #ffdfde;
+}
+
+/*ADAPTACIÓN PARA MÓVILES */
+@media (max-width: 700px) {
+  .header {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .search-bar {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .search-bar input {
+    width: 70%;
+  }
+}
+
+
+/*=============================*/
+/*Diseño para compra.html
+===============================*/
+
+.checkout-container {
+  width: 80%;
+  margin: 40px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+.cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  background: #f3f3ff;
+  border-radius: 8px;
+  padding: 10px;
+  gap: 15px;
+}
+
+.cart-item img {
+  width: 70px;
+  height: 70px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.item-info p {
+  margin: 2px 0;
+}
+
+.total-section {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.buy-btn {
+  padding: 10px 20px;
+  background: #211949;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.buy-btn:hover {
+  background: #3a2bad;
+}
+
+/* ✅ MODAL */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 280px;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.confirm-btn, .cancel-btn {
+  padding: 8px 12px;
+  margin-top: 10px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+}
+
+.confirm-btn {
+  background: green;
+  color: white;
+}
+
+.cancel-btn {
+  background: red;
+  color: white;
+}
