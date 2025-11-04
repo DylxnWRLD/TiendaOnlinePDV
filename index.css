@@ -242,3 +242,9 @@ body {
   gap: 10px;
   flex-wrap: nowrap;
 }
+
+.product-card a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
