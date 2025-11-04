@@ -14,3 +14,4 @@ let ventaActual = {
     descuento: 0,
     total: 0
 };
+
