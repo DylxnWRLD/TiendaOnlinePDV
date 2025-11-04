@@ -88,3 +88,30 @@ let ventaActual = {
     descuento: 0,
     total: 0
 };
+
+// =========================
+// Funcionalidad de Bsuqueda
+// =========================
+
+const searchInput = document.getElementById("search");
+const searchBtn = document.getElementById("searchBtn");
+
+function filtrarProductos() {
+  const texto = searchInput.value.toLowerCase().trim();
+  const productos = document.querySelectorAll(".product-card");
+
+  productos.forEach(card => {
+    const contenido = card.innerText.toLowerCase();
+    card.style.display = contenido.includes(texto) ? "flex" : "none";
+  });
+}
+
+// Filtrar mientras escribe
+if (searchInput) {
+  searchInput.addEventListener("input", filtrarProductos);
+}
+
+// Filtrar al presionar el botón
+if (searchBtn) {
+  searchBtn.addEventListener("click", filtrarProductos);
+}
