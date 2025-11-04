@@ -708,7 +708,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
  */
 app.put("/api/promociones/:id", async (req, res) => {
     const { id } = req.params;
-    const { nombre, descripcion, tipo_descuento, descuento, tipo_regla, valor_regla, fecha_inicio, fecha_fin, activa } = req.body;
+    const { nombre, descripcion, tipo_descuento, valor, tipo_regla, valor_regla, fecha_inicio, fecha_fin, activa } = req.body;
 
     try {
         const { data, error } = await supabase
@@ -1111,8 +1111,83 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     const id_cajero = req.userId; // ID del usuario autenticado (cajero)
     const { id_corte, total_descuento, total_final, metodo_pago, detalles } = req.body;
 
-    // 1. **Transacción de Venta en PostgreSQL**
+
+
+
+
+
+
+
     try {
+
+        // 1. Consultar MongoDB para detalles de producto Y STOCK
+        const productoIds = items.map(item => new mongoose.Types.ObjectId(item.producto_id_mongo));
+        const productosMongo = await Product.find({ _id: { $in: productoIds } });
+
+        // 2. Consultar Promociones (Postgres)
+        const { data: promocionesActivas, error: promoError } = await supabase
+            .from("promociones")
+            .select("*")
+            .eq("activa", true)
+            .lte("fecha_inicio", new Date().toISOString())
+            .or(`fecha_fin.is.null, fecha_fin.gte.${new Date().toISOString()}`)
+            .neq("tipo_regla", "GLOBAL"); // Excluye promos globales por ahora
+
+        if (promoError) throw promoError;
+
+        // 3. Validar Stock y Calcular Totales
+        let totalFinalVenta = 0;
+        let totalDescuentoVenta = 0;
+        const detallesParaSupabase = []; 
+
+        for (const item of items) {
+            const productoInfo = productosMongo.find(p => p._id.toString() === item.producto_id_mongo);
+            if (!productoInfo) {
+                throw new Error(`Producto ${item.producto_id_mongo} no encontrado en inventario.`);
+            }
+
+            // 3. Validar Stock
+            if (item.cantidad > productoInfo.stockQty) {
+                throw new Error(`Stock insuficiente para ${productoInfo.name}. Solicitado: ${item.cantidad}, Disponible: ${productoInfo.stockQty}`);
+            }
+
+            // 4. Calcular Descuentos Aplicables
+            const { 
+                precio_original, 
+                monto_descuento_unitario, 
+                precio_final_unitario 
+            } = calcularDescuentoItem(productoInfo, promocionesActivas || []);
+
+            // 5. Calcular Totales
+            const totalLinea = precio_final_unitario * item.cantidad;
+            totalFinalVenta += totalLinea;
+            totalDescuentoVenta += (monto_descuento_unitario * item.cantidad);
+            // Preparar detalle para Supabase
+            detallesParaSupabase.push({
+                id_producto_mongo: productoInfo._id.toString(),
+                nombre_producto: productoInfo.name,
+                cantidad: item.cantidad,
+                precio_unitario_venta: precio_original, // El precio ANTES del descuento
+                monto_descuento: monto_descuento_unitario, // El descuento POR UNIDAD
+            });
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // 1. **Transacción de Venta en PostgreSQL**
+    
         // Llama a la función PL/pgSQL
         const { data, error } = await supabase
             .rpc('registrar_venta', {
@@ -1193,6 +1268,70 @@ app.post('/api/caja/cerrar', getUserIdFromToken, async (req, res) => {
         res.status(500).json({ message: 'Fallo interno al cerrar la caja.', error: error.message });
     }
 });
+
+
+
+
+
+
+
+
+
+
+/**
+ * Función auxiliar para encontrar la mejor promoción y calcular descuentos.
+ * Esta es la clave de tu "motor de reglas".
+ * @param {object} producto - El objeto del producto desde MongoDB
+ * @param {Array} promociones - Array de todas las promociones activas desde Postgres
+ * @returns {object} - { precio_original, monto_descuento_unitario, promocion_aplicada }
+ */
+function calcularDescuentoItem(producto, promociones) {
+    const precioBase = producto.price;
+    let mejorPrecio = precioBase;
+    let promocionAplicada = null;
+
+    // 1. Filtrar promociones que aplican a este producto
+    const promosAplicables = promociones.filter(promo => {
+        if (promo.tipo_regla === 'MARCA' && promo.valor_regla === producto.brand) return true;
+        if (promo.tipo_regla === 'PRODUCTO' && promo.valor_regla === producto._id.toString()) return true;
+        if (promo.tipo_regla === 'SKU' && promo.valor_regla === producto.sku) return true;
+        
+        return false;
+    });
+
+    for (const promo of promosAplicables) {
+        let precioCalculado = precioBase;
+        if (promo.tipo_descuento === 'PORCENTAJE') {
+            precioCalculado = precioBase * (1 - promo.valor / 100);
+        } else if (promo.tipo_descuento === 'FIJO') {
+            precioCalculado = precioBase - promo.valor;
+        }
+        
+        /**if (precioCalculado < mejorPrecio) {
+            mejorPrecio = precioCalculado;
+            promocionAplicada = promo;
+        }*/
+    }
+
+    const montoDescuento = precioBase - precioCalculado;
+
+    return {
+        precio_original: precioBase, // Precio base de Mongo
+        precio_final_unitario: Math.round(mejorPrecio * 100) / 100,
+        monto_descuento_unitario: Math.round(montoDescuento * 100) / 100, // Descuento por unidad
+        promocion_aplicada: promocionAplicada // Objeto de la promo (o null)
+    };
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
