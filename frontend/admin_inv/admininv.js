@@ -367,6 +367,7 @@ function fillForm(p) {
 
 function collectForm() {
   // 1. Primero validamos los datos de texto (como antes)
+  const id = $("#id").value.trim(); // ⭐️ NUEVO: Leer el ID
   const sku = $("#sku").value.trim();
   const name = $("#name").value.trim();
   const price = Number($("#price").value);
@@ -377,6 +378,11 @@ function collectForm() {
 
   // 2. ⭐️ CAMBIO: Creamos un objeto FormData ⭐️
   const formData = new FormData();
+
+  // ⭐️ CRÍTICO: Agregar el ID del producto para que el controlador PUT sepa cuál actualizar ⭐️
+  if (id) {
+    formData.append('_id', id); // Usamos el nombre '_id' que Mongo espera
+  }
 
   // 3. Agregamos todos los campos de texto al FormData
   formData.append('sku', sku);
