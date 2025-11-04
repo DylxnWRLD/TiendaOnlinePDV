@@ -215,7 +215,7 @@ function updateVentaSummary() {
     ventaActual.total = subtotal - descuento;
     
     document.getElementById('subtotal').textContent = ventaActual.subtotal.toFixed(2);
-    document.getElementById('descuento').textContent = "Calculado al cobrar";
+    document.getElementById('descuento').textContent = ventaActual.descuento.toFixed(2);
     document.getElementById('total-final').textContent = ventaActual.total.toFixed(2);
     
     const modalTotal = document.getElementById('modal-total');
