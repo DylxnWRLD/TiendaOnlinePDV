@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="admin.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <!-- Sidebar -->
     <nav class="sidebar">
@@ -15,12 +17,18 @@
             <h2><i class="fas fa-store"></i> <span class="menu-text">Admin PDV</span></h2>
         </div>
         <ul class="sidebar-menu">
-            <li><a href="#" class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> <span class="menu-text">Dashboard</span></a></li>
-            <li><a href="#" data-tab="users"><i class="fas fa-users"></i> <span class="menu-text">Gestión de Usuarios</span></a></li>
-            <li><a href="#" data-tab="reports"><i class="fas fa-chart-bar"></i> <span class="menu-text">Reportes</span></a></li>
-            <li><a href="#" data-tab="promotions"><i class="fas fa-tag"></i> <span class="menu-text">Promociones</span></a></li>
-            <li><a href="#" data-tab="performance"><i class="fas fa-chart-line"></i> <span class="menu-text">Rendimiento</span></a></li>
-            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span class="menu-text">Cerrar Sesión</span></a></li>
+            <li><a href="#" class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> <span
+                        class="menu-text">Dashboard</span></a></li>
+            <li><a href="#" data-tab="users"><i class="fas fa-users"></i> <span class="menu-text">Gestión de
+                        Usuarios</span></a></li>
+            <li><a href="#" data-tab="reports"><i class="fas fa-chart-bar"></i> <span
+                        class="menu-text">Reportes</span></a></li>
+            <li><a href="#" data-tab="promotions"><i class="fas fa-tag"></i> <span
+                        class="menu-text">Promociones</span></a></li>
+            <li><a href="#" data-tab="performance"><i class="fas fa-chart-line"></i> <span
+                        class="menu-text">Rendimiento</span></a></li>
+            <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span class="menu-text">Cerrar
+                        Sesión</span></a></li>
         </ul>
     </nav>
 
@@ -124,12 +132,14 @@
                     <div class="tab" data-report-tab="users">Reporte de Usuarios</div>
                     <div class="tab" data-report-tab="products">Reporte de Productos</div>
                 </div>
-                
+
                 <div id="salesReport" class="report-content active">
                     <div class="form-group">
                         <label class="form-label">Filtrar por fecha:</label>
-                        <input type="date" id="startDate" class="form-control" style="display: inline-block; width: auto;">
-                        <input type="date" id="endDate" class="form-control" style="display: inline-block; width: auto;">
+                        <input type="date" id="startDate" class="form-control"
+                            style="display: inline-block; width: auto;">
+                        <input type="date" id="endDate" class="form-control"
+                            style="display: inline-block; width: auto;">
                         <button class="btn btn-primary" onclick="generateSalesReport()">Generar Reporte</button>
                     </div>
                     <div class="chart-container">
@@ -209,7 +219,7 @@
                         <div class="stat-title">Tasa de Conversión</div>
                     </div>
                 </div>
-                
+
                 <div class="chart-container">
                     <canvas id="performanceChart"></canvas>
                 </div>
@@ -240,6 +250,7 @@
                         <option value="2">Cliente</option>
                         <option value="4">Administrador de Inventario</option>
                         <option value="3">Cajero</option>
+                        <option value="5">Repartidor</option>
                         <option value="1">Administrador</option>
                     </select>
                 </div>
@@ -270,6 +281,7 @@
                         <option value="1">Administrador</option>
                         <option value="4">Administrador de Inventario</option>
                         <option value="3">Cajero</option>
+                        <option value="5">Repartidor</option>
                         <option value="2">Cliente</option>
                     </select>
                 </div>
@@ -281,83 +293,82 @@
         </div>
     </div>
 
-  <div id="addPromotionModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Crear Nueva Promoción</h3>
-            <button class="close" onclick="closeAddPromotionModal()">&times;</button>
+    <div id="addPromotionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Crear Nueva Promoción</h3>
+                <button class="close" onclick="closeAddPromotionModal()">&times;</button>
+            </div>
+
+            <form id="addPromotionForm">
+                <div class="form-group">
+                    <label class="form-label" for="promotionName">Nombre de la Promoción</label>
+                    <input type="text" class="form-control" id="promotionName" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="promotionDescription">Descripción (Opcional)</label>
+                    <textarea class="form-control" id="promotionDescription" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="promotionType">Tipo de Descuento</label>
+                    <select class="form-control" id="promotionType" required>
+                        <option value="PORCENTAJE">Porcentaje (%)</option>
+                        <option value="FIJO">Monto Fijo ($)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="promotionValue">Valor del Descuento</label>
+                    <input type="number" class="form-control" id="promotionValue" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="promotionRuleType">Aplicar descuento a:</label>
+                    <select class="form-control" id="promotionRuleType" required>
+                        <option value="GLOBAL">Global (Toda la compra)</option>
+                        <option value="CATEGORIA">Categoría de Producto</option>
+                        <option value="MARCA">Marca Específica</option>
+                        <option value="PRODUCTO">Producto Específico (SKU o ID)</option>
+                        <option value="PRECIO">Basado en Precio (Ej. Gasta $1000)</option>
+                        <option value="CANTIDAD">Basado en Cantidad (Ej. Compra 3)</option>
+                        <option value="FECHA ESPECIAL">Fecha Especial (Ej. Navidad)</option>
+                        <option value="REBAJAS">Rebajas (General)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="promotionRuleValueGroup">
+                    <label class="form-label" for="promotionRuleValue">Valor de la Regla</label>
+                    <input type="text" class="form-control" id="promotionRuleValue"
+                        placeholder="Ej: 'videojuegos' o '500' (para precio)">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="promotionStart">Fecha de Inicio</label>
+                    <input type="datetime-local" class="form-control" id="promotionStart" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="promotionEnd">Fecha de Fin (Opcional)</label>
+                    <input type="datetime-local" class="form-control" id="promotionEnd">
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="promotionActive" checked style="margin-right: 10px; width: auto;">
+                    <label class="form-label" for="promotionActive"
+                        style="display: inline-block; vertical-align: middle;">
+                        Promoción Activa
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Crear Promoción</button>
+                    <button type="button" class="btn" onclick="closeAddPromotionModal()">Cancelar</button>
+                </div>
+            </form>
         </div>
-        
-        <form id="addPromotionForm">
-            <div class="form-group">
-                <label class="form-label" for="promotionName">Nombre de la Promoción</label>
-                <input type="text" class="form-control" id="promotionName" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="promotionDescription">Descripción (Opcional)</label>
-                <textarea class="form-control" id="promotionDescription" rows="3"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="promotionType">Tipo de Descuento</label>
-                <select class="form-control" id="promotionType" required>
-                    <option value="PORCENTAJE">Porcentaje (%)</option>
-                    <option value="FIJO">Monto Fijo ($)</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="promotionValue">Valor del Descuento</label>
-                <input type="number" class="form-control" id="promotionValue" step="0.01" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="promotionRuleType">Aplicar descuento a:</label>
-                <select class="form-control" id="promotionRuleType" required>
-                    <option value="GLOBAL">Global (Toda la compra)</option>
-                    <option value="CATEGORIA">Categoría de Producto</option>
-                    <option value="MARCA">Marca Específica</option>
-                    <option value="PRODUCTO">Producto Específico (SKU o ID)</option>
-                    <option value="PRECIO">Basado en Precio (Ej. Gasta $1000)</option>
-                    <option value="CANTIDAD">Basado en Cantidad (Ej. Compra 3)</option>
-                    <option value="FECHA ESPECIAL">Fecha Especial (Ej. Navidad)</option>
-                    <option value="REBAJAS">Rebajas (General)</option>
-                </select>
-            </div>
-
-            <div class="form-group" id="promotionRuleValueGroup">
-                <label class="form-label" for="promotionRuleValue">Valor de la Regla</label>
-                <input type="text" class="form-control" id="promotionRuleValue" 
-                       placeholder="Ej: 'videojuegos' o '500' (para precio)">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="promotionStart">Fecha de Inicio</label>
-                <input type="datetime-local" class="form-control" id="promotionStart" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="promotionEnd">Fecha de Fin (Opcional)</label>
-                <input type="datetime-local" class="form-control" id="promotionEnd">
-            </div>
-
-            <div class="form-group">
-                <input type="checkbox" id="promotionActive" checked 
-                       style="margin-right: 10px; width: auto;">
-                <label class="form-label" for="promotionActive" 
-                       style="display: inline-block; vertical-align: middle;">
-                    Promoción Activa
-                </label>
-            </div>
-            
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Crear Promoción</button>
-                <button type="button" class="btn" onclick="closeAddPromotionModal()">Cancelar</button>
-            </div>
-        </form>
     </div>
-</div>
 
 
 
@@ -367,86 +378,86 @@
 
 
 
-<!-- 🔹 Modal para editar promoción -->
-<div id="editPromotionModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Editar Promoción</h3>
-            <button class="close" onclick="cerrarModalEditar()">&times;</button>
+    <!-- 🔹 Modal para editar promoción -->
+    <div id="editPromotionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Editar Promoción</h3>
+                <button class="close" onclick="cerrarModalEditar()">&times;</button>
+            </div>
+
+            <form id="editPromotionForm">
+                <!-- ID oculto -->
+                <input type="hidden" id="editPromotionId">
+
+                <div class="form-group">
+                    <label class="form-label" for="editPromotionName">Nombre</label>
+                    <input type="text" class="form-control" id="editPromotionName" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editPromotionDescription">Descripción (Opcional)</label>
+                    <textarea class="form-control" id="editPromotionDescription" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editPromotionType">Tipo de Descuento</label>
+                    <select class="form-control" id="editPromotionType" required>
+                        <option value="PORCENTAJE">Porcentaje (%)</option>
+                        <option value="FIJO">Monto Fijo ($)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editPromotionValue">Valor del Descuento</label>
+                    <input type="number" class="form-control" id="editPromotionValue" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editPromotionRuleType">Aplicar descuento a:</label>
+                    <select class="form-control" id="editPromotionRuleType" required>
+                        <option value="GLOBAL">Global (Toda la compra)</option>
+                        <option value="CATEGORIA">Categoría de Producto</option>
+                        <option value="MARCA">Marca Específica</option>
+                        <option value="PRODUCTO">Producto Específico (SKU o ID)</option>
+                        <option value="PRECIO">Basado en Precio (Ej. Gasta $1000)</option>
+                        <option value="CANTIDAD">Basado en Cantidad (Ej. Compra 3)</option>
+                        <option value="FECHA ESPECIAL">Fecha Especial (Ej. Navidad)</option>
+                        <option value="REBAJAS">Rebajas (General)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="editPromotionRuleValueGroup">
+                    <label class="form-label" for="editPromotionRuleValue">Valor de la Regla</label>
+                    <input type="text" class="form-control" id="editPromotionRuleValue"
+                        placeholder="Ej: 'videojuegos' o '500' (para precio)">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editPromotionStart">Fecha de Inicio</label>
+                    <input type="datetime-local" class="form-control" id="editPromotionStart" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="editPromotionEnd">Fecha de Fin (Opcional)</label>
+                    <input type="datetime-local" class="form-control" id="editPromotionEnd">
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="editPromotionActive" style="margin-right: 10px; width: auto;">
+                    <label class="form-label" for="editPromotionActive"
+                        style="display: inline-block; vertical-align: middle;">
+                        Promoción Activa
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn" onclick="cerrarModalEditar()">Cancelar</button>
+                </div>
+            </form>
         </div>
-        
-        <form id="editPromotionForm">
-            <!-- ID oculto -->
-            <input type="hidden" id="editPromotionId">
-
-            <div class="form-group">
-                <label class="form-label" for="editPromotionName">Nombre</label>
-                <input type="text" class="form-control" id="editPromotionName" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="editPromotionDescription">Descripción (Opcional)</label>
-                <textarea class="form-control" id="editPromotionDescription" rows="3"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="editPromotionType">Tipo de Descuento</label>
-                <select class="form-control" id="editPromotionType" required>
-                    <option value="PORCENTAJE">Porcentaje (%)</option>
-                    <option value="FIJO">Monto Fijo ($)</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="editPromotionValue">Valor del Descuento</label>
-                <input type="number" class="form-control" id="editPromotionValue" step="0.01" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="editPromotionRuleType">Aplicar descuento a:</label>
-                <select class="form-control" id="editPromotionRuleType" required>
-                    <option value="GLOBAL">Global (Toda la compra)</option>
-                    <option value="CATEGORIA">Categoría de Producto</option>
-                    <option value="MARCA">Marca Específica</option>
-                    <option value="PRODUCTO">Producto Específico (SKU o ID)</option>
-                    <option value="PRECIO">Basado en Precio (Ej. Gasta $1000)</option>
-                    <option value="CANTIDAD">Basado en Cantidad (Ej. Compra 3)</option>
-                    <option value="FECHA ESPECIAL">Fecha Especial (Ej. Navidad)</option>
-                    <option value="REBAJAS">Rebajas (General)</option>
-                </select>
-            </div>
-
-            <div class="form-group" id="editPromotionRuleValueGroup">
-                <label class="form-label" for="editPromotionRuleValue">Valor de la Regla</label>
-                <input type="text" class="form-control" id="editPromotionRuleValue" 
-                       placeholder="Ej: 'videojuegos' o '500' (para precio)">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="editPromotionStart">Fecha de Inicio</label>
-                <input type="datetime-local" class="form-control" id="editPromotionStart" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="editPromotionEnd">Fecha de Fin (Opcional)</label>
-                <input type="datetime-local" class="form-control" id="editPromotionEnd">
-            </div>
-
-            <div class="form-group">
-                <input type="checkbox" id="editPromotionActive" style="margin-right: 10px; width: auto;">
-                <label class="form-label" for="editPromotionActive" 
-                       style="display: inline-block; vertical-align: middle;">
-                    Promoción Activa
-                </label>
-            </div>
-            
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                <button type="button" class="btn" onclick="cerrarModalEditar()">Cancelar</button>
-            </div>
-        </form>
     </div>
-</div>
 
 
 
@@ -460,7 +471,8 @@
 
 
 
-    
+
 </body>
 <script src="admin.js"></script>
+
 </html>

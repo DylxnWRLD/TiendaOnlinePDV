@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repartidor - Level One</title>
+    <link rel="stylesheet" href="repartidor.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="repartidor-container">
+        <h1 class="cyber-glow">Ruta de Entrega Hoy</h1>
+        <p style="text-align: center; color: #aaa; margin-bottom: 20px;">
+            Bienvenido, Repartidor #<span id="repartidorId">101</span>. Haz clic en un paquete para ver los detalles.
+        </p>
+
+        <div class="paquete-list" id="paqueteList">
+            <div class="paquete-card" data-paquete-id="ORD-001" data-status="pendiente">
+                <div class="paquete-info">
+                    <h4>#1 - Pedido ORD-001 (Prioridad: Alta)</h4>
+                    <p>Cliente: Juan Pérez | Dirección: Av. Siempre Viva 742</p>
+                </div>
+                <span class="paquete-status status-pendiente">Pendiente</span>
+            </div>
+
+            <div class="paquete-card" data-paquete-id="ORD-003" data-status="pendiente">
+                <div class="paquete-info">
+                    <h4>#2 - Pedido ORD-003</h4>
+                    <p>Cliente: María López | Dirección: Calle Falsa 123</p>
+                </div>
+                <span class="paquete-status status-pendiente">Pendiente</span>
+            </div>
+
+            <div class="paquete-card" data-paquete-id="ORD-002" data-status="entregado">
+                <div class="paquete-info">
+                    <h4>Pedido ORD-002</h4>
+                    <p>Cliente: Carlos Gómez | Dirección: Blvrd. El Sol 45</p>
+                </div>
+                <span class="paquete-status status-entregado">Entregado</span>
+            </div>
+        </div>
+    </div>
+    
+    <script src="repartidor.js"></script>
+</body>
+</html>

@@ -58,9 +58,13 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
                 case 'AdminInventario':
                     window.location.href = '../admin_inv/admininv.html'; // Corregida a formato consistente
                     break;
+                case 'Repartidor':
+                    // ⭐️ Nueva ruta para el Repartidor ⭐️
+                    window.location.href = '../repartidor/repartidor.html';
+                    break;
                 case 'Cliente':
                 default:
-                    window.location.href = '../cliente/cliente.html'; // Corregida a formato consistente
+                    window.location.href = '../cliente/cliente.html'; // Se asume esta ruta para clientes generales
                     break;
             }
 

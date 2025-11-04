@@ -62,3 +62,9 @@ setInterval(() => {
   }
 }, 4000);
 
+// ✅ Permite que las product-card abran su enlace normalmente
+document.querySelectorAll(".product-card a").forEach(card => {
+  card.addEventListener("click", (e) => {
+    e.stopPropagation(); // evita que otro evento bloquee el click
+  });
+});

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Pedido - Level One</title>
+    <link rel="stylesheet" href="../../index.css"> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .seguimiento-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 20px; }
+        .btn-rastrear {
+            background-color: #211949; /* Azul oscuro de tu header */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        #resultado {
+            margin-top: 25px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .estado-box {
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .estado-preparacion { background-color: #f39c12; color: white; }
+        .estado-enruta { background-color: #3498db; color: white; }
+        .estado-entregado { background-color: #27ae60; color: white; }
+        .estado-error { background-color: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="menu-icon" id="menuToggle">☰</div>
+        <a href="../../index.html"><h1 class="logo">LEVEL_ONE</h1></a>
+        <div class="search-bar">
+            <input type="text" placeholder="Buscar productos...">
+            <button>Buscar</button>
+        </div>
+        <div class="user-actions">
+            <button id="loginBtn" class="login-btn">Iniciar sesión</button>
+            <button class="cart-btn">Comprar</button>
+        </div>
+    </header>
+
+    <main class="seguimiento-container">
+        <h2>Rastrear Estado de Pedido</h2>
+        <form id="seguimientoForm">
+            <div class="form-group">
+                <label for="pedidoId">Ingresa tu ID de Pedido:</label>
+                <input type="text" id="pedidoId" class="form-control" placeholder="Ej: VENTA-00123" required>
+            </div>
+            <button type="submit" class="btn-rastrear">Buscar Seguimiento</button>
+            <p id="mensaje-error" style="color: #e74c3c; margin-top: 10px;"></p>
+        </form>
+
+        <div id="resultado" style="display: none;">
+            <h4>Detalles del Envío:</h4>
+            <div class="form-group">
+                <label>Estado Actual:</label>
+                <div id="estadoActual" class="estado-box"></div>
+            </div>
+            <div class="form-group">
+                <label>Dirección de Envío:</label>
+                <p id="direccionEnvio"></p>
+            </div>
+            <div class="form-group">
+                <label>Fecha Estimada de Entrega:</label>
+                <p id="fechaEstimada"></p>
+            </div>
+        </div>
+    </main>
+
+    <script src="seguimiento.js"></script>
+</body>
+</html>

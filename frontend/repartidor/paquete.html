@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Paquete - Level One</title>
+    <link rel="stylesheet" href="repartidor.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="repartidor-container">
+        <h1 class="cyber-glow">Detalle de Paquete <span id="paqueteId">ORD-001</span></h1>
+        
+        <div class="detalle-section">
+            <h4>📍 Dirección de Entrega</h4>
+            <div class="map-placeholder">
+                <i class="fas fa-map-marked-alt" style="font-size: 2em;"></i>
+                <p>Ubicación: <span id="direccion">Av. Siempre Viva 742, Springfield</span></p>
+            </div>
+        </div>
+
+        <div class="detalle-section">
+            <h4>👤 Datos del Cliente</h4>
+            <div class="detalle-item">
+                <span>Nombre:</span>
+                <span id="clienteNombre">Juan Pérez</span>
+            </div>
+            <div class="detalle-item">
+                <span>Teléfono:</span>
+                <span id="clienteTelefono"><a href="tel:5512345678" style="color: var(--color-primary); text-decoration: none;">55 1234 5678 (Llamar)</a></span>
+            </div>
+            <div class="detalle-item">
+                <span>Instrucciones:</span>
+                <span style="max-width: 60%; text-align: right;">Dejar con el portero de camisa roja.</span>
+            </div>
+        </div>
+        
+        <div class="detalle-section">
+            <h4>📦 Productos</h4>
+            <ul style="list-style: none; padding-left: 0;">
+                <li><i class="fas fa-cube" style="margin-right: 8px;"></i>Consola PlayStation 5 x1</li>
+                <li><i class="fas fa-cube" style="margin-right: 8px;"></i>Juego Cyberpunk 2077 x1</li>
+            </ul>
+        </div>
+        
+        <div class="detalle-section" id="accionEntrega">
+            <h4>Acción Final</h4>
+            <div id="pruebasEntrega">
+                <p style="margin-bottom: 10px; color: #aaa;">Sube una foto como prueba de la entrega.</p>
+                <input type="file" accept="image/*" capture="camera" id="fotoPrueba" style="margin-bottom: 15px;">
+            </div>
+            <button id="btnMarcarEntregado" class="btn btn-success" style="width: 100%;">
+                <i class="fas fa-check"></i> Marcar como Entregado
+            </button>
+        </div>
+        
+        <button onclick="window.location.href='repartidor.html'" class="btn btn-secondary" style="width: 100%;">
+            <i class="fas fa-undo"></i> Volver a la Lista
+        </button>
+        
+    </div>
+    
+    <script src="repartidor.js"></script>
+</body>
+</html>
