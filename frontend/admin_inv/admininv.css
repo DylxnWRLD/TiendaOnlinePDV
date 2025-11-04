@@ -251,9 +251,10 @@ body {
 }
 
 .badge--off {
-  background: #eef2ff;
-  color: #7c2d12;
-  border-color: #c7d2fe
+  /* Fondo rojo oscuro o rojo intenso */
+  background: #f44336; /* Color rojo intenso (Danger) */
+  color: #fff; /* Texto blanco para alto contraste */
+  border-color: #d32f2f; /* Borde rojo más oscuro */
 }
 
 .inv-footer {
