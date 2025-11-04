@@ -339,11 +339,11 @@ app.get('/api/products/:id', async (req, res) => {
         console.error('Error al obtener producto por ID:', error.message);
         // Maneja el caso de un ID de Mongo mal formado
         if (error.kind === 'ObjectId') {
-             return res.status(404).json({ message: 'ID de producto no válido.' });
+            return res.status(404).json({ message: 'ID de producto no válido.' });
         }
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error interno del servidor.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -764,7 +764,7 @@ app.get('/api/reports/sales', authenticateAdmin, async (req, res) => {
     if (!startDate || !endDate) {
         return res.status(400).json({ message: 'Se requieren fechas de inicio y fin.' });
     }
-    
+
     try {
         // Llamar a la nueva función SQL que acepta fechas
         const { data, error } = await supabase.rpc('get_sales_by_date_range', {
@@ -773,12 +773,12 @@ app.get('/api/reports/sales', authenticateAdmin, async (req, res) => {
         });
 
         if (error) {
-             console.error('Error en RPC get_sales_by_date_range:', error.message);
-             // Error común si la función no se creó:
-             if (error.message.includes('function get_sales_by_date_range')) {
-                 return res.status(500).json({ message: 'Error Crítico: La función SQL "get_sales_by_date_range" no existe en Supabase. Asegúrate de crearla en el SQL Editor.' });
-             }
-             throw error;
+            console.error('Error en RPC get_sales_by_date_range:', error.message);
+            // Error común si la función no se creó:
+            if (error.message.includes('function get_sales_by_date_range')) {
+                return res.status(500).json({ message: 'Error Crítico: La función SQL "get_sales_by_date_range" no existe en Supabase. Asegúrate de crearla en el SQL Editor.' });
+            }
+            throw error;
         }
 
         // Formato para Chart.js
@@ -807,11 +807,11 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
 
         // --- Consultas a Supabase (PostgreSQL) ---
         const [
-            salesData,       
-            totalOrders,     
-            activeUsers,     
-            activeCustomers, 
-            activePromos,    
+            salesData,
+            totalOrders,
+            activeUsers,
+            activeCustomers,
+            activePromos,
             chartData,
             usersReportData
         ] = await Promise.all([
@@ -835,11 +835,11 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
 
         // --- Procesar datos de Supabase ---
         const allSales = salesData.data || [];
-        
+
         const monthlyRevenue = allSales
             .filter(sale => new Date(sale.fecha_hora) >= firstDayOfMonth)
             .reduce((acc, v) => acc + v.total_final, 0);
-        
+
         const totalSales = allSales.reduce((acc, v) => acc + v.total_final, 0);
 
         // --- Procesar Gráfico (Rendimiento) ---
@@ -875,7 +875,7 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
             monthlyRevenue: monthlyRevenue,
             totalOrders: totalOrders.count || 0,
             activeCustomers: activeCustomers.count || 0,
-            conversionRate: 0, 
+            conversionRate: 0,
             // Chart Data (Rendimiento)
             chartData: {
                 labels: labels,
@@ -889,7 +889,7 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
     } catch (error) {
         console.error('Error al cargar estadísticas completas:', error.message);
         if (error.message.includes('function get_daily_sales_last_7_days does not exist')) {
-             return res.status(500).json({ message: 'Error Crítico: La función SQL "get_daily_sales_last_7_days" no existe en la base de datos Supabase. Por favor, créala usando el SQL Editor.' });
+            return res.status(500).json({ message: 'Error Crítico: La función SQL "get_daily_sales_last_7_days" no existe en la base de datos Supabase. Por favor, créala usando el SQL Editor.' });
         }
         res.status(500).json({ message: 'Error interno al cargar estadísticas.' });
     }
@@ -917,15 +917,15 @@ app.post('/api/products', upload.single('imageUpload'), async (req, res) => {
 
     try {
         // 'req.body' ahora contiene los campos de texto
-        const newProductData = req.body; 
+        const newProductData = req.body;
         // 'req.file' contiene el archivo de imagen (si se envió)
-        const file = req.file; 
+        const file = req.file;
 
         // Convertir los datos de FormData de string a Number/Boolean
         newProductData.price = parseFloat(newProductData.price);
         newProductData.stockQty = parseInt(newProductData.stockQty, 10);
         newProductData.minStock = parseInt(newProductData.minStock, 10);
-        newProductData.active = newProductData.active === 'true'; 
+        newProductData.active = newProductData.active === 'true';
 
         // ⬇️ ⭐️ AGREGA ESTA LÍNEA ⭐️ ⬇️
         console.log('--- ¡¡VERIFICACIÓN DE TIPO EXITOSA!! Tipo de precio:', typeof newProductData.price);
@@ -972,7 +972,7 @@ app.post('/api/products', upload.single('imageUpload'), async (req, res) => {
             });
         }
 
-        
+
 
         const producto = new Product(newProductData);
         await producto.save();
@@ -1194,7 +1194,29 @@ app.post('/api/caja/cerrar', getUserIdFromToken, async (req, res) => {
     }
 });
 
+/**
+ * RUTA: GET /api/products/lowstock
+ * Objetivo: Obtener la lista de productos con stockQty <= minStock.
+ * Creado para: Sprint 2 - HU "Alertas automáticas de stock"
+ * Panel: admin_inv
+ */
+app.get('/api/products/lowstock', async (req, res) => {
+    try {
+        // Busca productos donde el stock actual (stockQty) es menor o igual al stock mínimo (minStock)
+        const productosLowStock = await Product.find({
+            $expr: { $lte: ['$stockQty', '$minStock'] },
+            active: true // Solo productos activos
+        }).select('sku name stockQty minStock');
 
+        res.status(200).json(productosLowStock);
+    } catch (error) {
+        console.error('Error al obtener productos con stock bajo:', error.message);
+        res.status(500).json({
+            message: 'Error interno del servidor al consultar stock bajo.',
+            details: error.message
+        });
+    }
+});
 
 
 // ===============================================

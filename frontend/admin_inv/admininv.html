@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel de Administración de Inventario</title>
   <link rel="stylesheet" href="admininv.css">
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
+
 <body>
   <div class="inv-layout">
     <!-- Sidebar -->
@@ -23,7 +25,8 @@
         <button class="inv-nav__item" id="navStock"><i class="fa-solid fa-layer-group"></i> Revisar stock</button>
       </nav>
       <div class="inv-sidebar__footer">
-        <button class="inv-nav__item inv-nav__item--muted"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+        <button class="inv-nav__item inv-nav__item--muted"><i class="fa-solid fa-right-from-bracket"></i> Cerrar
+          sesión</button>
       </div>
     </aside>
 
@@ -31,6 +34,8 @@
     <main class="inv-main">
       <header class="inv-topbar">
         <h1 class="inv-topbar__title">Panel de Administración de Inventario</h1>
+        <div id="lowStockAlert" class="inv-alert inv-alert--danger hidden" style="margin-bottom: 16px;">
+        </div>
         <div class="inv-user">Bienvenido, Admin</div>
       </header>
 
@@ -145,4 +150,5 @@
 
   <script type="module" src="admininv.js"></script>
 </body>
+
 </html>
