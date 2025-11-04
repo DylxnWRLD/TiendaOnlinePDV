@@ -85,7 +85,10 @@ class HttpAdapter {
     if (!r.ok) throw new Error((await r.json()).message || "Error de ajuste");
     return r.json();
   }
+
+  // ⭐️ NUEVA FUNCIÓN: Obtener productos con stock bajo ⭐️
   async getLowStock() {
+    // ⭐️ CORRECCIÓN: Usar la URL completa ⭐️
     const r = await fetch(`${RENDER_SERVER_URL}/api/products/lowstock`);
     if (!r.ok) throw new Error("Error obteniendo alerta de stock");
     return r.json();
@@ -256,9 +259,9 @@ async function refresh() {
 async function checkLowStock() {
   try {
     const lowStockItems = await api.getLowStock();
-    const alertBox = $("#lowStockAlert"); // Selector del elemento en HTML
+    const alertBox = $("#lowStockAlert");
 
-    if (!alertBox) return; // Salir si el elemento no existe (prevención)
+    if (!alertBox) return;
 
     if (lowStockItems.length > 0) {
       alertBox.classList.remove("hidden");
@@ -269,8 +272,13 @@ async function checkLowStock() {
 
   } catch (err) {
     console.error("Error al verificar stock bajo:", err);
-    // Podrías mostrar un toast de error interno aquí si fuera necesario
   }
+}
+
+async function refresh() {
+  const { items, total } = await api.list(state);
+  renderRows(items); paginate(total); updateLast();
+  checkLowStock(); // ⭐️ Llamada a la nueva función
 }
 
 /********** Handlers **********/
@@ -283,24 +291,24 @@ el.next.addEventListener("click", () => { state.page++; refresh(); });
 $$("[data-close]").forEach(b => b.addEventListener("click", closeModals));
 [el.modalForm, el.modalStock].forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
 
-el.save.addEventListener("click", async ()=>{
+el.save.addEventListener("click", async () => {
   // ⭐️ CRÍTICO: Leer el ID del campo oculto ANTES de crear el payload ⭐️
-  const productId = $("#id").value.trim(); 
+  const productId = $("#id").value.trim();
   const payload = collectForm(); // Contiene solo los campos del producto (sin ID)
-  
-  try{
-      if(productId){ // Si tenemos un ID, estamos EDITANDO
-          await api.update(productId, payload); // Pasamos el ID del producto y los datos
-          toast("Producto actualizado","ok"); 
-      }
-      else{ // Si no hay ID, estamos CREANDO
-          await api.create(payload); 
-          toast("Producto creado","ok"); 
-      }
+
+  try {
+    if (productId) { // Si tenemos un ID, estamos EDITANDO
+      await api.update(productId, payload); // Pasamos el ID del producto y los datos
+      toast("Producto actualizado", "ok");
+    }
+    else { // Si no hay ID, estamos CREANDO
+      await api.create(payload);
+      toast("Producto creado", "ok");
+    }
     closeModals(); refresh();
-  }catch(err){ 
-      // Si el backend devuelve un error de SKU duplicado, este lo mostrará correctamente.
-      toast(err.message||"Error", "err"); 
+  } catch (err) {
+    // Si el backend devuelve un error de SKU duplicado, este lo mostrará correctamente.
+    toast(err.message || "Error", "err");
   }
 });
 
