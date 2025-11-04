@@ -283,30 +283,25 @@ el.next.addEventListener("click", () => { state.page++; refresh(); });
 $$("[data-close]").forEach(b => b.addEventListener("click", closeModals));
 [el.modalForm, el.modalStock].forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
 
-el.save.addEventListener("click", async () => {
-  const payload = collectForm();
-  try {
-    if (payload.get('_id')) {
-      await api.update(payload.get('_id'), payload);
-      toast("Producto actualizado", "ok");
-    }
-    else {
-      await api.create(payload);
-      toast("Producto creado", "ok");
-    }
+el.save.addEventListener("click", async ()=>{
+  // ⭐️ CRÍTICO: Leer el ID del campo oculto ANTES de crear el payload ⭐️
+  const productId = $("#id").value.trim(); 
+  const payload = collectForm(); // Contiene solo los campos del producto (sin ID)
+  
+  try{
+      if(productId){ // Si tenemos un ID, estamos EDITANDO
+          await api.update(productId, payload); // Pasamos el ID del producto y los datos
+          toast("Producto actualizado","ok"); 
+      }
+      else{ // Si no hay ID, estamos CREANDO
+          await api.create(payload); 
+          toast("Producto creado","ok"); 
+      }
     closeModals(); refresh();
-  } catch (err) { toast(err.message || "Error", "err"); }
-});
-
-el.applyAdjust.addEventListener("click", async () => {
-  const productId = $("#adjId").value;
-  const type = $("#adjType").value;
-  const quantity = Number($("#adjQty").value);
-  const reason = $("#adjReason").value.trim();
-  try {
-    await api.adjust({ productId, type, quantity, reason });
-    closeModals(); toast("Stock actualizado", "ok"); refresh();
-  } catch (err) { toast(err.message || "Error", "err"); }
+  }catch(err){ 
+      // Si el backend devuelve un error de SKU duplicado, este lo mostrará correctamente.
+      toast(err.message||"Error", "err"); 
+  }
 });
 
 /********** CRUD UI **********/
