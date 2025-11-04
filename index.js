@@ -15,7 +15,7 @@ if (loginBtn) {
 // Redirigir al carrito
 if (cartBtn) {
   cartBtn.addEventListener("click", () => {
-    window.location.href = "frontend/carrito/carrito.html";
+    window.location.href = "frontend/compraCliente/compra.html";
   });
 }
 
