@@ -261,7 +261,8 @@ class AdminPanel {
             'Admin': 'badge-admin',
             'AdminInventario': 'badge-inventario',
             'Cajero': 'badge-cajero',
-            'Cliente': 'badge-cliente'
+            'Cliente': 'badge-cliente',
+            'Repartidor': 'badge-repartidor' // ⭐️ NUEVO: Clase para Repartidor
         };
         return roles[role] || 'badge-cliente';
     }
@@ -492,12 +493,14 @@ class AdminPanel {
 
     // --- HELPERS ---
     getRoleName(roleValue) {
-        const roles = { '1': 'Admin', '2': 'Cliente', '3': 'Cajero', '4': 'AdminInventario' };
+        // ⭐️ ACTUALIZADO: ID 5 para Repartidor ⭐️
+        const roles = { '1': 'Admin', '2': 'Cliente', '3': 'Cajero', '4': 'AdminInventario', '5': 'Repartidor' };
         return roles[roleValue] || 'Cliente';
     }
 
     getRoleValue(roleName) {
-        const roles = { 'Admin': '1', 'Cliente': '2', 'Cajero': '3', 'AdminInventario': '4' };
+        // ⭐️ ACTUALIZADO: Nombre 'Repartidor' a ID 5 ⭐️
+        const roles = { 'Admin': '1', 'Cliente': '2', 'Cajero': '3', 'AdminInventario': '4', 'Repartidor': '5' };
         return roles[roleName] || '2';
     }
 
