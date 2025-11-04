@@ -365,9 +365,11 @@ function fillForm(p) {
   $("#active").checked = !!(p?.active ?? true);
 }
 
+// En frontend/admin_inv/admininv.js
+
 function collectForm() {
   // 1. Primero validamos los datos de texto (como antes)
-  const id = $("#id").value.trim(); // ⭐️ NUEVO: Leer el ID
+  // Se quitó la lectura del ID ya que solo enviamos los campos a actualizar/crear.
   const sku = $("#sku").value.trim();
   const name = $("#name").value.trim();
   const price = Number($("#price").value);
@@ -376,13 +378,8 @@ function collectForm() {
     throw new Error("Completa SKU, Nombre y Precio");
   }
 
-  // 2. ⭐️ CAMBIO: Creamos un objeto FormData ⭐️
+  // 2. ⭐️ Creamos un objeto FormData ⭐️
   const formData = new FormData();
-
-  // ⭐️ CRÍTICO: Agregar el ID del producto para que el controlador PUT sepa cuál actualizar ⭐️
-  if (id) {
-    formData.append('_id', id); // Usamos el nombre '_id' que Mongo espera
-  }
 
   // 3. Agregamos todos los campos de texto al FormData
   formData.append('sku', sku);
@@ -394,12 +391,10 @@ function collectForm() {
   formData.append('description', $("#desc").value.trim());
   formData.append('active', $("#active").checked);
 
-  // 4. ⭐️ CAMBIO: Buscamos el archivo de imagen ⭐️
+  // 4. Buscamos el archivo de imagen
   const imageFile = $("#imageUpload").files[0];
 
   if (imageFile) {
-    // Y lo agregamos al FormData. El nombre 'imageUpload'
-    // debe coincidir con el de multer: upload.single('imageUpload')
     formData.append('imageUpload', imageFile);
   }
 
