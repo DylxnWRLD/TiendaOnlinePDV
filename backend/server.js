@@ -1195,6 +1195,50 @@ app.post('/api/caja/cerrar', getUserIdFromToken, async (req, res) => {
 });
 
 /**
+ * RUTA: GET /api/paquetes/seguimiento/:id
+ * Objetivo: Permitir al cliente rastrear el estado de su pedido.
+ * Creado para: HU Seguimiento de paquetes.
+ */
+app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
+    const pedidoId = req.params.id;
+
+    if (!pedidoId) {
+        return res.status(400).json({ message: 'Se requiere el ID del pedido para el seguimiento.' });
+    }
+
+    try {
+        // Asumiendo que existe una tabla 'pedidos' que contiene el 'estado_envio'.
+        // NOTA: Esta consulta NO requiere token de autenticación (es pública)
+        const { data: pedido, error } = await supabase
+            .from('pedidos') // ⭐️ REEMPLAZA 'pedidos' por el nombre de tu tabla de pedidos/ventas si es diferente ⭐️
+            .select('id, direccion_envio, estado_envio, fecha_estimada_entrega')
+            .eq('id', pedidoId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error Supabase al buscar pedido:', error.message);
+            return res.status(500).json({ message: 'Error interno al consultar la base de datos.' });
+        }
+
+        if (!pedido) {
+            return res.status(404).json({ message: 'Pedido no encontrado o ID incorrecto.' });
+        }
+
+        // Éxito: devolver la información de seguimiento.
+        res.status(200).json({
+            id: pedido.id,
+            estado: pedido.estado_envio,
+            direccion: pedido.direccion_envio,
+            fecha_estimada: pedido.fecha_estimada_entrega || 'Pendiente de asignar'
+        });
+
+    } catch (error) {
+        console.error('Error fatal en ruta de seguimiento:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+/**
  * RUTA: GET /api/products/lowstock
  * Objetivo: Obtener la lista de productos con stockQty <= minStock.
  * Creado para: Sprint 2 - HU "Alertas automáticas de stock"
