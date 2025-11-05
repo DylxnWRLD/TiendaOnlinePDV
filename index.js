@@ -6,6 +6,11 @@ const loginBtn = document.getElementById("loginBtn");
 const cartBtn = document.getElementById("cartBtn");
 const menuToggle = document.getElementById("menuToggle");
 
+// Obtención de datos de sesión del localStorage
+const token = localStorage.getItem('supabase-token');
+const corteId = localStorage.getItem('currentCorteId');
+const role = localStorage.getItem('user-role');
+
 if (token && role) {
   // --- Usuario LOGUEADO ---
 
@@ -119,11 +124,6 @@ document.querySelectorAll(".product-card a").forEach(card => {
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:3000'
   : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
-
-// Obtención de datos de sesión del localStorage
-const token = localStorage.getItem('supabase-token');
-const corteId = localStorage.getItem('currentCorteId');
-const role = localStorage.getItem('user-role');
 
 // Estado local de la venta (el "carrito")
 let ventaActual = {
