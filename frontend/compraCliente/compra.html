@@ -1,28 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEVEL_ONE - Compra</title>
     <link rel="stylesheet" href="compra.css">
 </head>
+
 <body>
-     <header class="header">
-      <div class="menu-icon" id="menuToggle">☰</div>
+    <header class="header">
+        <div class="menu-icon" id="menuToggle">☰</div>
 
-      <a href="../../index.html">
-        <h1 class="logo">LEVEL_ONE</h1>
-      </a>
+        <a href="../../index.html">
+            <h1 class="logo">LEVEL_ONE</h1>
+        </a>
 
-      <div class="search-bar">
-        <input type="text" placeholder="Buscar productos...">
-        <button>Buscar</button>
-      </div>
+        <div class="search-bar">
+            <input type="text" placeholder="Buscar productos...">
+            <button>Buscar</button>
+        </div>
 
-      <div class="user-actions">
-        <button id="loginBtn" class="login-btn">Iniciar sesión</button>
-        <button class="cart-btn">Comprar</button>
-      </div>
+        <div class="user-actions">
+            <button id="loginBtn" class="login-btn">Iniciar sesión</button>
+            <button class="cart-btn">Comprar</button>
+        </div>
     </header>
 
     <main class="checkout-container">
@@ -77,10 +79,11 @@
             <p>Tu código de pedido es:</p>
             <h2 id="codigoGenerado"></h2>
             <p>Este código se envió al repartidor</p>
-            <button onclick="location.href='../../index.html'">Volver al inicio</button>
+            <button id="finalRedirectBtn">Rastrear mi pedido</button>
         </div>
     </div>
 
-    <script src="compra.js"></script>    
+    <script src="compra.js"></script>
 </body>
+
 </html>

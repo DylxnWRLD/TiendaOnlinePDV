@@ -1,3 +1,5 @@
+// dylxnwrld/tiendaonlinepdv/TiendaOnlinePDV-6fd25318790eabba740e5931df289c127ba0141b/frontend/compraCliente/compra.js
+
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
@@ -34,6 +36,17 @@ document.getElementById("confirmPayment").addEventListener("click", () => {
   document.getElementById("codigoGenerado").innerText = codigo;
   document.getElementById("paymentModal").style.display = "none";
   document.getElementById("codeModal").style.display = "flex";
+
+  // ⭐️ INICIO DE CÓDIGO AÑADIDO ⭐️
+  const finalRedirectBtn = document.getElementById("finalRedirectBtn");
+  if (finalRedirectBtn) {
+    // La ruta relativa a 'frontend/cliente/seguimiento.html' desde 'frontend/compraCliente/' es '../cliente/seguimiento.html'
+    finalRedirectBtn.onclick = function() {
+        // Redirige al seguimiento, pasando el código generado como ID de pedido en el parámetro 'id'
+        window.location.href = `../cliente/seguimiento.html?id=${codigo}`; 
+    };
+  }
+  // ⭐️ FIN DE CÓDIGO AÑADIDO ⭐️
 
   console.log("Código enviado al repartidor:", codigo);
 });
