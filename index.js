@@ -7,9 +7,9 @@ const cartBtn = document.getElementById("cartBtn");
 const menuToggle = document.getElementById("menuToggle");
 
 // Obtención de datos de sesión del localStorage
-const token = localStorage.getItem('supabase-token');
-const corteId = localStorage.getItem('currentCorteId');
-const role = localStorage.getItem('user-role');
+const token = sessionStorage.getItem('supabase-token');
+const corteId = sessionStorage.getItem('currentCorteId');
+const role = sessionStorage.getItem('user-role');
 
 if (token && role) {
   // --- Usuario LOGUEADO ---

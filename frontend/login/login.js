@@ -35,13 +35,13 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
 
         if (response.ok) {
             // 1. Guardar el token de sesión (JWT)
-            localStorage.setItem('supabase-token', data.token);
+            sessionStorage.setItem('supabase-token', data.token);
 
             // 2. Redirigir basado en el rol
             const userRole = data.role;
 
-            localStorage.setItem('user-email', username); // Guarda el email
-            localStorage.setItem('user-role', data.role); // Guarda el rol
+            sessionStorage.setItem('user-email', username); // Guarda el email
+            sessionStorage.setItem('user-role', data.role); // Guarda el rol
 
             // =========================================================================
             // 2. RUTAS DE REDIRECCIÓN (Consistentes)
