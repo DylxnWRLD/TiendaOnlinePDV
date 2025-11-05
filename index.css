@@ -128,14 +128,14 @@ body {
 
 .carousel-container {
   display: flex;
-  overflow-x: hidden;
+  overflow-x: auto; /* Permite que se mueva */
   scroll-behavior: smooth;
 }
 
-/* ✅ TODAS LAS CARDS MISMO TAMAÑO */
+/* TODAS LAS CARDS MISMO TAMAÑO (AUMENTADAS) */
 .product-card {
-  width: 160px;
-  min-height: 220px;
+  width: 190px;          /* antes 160px */
+  min-height: 250px;     /* antes 220px */
   margin: 10px;
   background-color: #fcfcff;
   border-radius: 10px;
@@ -151,15 +151,14 @@ body {
   box-shadow: 0 4px 12px rgba(41, 23, 75, 0.4);
 }
 
-/* ✅ IMAGEN AJUSTADA SIN DEFORMARSE */
+/* IMAGEN MÁS GRANDE SIN DEFORMARSE */
 .product-card img {
   width: 100%;
-  height: 120px;
+  height: 150px;    /* antes 120px */
   object-fit: cover;
   border-radius: 10px 10px 0 0;
 }
 
-/* ✅ TEXTO QUE CABE Y NO SE SALE */
 .product-card p {
   padding: 10px;
   color: #3f3d56;
@@ -169,6 +168,7 @@ body {
   white-space: normal;
 }
 
+/* FLECHAS */
 .arrow {
   background-color: rgba(33, 25, 73, 0.8);
   border: none;
@@ -191,11 +191,13 @@ body {
 .arrow.left { left: -15px; }
 .arrow.right { right: -15px; }
 
+/* RESPONSIVE */
 @media (max-width: 700px) {
   .carousel-section { width: 95%; padding: 15px; }
-  .product-card { width: 130px; min-height: 200px; }
+  .product-card { width: 150px; min-height: 220px; }
   .arrow { font-size: 1.4rem; padding: 8px; }
 }
+
 
 /* ======================================= */
 /* PROMOCIONES
