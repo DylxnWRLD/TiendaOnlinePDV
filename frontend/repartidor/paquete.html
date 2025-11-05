@@ -1,6 +1,7 @@
+// dylxnwrld/tiendaonlinepdv/TiendaOnlinePDV-6fd25318790eabba740e5931df289c127ba0141b/frontend/repartidor/paquete.html
+
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,16 +9,15 @@
     <link rel="stylesheet" href="repartidor.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-
 <body>
     <div class="repartidor-container">
         <h1 class="cyber-glow">Detalle de Paquete <span id="paqueteId">ORD-001</span></h1>
-
+        
         <div class="detalle-section">
             <h4>📍 Dirección de Entrega</h4>
-            <div class="map-placeholder">
-                <i class="fas fa-map-marked-alt" style="font-size: 2em;"></i>
-                <p>Ubicación: <span id="direccion">Av. Siempre Viva 742, Springfield</span></p>
+            <div class="detalle-item" style="display: block; padding-top: 5px;">
+                <p style="margin: 0; color: #aaa;">Ubicación:</p>
+                <span id="direccion" style="font-weight: bold;">Av. Siempre Viva 742, Springfield</span>
             </div>
         </div>
 
@@ -28,16 +28,15 @@
                 <span id="clienteNombre">Juan Pérez</span>
             </div>
             <div class="detalle-item">
-                <span>Teléfono:</span>
-                <span id="clienteTelefono"><a href="tel:5512345678"
-                        style="color: var(--color-primary); text-decoration: none;">55 1234 5678 (Llamar)</a></span>
+                <span>Correo Electrónico:</span>
+                <span id="clienteEmail">juan.perez@email.com</span>
             </div>
             <div class="detalle-item">
-                <span>Instrucciones:</span>
-                <span style="max-width: 60%; text-align: right;">Dejar con el portero de camisa roja.</span>
+                <span>Teléfono:</span>
+                <span id="clienteTelefono"><a href="tel:5512345678" style="color: var(--color-primary); text-decoration: none;">55 1234 5678 (Llamar)</a></span>
             </div>
-        </div>
-
+            </div>
+        
         <div class="detalle-section">
             <h4>📦 Productos</h4>
             <ul style="list-style: none; padding-left: 0;">
@@ -45,15 +44,13 @@
                 <li><i class="fas fa-cube" style="margin-right: 8px;"></i>Juego Cyberpunk 2077 x1</li>
             </ul>
         </div>
-
+        
         <div class="detalle-section" id="accionEntrega">
             <h4>Actualizar Estado del Pedido</h4>
-
+            
             <div style="margin-bottom: 15px;">
-                <label for="nuevoEstado" style="font-weight: bold; display: block; margin-bottom: 5px;">Seleccionar
-                    Estado:</label>
-                <select id="nuevoEstado"
-                    style="width: 100%; padding: 10px; border-radius: 5px; background: #333; color: var(--color-text-light);">
+                <label for="nuevoEstado" style="font-weight: bold; display: block; margin-bottom: 5px;">Seleccionar Estado:</label>
+                <select id="nuevoEstado" style="width: 100%; padding: 10px; border-radius: 5px; background: #333; color: var(--color-text-light);">
                     <option value="PREPARACION">📦 Preparando tu pedido</option>
                     <option value="EN RUTA">🚚 En Camino</option>
                     <option value="CERCA">📍 Cerca de tu ubicación</option>
@@ -62,32 +59,28 @@
                     <option value="CANCELADO">🚫 Cancelado</option>
                 </select>
             </div>
-
+            
             <div id="mensajeExtraContainer" style="margin-bottom: 15px; display: none;">
-                <label for="mensajeExtra" style="font-weight: bold; display: block; margin-bottom: 5px;">Mensaje
-                    Adicional:</label>
-                <textarea id="mensajeExtra" rows="2"
-                    placeholder="Ej: No se encontró a nadie en el domicilio, dirección incorrecta..."
-                    style="width: 100%; padding: 10px; border-radius: 5px; background: #333; color: var(--color-text-light); resize: vertical;"></textarea>
+                <label for="mensajeExtra" style="font-weight: bold; display: block; margin-bottom: 5px;">Mensaje Adicional:</label>
+                <textarea id="mensajeExtra" rows="2" placeholder="Ej: No se encontró a nadie en el domicilio, dirección incorrecta..." style="width: 100%; padding: 10px; border-radius: 5px; background: #333; color: var(--color-text-light); resize: vertical;"></textarea>
             </div>
 
-            <div id="pruebasEntrega" style="display: none;">
+            <div id="pruebasEntrega" style="display: none;"> 
                 <p style="margin-bottom: 10px; color: #aaa;">Prueba de entrega (Solo para "Entregado"):</p>
                 <input type="file" accept="image/*" capture="camera" id="fotoPrueba" style="margin-bottom: 15px;">
             </div>
-
+            
             <button id="btnActualizarEstado" class="btn btn-primary" style="width: 100%;">
                 <i class="fas fa-sync"></i> Actualizar Estado
             </button>
         </div>
-
+        
         <button onclick="window.location.href='repartidor.html'" class="btn btn-secondary" style="width: 100%;">
             <i class="fas fa-undo"></i> Volver a la Lista
         </button>
-
+        
     </div>
-
+    
     <script src="repartidor.js"></script>
 </body>
-
 </html>
