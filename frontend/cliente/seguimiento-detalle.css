@@ -1,0 +1,223 @@
+/* frontend/cliente/seguimiento-detalle.css */
+
+/* Variables si las usas en globals.css */
+:root {
+    --color-primary: #8B5CF6; /* Púrpura */
+    --color-secondary: #6B7280; /* Gris */
+    --color-success: #10B981; /* Verde */
+    --color-danger: #EF4444; /* Rojo */
+    --color-warning: #F59E0B; /* Amarillo */
+    --color-info: #3B82F6; /* Azul */
+    --color-text-light: #F3F4F6; /* Gris claro */
+    --color-bg-dark: #1F2937; /* Gris oscuro */
+}
+
+/* Base de tu globals.css */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--color-bg-dark);
+    color: var(--color-text-light);
+}
+
+.container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2.5rem;
+    background-color: #2D3748; /* Un poco más claro que el body */
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+h1, h2 {
+    color: var(--color-primary);
+    margin-bottom: 1.5rem;
+}
+
+.text-purple-400 { color: var(--color-primary); }
+.text-purple-300 { color: #A78BFA; }
+.text-red-400 { color: var(--color-danger); }
+.text-gray-400 { color: #9CA3AF; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #7C3AED; /* Un tono más oscuro */
+}
+
+.btn-secondary {
+    background-color: var(--color-secondary);
+    color: white;
+}
+.btn-secondary:hover {
+    background-color: #5B616D;
+}
+
+/* Estilos de la línea de tiempo */
+.timeline-container {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem 0;
+}
+
+.timeline-container::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    background-color: #6B7280; /* Color de la línea */
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    margin-left: -2px;
+    border-radius: 2px;
+}
+
+/* Contenedor de cada evento */
+.timeline-event {
+    padding: 10px 40px;
+    position: relative;
+    background-color: inherit;
+    width: 50%;
+    box-sizing: border-box;
+}
+
+/* Icono del punto en la línea */
+.timeline-event::after {
+    content: '';
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    right: -17px;
+    background-color: #2D3748; /* Fondo del evento */
+    border: 4px solid var(--color-primary);
+    top: 15px;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+/* A la izquierda */
+.timeline-event.left {
+    left: 0;
+}
+
+/* A la derecha */
+.timeline-event.right {
+    left: 50%;
+}
+
+/* Flecha de los eventos a la izquierda */
+.timeline-event.left::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 22px;
+    width: 0;
+    z-index: 1;
+    right: 30px;
+    border: medium solid white;
+    border-width: 10px 0 10px 10px;
+    border-color: transparent transparent transparent #4A5568; /* Color del box-content */
+}
+
+/* Flecha de los eventos a la derecha */
+.timeline-event.right::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 22px;
+    width: 0;
+    z-index: 1;
+    left: 30px;
+    border: medium solid white;
+    border-width: 10px 10px 10px 0;
+    border-color: transparent #4A5568 transparent transparent;
+}
+
+/* Puntos a la derecha para eventos a la izquierda */
+.timeline-event.left::after {
+    left: 50%;
+    margin-left: -16px;
+}
+
+/* Puntos a la izquierda para eventos a la derecha */
+.timeline-event.right::after {
+    left: 50%;
+    margin-left: -16px;
+}
+
+.timeline-content {
+    padding: 20px 30px;
+    background-color: #4A5568; /* Contenido del box */
+    position: relative;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.timeline-content h3 {
+    color: var(--color-text-light);
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-content small {
+    color: #CBD5E0; /* Gris claro */
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.timeline-content p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #E2E8F0; /* Gris muy claro */
+}
+
+/* Colores de estado para el punto de la línea de tiempo */
+.status-PREPARACION::after { border-color: #F59E0B; } /* Amarillo */
+.status-EN_RUTA::after { border-color: #3B82F6; } /* Azul */
+.status-CERCA::after { border-color: #8B5CF6; } /* Púrpura */
+.status-ENTREGADO::after { border-color: #10B981; } /* Verde */
+.status-INTENTO_DE_ENTREGA::after,
+.status-CANCELADO::after { border-color: #EF4444; } /* Rojo */
+
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .timeline-container::after {
+        left: 31px;
+    }
+    .timeline-event {
+        width: 100%;
+        padding-left: 70px;
+        padding-right: 25px;
+    }
+    .timeline-event.left::before,
+    .timeline-event.right::before {
+        left: 60px;
+        border: medium solid white;
+        border-width: 10px 10px 10px 0;
+        border-color: transparent #4A5568 transparent transparent;
+    }
+    .timeline-event.left::after,
+    .timeline-event.right::after {
+        left: 15px;
+        margin-left: 0;
+    }
+    .timeline-event.right {
+        left: 0%;
+    }
+}
