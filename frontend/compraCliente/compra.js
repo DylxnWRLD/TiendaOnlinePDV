@@ -15,42 +15,132 @@ let ventaActual = {
     total: 0
 };
 
-// Abrir modal de pago
-document.getElementById("payBtn").addEventListener("click", () => {
-  document.getElementById("paymentModal").style.display = "flex";
+// Ejemplo de productos cargados desde la base o LocalStorage
+//const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+
+// ELEMENTOS
+const cartItems = document.getElementById("cartItems");
+const subtotalEl = document.getElementById("subtotal");
+const discountEl = document.getElementById("discount");
+const totalEl = document.getElementById("total");
+const payBtn = document.getElementById("payBtn");
+
+const paymentModal = document.getElementById("paymentModal");
+const cancelModal = document.getElementById("cancelModal");
+const confirmCardModal = document.getElementById("confirmCardModal");
+const codeModal = document.getElementById("codeModal");
+
+// BOTONES
+const cancelPayment = document.getElementById("cancelPayment");
+const confirmPayment = document.getElementById("confirmPayment");
+const yesCancel = document.getElementById("yesCancel");
+const noCancel = document.getElementById("noCancel");
+
+const yesCard = document.getElementById("yesCard");
+const noCard = document.getElementById("noCard");
+
+const cardNumberInput = document.getElementById("cardNumber");
+const cvvInput = document.getElementById("cvv");
+const showCard = document.getElementById("showCard");
+const showCVV = document.getElementById("showCVV");
+
+// Mostrar productos en pantalla
+function renderCarrito() {
+    cartItems.innerHTML = "";
+
+    let subtotal = 0;
+    let descuento = 0;
+
+    carrito.forEach(item => {
+        let totalProducto = item.precio * item.cantidad;
+        let descuentoProducto = item.descuento ? (totalProducto * (item.descuento/100)) : 0;
+
+        subtotal += totalProducto;
+        descuento += descuentoProducto;
+
+        cartItems.innerHTML += `
+            <div class="cart-item">
+                <img src="${item.imagen}" class="mini-img">
+                <p>${item.nombre}</p>
+                <p>Cant: ${item.cantidad}</p>
+                <p>$${(totalProducto - descuentoProducto).toFixed(2)}</p>
+            </div>
+        `;
+    });
+
+    let total = subtotal - descuento;
+
+    subtotalEl.textContent = subtotal.toFixed(2);
+    discountEl.textContent = descuento.toFixed(2);
+    totalEl.textContent = total.toFixed(2);
+}
+
+// Mostrar ventana de pago
+payBtn.addEventListener("click", () => {
+    paymentModal.classList.remove("hidden");
 });
 
-// Confirmar pago y generar código
-document.getElementById("confirmPayment").addEventListener("click", () => {
-  const tarjeta = document.getElementById("cardNumber").value.trim();
-  
-  if (tarjeta.length < 8) {
-    alert("Ingrese un número de tarjeta válido");
-    return;
-  }
-
-  const codigo = "ENT-" + Math.floor(Math.random() * 999999);
-
-  document.getElementById("codigoGenerado").innerText = codigo;
-  document.getElementById("paymentModal").style.display = "none";
-  document.getElementById("codeModal").style.display = "flex";
-
-  console.log("Código enviado al repartidor:", codigo);
+// Cancelar compra (abre confirmación)
+cancelPayment.addEventListener("click", () => {
+    paymentModal.classList.add("hidden");
+    cancelModal.classList.remove("hidden");
 });
 
-// ✅ Abrir modal de confirmar cancelación
-document.getElementById("cancelPayment").addEventListener("click", () => {
-  document.getElementById("cancelModal").style.display = "flex";
+// SI cancela
+yesCancel.addEventListener("click", () => {
+    cancelModal.classList.add("hidden");
+    alert("Compra cancelada.");
+    location.href = "../../index.html";
 });
 
-// ✅ Si confirma cancelar
-document.getElementById("yesCancel").addEventListener("click", () => {
-  document.getElementById("paymentModal").style.display = "none";
-  document.getElementById("cancelModal").style.display = "none";
-  alert("✅ La compra ha sido cancelada.");
+// NO cancela
+noCancel.addEventListener("click", () => {
+    cancelModal.classList.add("hidden");
+    paymentModal.classList.remove("hidden");
 });
 
-// ✅ Si NO cancela
-document.getElementById("noCancel").addEventListener("click", () => {
-  document.getElementById("cancelModal").style.display = "none";
+// Confirmar método y datos antes de pagar
+confirmPayment.addEventListener("click", () => {
+    let metodo = document.querySelector('input[name="payMethod"]:checked');
+    let tarjeta = cardNumberInput.value.trim();
+    let cvv = cvvInput.value.trim();
+
+    // VALIDACIONES
+    if (!metodo) {
+        alert("Selecciona Débito o Crédito.");
+        return;
+    }
+    if (tarjeta.length !== 16 || isNaN(tarjeta)) {
+        alert("El número de tarjeta debe tener 16 dígitos.");
+        return;
+    }
+    if (cvv.length !== 3 || isNaN(cvv)) {
+        alert("El CVV debe tener 3 dígitos.");
+        return;
+    }
+
+    // Mostrar confirmación
+    paymentModal.classList.add("hidden");
+    confirmCardModal.classList.remove("hidden");
+    showCard.textContent = tarjeta;
+    showCVV.textContent = cvv;
 });
+
+// Si los datos son correctos → generar código
+yesCard.addEventListener("click", () => {
+    confirmCardModal.classList.add("hidden");
+    codeModal.classList.remove("hidden");
+
+    let codigo = "PED-" + Math.floor(Math.random() * 900000 + 100000);
+    document.getElementById("codigoGenerado").textContent = codigo;
+});
+
+// Si NO son correctos → regresar
+noCard.addEventListener("click", () => {
+    confirmCardModal.classList.add("hidden");
+    paymentModal.classList.remove("hidden");
+});
+
+// Render inicial
+renderCarrito();
+
