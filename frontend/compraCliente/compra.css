@@ -201,3 +201,82 @@ body {
   background: red;
   color: white;
 }
+
+/* ============================
+   ESTILOS PARA MODAL DE PAGO
+============================ */
+
+.modal-content {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 10px;
+  width: 320px;
+  text-align: center;
+  animation: popup 0.2s ease-out;
+}
+
+/* Animación de aparición */
+@keyframes popup {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Imagen de tarjetas */
+.modal-content img {
+  width: 160px;
+  margin: 10px auto;
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Inputs de tarjeta */
+.modal-content input {
+  width: 90%;
+  padding: 8px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #b8b8b8;
+  font-size: 0.95rem;
+  text-align: center;
+  outline: none;
+}
+
+.modal-content input:focus {
+  border-color: #211949;
+  box-shadow: 0 0 4px rgba(33, 25, 73, 0.4);
+}
+
+/* Mejor diseño de botones */
+.confirm-btn, .cancel-btn {
+  width: 90%;
+  padding: 10px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.confirm-btn {
+  background: #211949;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #3a2bad;
+}
+
+.cancel-btn {
+  background: #d40000;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #ff4747;
+}
+
+/* Modal de confirmación de tarjeta */
+#confirmCardModal .modal-content {
+  width: 300px;
+}
