@@ -18,30 +18,11 @@ if (token && role) {
     loginBtn.textContent = "Mi Cuenta"; // ⭐️ Cambia el texto del botón
 
     loginBtn.addEventListener("click", () => {
-      // Redirige a la página de perfil/panel correcta según el rol
-      switch (role) {
-        case 'Admin':
-          window.location.href = 'frontend/admin/admin.html';
-          break;
-        case 'Cajero':
-          window.location.href = 'frontend/cajero/apertura_caja.html';
-          break;
-        case 'AdminInventario':
-          window.location.href = 'frontend/admin_inv/admininv.html';
-          break;
-        case 'Repartidor':
-          window.location.href = 'frontend/repartidor/repartidor.html';
-          break;
-        case 'Cliente':
-        default:
-          // ⭐️ Redirige a la página de perfil del cliente
-          window.location.href = "frontend/cliente/cliente.html";
-          break;
-      }
+      window.location.href = "frontend/cliente/cliente.html";
     });
   }
 
-  // El botón de comprar funciona normalmente (va al carrito)
+  // El botón de comprar funciona normally (va al carrito)
   if (cartBtn) {
     cartBtn.addEventListener("click", () => {
       window.location.href = "frontend/compraCliente/compra.html";
