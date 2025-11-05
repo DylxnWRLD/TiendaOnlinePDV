@@ -1,25 +1,69 @@
 // ==========================================
-// 🔹 BOTONES PRINCIPALES
+// 🔹 MANEJO DE ESTADO (Logueado / No Logueado)
 // ==========================================
+
 const loginBtn = document.getElementById("loginBtn");
 const cartBtn = document.getElementById("cartBtn");
 const menuToggle = document.getElementById("menuToggle");
 
-// Redirigir al login
-if (loginBtn) {
-  loginBtn.addEventListener("click", () => {
-    window.location.href = "frontend/login/login.html";
-  });
+if (token && role) {
+  // --- Usuario LOGUEADO ---
+
+  if (loginBtn) {
+    loginBtn.textContent = "Mi Cuenta"; // ⭐️ Cambia el texto del botón
+
+    loginBtn.addEventListener("click", () => {
+      // Redirige a la página de perfil/panel correcta según el rol
+      switch (role) {
+        case 'Admin':
+          window.location.href = 'frontend/admin/admin.html';
+          break;
+        case 'Cajero':
+          window.location.href = 'frontend/cajero/apertura_caja.html';
+          break;
+        case 'AdminInventario':
+          window.location.href = 'frontend/admin_inv/admininv.html';
+          break;
+        case 'Repartidor':
+          window.location.href = 'frontend/repartidor/repartidor.html';
+          break;
+        case 'Cliente':
+        default:
+          // ⭐️ Redirige a la página de perfil del cliente
+          window.location.href = "frontend/cliente/cliente.html";
+          break;
+      }
+    });
+  }
+
+  // El botón de comprar funciona normalmente (va al carrito)
+  if (cartBtn) {
+    cartBtn.addEventListener("click", () => {
+      window.location.href = "frontend/compraCliente/compra.html";
+    });
+  }
+
+} else {
+  // --- Usuario NO LOGUEADO ---
+
+  // El botón de login funciona normalmente (va a login)
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      window.location.href = "frontend/login/login.html";
+    });
+  }
+
+  // ⭐️ El botón de comprar AHORA redirige a login
+  if (cartBtn) {
+    cartBtn.addEventListener("click", () => {
+      // Opcional: alertar al usuario
+      // alert("Debes iniciar sesión para poder comprar.");
+      window.location.href = "frontend/login/login.html";
+    });
+  }
 }
 
-// Redirigir al carrito
-if (cartBtn) {
-  cartBtn.addEventListener("click", () => {
-    window.location.href = "frontend/compraCliente/compra.html";
-  });
-}
-
-// Menú hamburguesa
+// Menú hamburguesa (lógica movida aquí, es igual para ambos)
 if (menuToggle) {
   menuToggle.addEventListener("click", () => {
     alert("Aquí podría abrir un menú lateral 🧭");
@@ -73,20 +117,20 @@ document.querySelectorAll(".product-card a").forEach(card => {
 // Conexion a la base de datos
 // ==========================================
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
+  ? 'http://127.0.0.1:3000'
+  : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
 
 // Obtención de datos de sesión del localStorage
-const token = localStorage.getItem('supabase-token'); 
+const token = localStorage.getItem('supabase-token');
 const corteId = localStorage.getItem('currentCorteId');
-const role = localStorage.getItem('user-role'); 
+const role = localStorage.getItem('user-role');
 
 // Estado local de la venta (el "carrito")
 let ventaActual = {
-    productos: [], // Contiene {id_producto_mongo, nombre_producto, precio_unitario, cantidad, monto_descuento, stock_disponible}
-    subtotal: 0,
-    descuento: 0,
-    total: 0
+  productos: [], // Contiene {id_producto_mongo, nombre_producto, precio_unitario, cantidad, monto_descuento, stock_disponible}
+  subtotal: 0,
+  descuento: 0,
+  total: 0
 };
 
 // =========================

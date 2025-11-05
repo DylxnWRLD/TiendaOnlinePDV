@@ -64,7 +64,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
                     break;
                 case 'Cliente':
                 default:
-                    window.location.href = '../cliente/cliente.html'; // Se asume esta ruta para clientes generales
+                    window.location.href = '../index.html'; // Se asume esta ruta para clientes generales
                     break;
             }
 
