@@ -1,36 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LEVEL_ONE - Compra</title>
-    <link rel="stylesheet" href="/index.css">
+    <link rel="stylesheet" href="compra.css">
 </head>
+
 <body>
-     <header class="header">
-    <!-- Menú hamburguesa -->
-      <div class="menu-icon" id="menuToggle">
-        ☰
-      </div>
+    <header class="header">
+        <div class="menu-icon" id="menuToggle">☰</div>
 
-    <!-- Nombre de la tienda -->
-     <a href="../../index.html">
-        <h1 class="logo">LEVEL_ONE</h1>
-     </a>
-    <!-- Barra de búsqueda -->
-      <div class="search-bar">
-        <input type="text" placeholder="Buscar productos...">
-        <button>Buscar</button>
-      </div>
+        <a href="../../index.html">
+            <h1 class="logo">LEVEL_ONE</h1>
+        </a>
 
-    <!-- Botones de usuario -->
-      <div class="user-actions">
-        <button id="loginBtn" class="login-btn">Iniciar sesión</button>
-        <button class="cart-btn">Comprar</button>
-      </div>
+        <div class="search-bar">
+            <input type="text" placeholder="Buscar productos...">
+            <button>Buscar</button>
+        </div>
+
+        <div class="user-actions">
+            <button id="loginBtn" class="login-btn">Iniciar sesión</button>
+            <button class="cart-btn">Comprar</button>
+        </div>
     </header>
-    
-        <p>Proximamente</p>
-    <script src="compra.js"></script>    
+
+    <main class="checkout-container">
+        <h2>Confirmar compra</h2>
+
+        <div id="cartItems" class="cart-items"></div>
+
+        <div class="total-section">
+            <p><strong>Subtotal: </strong> $<span id="subtotal">0</span></p>
+            <p><strong>Descuento: </strong> $<span id="discount">0</span></p>
+            <p><strong>Total: </strong> $<span id="total">0</span></p>
+            <button id="payBtn" class="buy-btn">Realizar compra</button>
+        </div>
+    </main>
+
+    <div id="paymentModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Método de pago</h3>
+
+            <label><input type="radio" name="payMethod" value="Debito"> Débito</label><br>
+            <label><input type="radio" name="payMethod" value="Credito"> Crédito</label>
+
+            <input type="text" id="cardNumber" maxlength="16" placeholder="Número de tarjeta (16 dígitos)">
+            <input type="text" id="cvv" maxlength="3" placeholder="CVV (3 dígitos)">
+
+            <button id="confirmPayment" class="confirm-btn">Confirmar pago</button>
+            <button id="cancelPayment" class="cancel-btn">Cancelar compra</button>
+        </div>
+    </div>
+
+    <div id="cancelModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>¿Seguro que deseas cancelar la compra?</h3>
+            <button id="yesCancel" class="confirm-btn">Sí</button>
+            <button id="noCancel" class="cancel-btn">No</button>
+        </div>
+    </div>
+
+    <div id="confirmCardModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>¿Los datos son correctos?</h3>
+            <p>Número: <span id="showCard"></span></p>
+            <p>CVV: <span id="showCVV"></span></p>
+            <button id="yesCard" class="confirm-btn">Sí</button>
+            <button id="noCard" class="cancel-btn">No</button>
+        </div>
+    </div>
+
+    <div id="codeModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>¡Compra realizada!</h3>
+            <p>Tu código de pedido es:</p>
+            <h2 id="codigoGenerado"></h2>
+            <p>Este código se envió al repartidor</p>
+            <button id="finalRedirectBtn">Rastrear mi pedido</button>
+        </div>
+    </div>
+
+    <script src="compra.js"></script>
 </body>
+
 </html>

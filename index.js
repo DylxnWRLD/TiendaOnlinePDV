@@ -1,117 +1,146 @@
-// ==========================================
-// 🔹 BOTONES PRINCIPALES
-// ==========================================
-const loginBtn = document.getElementById("loginBtn");
-const cartBtn = document.getElementById("cartBtn");
-const menuToggle = document.getElementById("menuToggle");
+document.addEventListener("DOMContentLoaded", () => {
 
-// Redirigir al login
-if (loginBtn) {
-  loginBtn.addEventListener("click", () => {
-    window.location.href = "frontend/login/login.html";
-  });
-}
+  // ==========================================
+  // 🔹 MANEJO DE ESTADO (Logueado / No Logueado)
+  // ==========================================
 
-// Redirigir al carrito
-if (cartBtn) {
-  cartBtn.addEventListener("click", () => {
-    window.location.href = "frontend/compraCliente/compra.html";
-  });
-}
+  const loginBtn = document.getElementById("loginBtn");
+  const cartBtn = document.getElementById("cartBtn");
+  const menuToggle = document.getElementById("menuToggle");
 
-// Menú hamburguesa
-if (menuToggle) {
-  menuToggle.addEventListener("click", () => {
-    alert("Aquí podría abrir un menú lateral 🧭");
-  });
-}
+  // Obtención de datos de sesión del localStorage
+  const token = sessionStorage.getItem('supabase-token');
+  const corteId = sessionStorage.getItem('currentCorteId');
+  const role = sessionStorage.getItem('user-role');
 
-// ==========================================
-// 🔸 NUEVO CARRUSEL
-// ==========================================
+  if (token && role) {
+    // --- Usuario LOGUEADO ---
 
-//flechas y el contenedor del carrusel
-const carouselContainer = document.getElementById("carousel");
-const prevArrow = document.getElementById("prev");
-const nextArrow = document.getElementById("next");
+    if (loginBtn) {
+      loginBtn.textContent = "Mi Cuenta"; // ⭐️ Cambia el texto del botón
 
-if (carouselContainer && prevArrow && nextArrow) {
-  const scrollAmount = 250; // distancia que se moverá cada vez
+      loginBtn.addEventListener("click", () => {
+        window.location.href = "frontend/cliente/cliente.html";
+      });
+    }
 
-  prevArrow.addEventListener("click", () => {
-    carouselContainer.scrollBy({
-      left: -scrollAmount,
-      behavior: "smooth",
-    });
-  });
+    // El botón de comprar funciona normally (va al carrito)
+    if (cartBtn) {
+      cartBtn.addEventListener("click", () => {
+        window.location.href = "frontend/compraCliente/compra.html";
+      });
+    }
 
-  nextArrow.addEventListener("click", () => {
-    carouselContainer.scrollBy({
-      left: scrollAmount,
-      behavior: "smooth",
-    });
-  });
-}
+  } else {
+    // --- Usuario NO LOGUEADO ---
 
-// ==========================================
-// (animación continua)
-// ==========================================
-setInterval(() => {
-  if (carouselContainer) {
-    carouselContainer.scrollBy({ left: 250, behavior: "smooth" });
+    // El botón de login funciona normalmente (va a login)
+    if (loginBtn) {
+      loginBtn.addEventListener("click", () => {
+        window.location.href = "frontend/login/login.html";
+      });
+    }
+
+    // ⭐️ El botón de comprar AHORA redirige a login
+    if (cartBtn) {
+      cartBtn.addEventListener("click", () => {
+        // Opcional: alertar al usuario
+        // alert("Debes iniciar sesión para poder comprar.");
+        window.location.href = "frontend/login/login.html";
+      });
+    }
   }
-}, 4000);
 
-// ✅ Permite que las product-card abran su enlace normalmente
-document.querySelectorAll(".product-card a").forEach(card => {
-  card.addEventListener("click", (e) => {
-    e.stopPropagation(); // evita que otro evento bloquee el click
+  // Menú hamburguesa (lógica movida aquí, es igual para ambos)
+  if (menuToggle) {
+    menuToggle.addEventListener("click", () => {
+      alert("Aquí podría abrir un menú lateral 🧭");
+    });
+  }
+
+  // ==========================================
+  // 🔸 NUEVO CARRUSEL
+  // ==========================================
+
+  //flechas y el contenedor del carrusel
+  const carouselContainer = document.getElementById("carousel");
+  const prevArrow = document.getElementById("prev");
+  const nextArrow = document.getElementById("next");
+
+  if (carouselContainer && prevArrow && nextArrow) {
+    const scrollAmount = 250; // distancia que se moverá cada vez
+
+    prevArrow.addEventListener("click", () => {
+      carouselContainer.scrollBy({
+        left: -scrollAmount,
+        behavior: "smooth",
+      });
+    });
+
+    nextArrow.addEventListener("click", () => {
+      carouselContainer.scrollBy({
+        left: scrollAmount,
+        behavior: "smooth",
+      });
+    });
+  }
+
+  // ==========================================
+  // (animación continua)
+  // ==========================================
+  setInterval(() => {
+    if (carouselContainer) {
+      carouselContainer.scrollBy({ left: 250, behavior: "smooth" });
+    }
+  }, 4000);
+
+  // ✅ Permite que las product-card abran su enlace normalmente
+  document.querySelectorAll(".product-card a").forEach(card => {
+    card.addEventListener("click", (e) => {
+      e.stopPropagation(); // evita que otro evento bloquee el click
+    });
   });
-});
 
-// ===========================================
-// Conexion a la base de datos
-// ==========================================
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  // ===========================================
+  // Conexion a la base de datos
+  // ==========================================
+  const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv-hm20.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
 
-// Obtención de datos de sesión del localStorage
-const token = localStorage.getItem('supabase-token'); 
-const corteId = localStorage.getItem('currentCorteId');
-const role = localStorage.getItem('user-role'); 
-
-// Estado local de la venta (el "carrito")
-let ventaActual = {
+  // Estado local de la venta (el "carrito")
+  let ventaActual = {
     productos: [], // Contiene {id_producto_mongo, nombre_producto, precio_unitario, cantidad, monto_descuento, stock_disponible}
     subtotal: 0,
     descuento: 0,
     total: 0
-};
+  };
 
-// =========================
-// Funcionalidad de Bsuqueda
-// =========================
+  // =========================
+  // Funcionalidad de Bsuqueda
+  // =========================
 
-const searchInput = document.getElementById("search");
-const searchBtn = document.getElementById("searchBtn");
+  const searchInput = document.getElementById("search");
+  const searchBtn = document.getElementById("searchBtn");
 
-function filtrarProductos() {
-  const texto = searchInput.value.toLowerCase().trim();
-  const productos = document.querySelectorAll(".product-card");
+  function filtrarProductos() {
+    const texto = searchInput.value.toLowerCase().trim();
+    const productos = document.querySelectorAll(".product-card");
 
-  productos.forEach(card => {
-    const contenido = card.innerText.toLowerCase();
-    card.style.display = contenido.includes(texto) ? "flex" : "none";
-  });
-}
+    productos.forEach(card => {
+      const contenido = card.innerText.toLowerCase();
+      card.style.display = contenido.includes(texto) ? "flex" : "none";
+    });
+  }
 
-// Filtrar mientras escribe
-if (searchInput) {
-  searchInput.addEventListener("input", filtrarProductos);
-}
+  // Filtrar mientras escribe
+  if (searchInput) {
+    searchInput.addEventListener("input", filtrarProductos);
+  }
 
-// Filtrar al presionar el botón
-if (searchBtn) {
-  searchBtn.addEventListener("click", filtrarProductos);
-}
+  // Filtrar al presionar el botón
+  if (searchBtn) {
+    searchBtn.addEventListener("click", filtrarProductos);
+  }
+
+});
