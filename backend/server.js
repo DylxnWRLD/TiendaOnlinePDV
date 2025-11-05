@@ -1111,13 +1111,6 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     const id_cajero = req.userId; // ID del usuario autenticado (cajero)
     const { id_corte, total_descuento, total_final, metodo_pago, detalles } = req.body;
 
-
-
-
-
-
-
-
     try {
 
         // 1. Consultar MongoDB para detalles de producto Y STOCK
@@ -1138,7 +1131,7 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
         // 3. Validar Stock y Calcular Totales
         let totalFinalVenta = 0;
         let totalDescuentoVenta = 0;
-        const detallesParaSupabase = []; 
+        const detallesParaSupabase = [];
 
         for (const item of detalles) {
             const productoInfo = productosMongo.find(p => p._id.toString() === item.producto_id_mongo);
@@ -1152,10 +1145,10 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
             }
 
             // 4. Calcular Descuentos Aplicables
-            const { 
-                precio_original, 
-                monto_descuento_unitario, 
-                precio_final_unitario 
+            const {
+                precio_original,
+                monto_descuento_unitario,
+                precio_final_unitario
             } = calcularDescuentoItem(productoInfo, promocionesActivas || []);
 
             // 5. Calcular Totales
@@ -1172,22 +1165,8 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
             });
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         // 1. **Transacción de Venta en PostgreSQL**
-    
+
         // Llama a la función PL/pgSQL
         const { data, error } = await supabase
             .rpc('registrar_venta', {
@@ -1270,41 +1249,119 @@ app.post('/api/caja/cerrar', getUserIdFromToken, async (req, res) => {
 });
 
 /**
+ * RUTA: PUT /api/paquetes/:id/estado
+ * Objetivo: Permitir al repartidor actualizar el estado del envío.
+ * Se requiere autenticación (asume que Repartidor ya está autenticado).
+ */
+app.put('/api/paquetes/:id/estado', getUserIdFromToken, async (req, res) => {
+    const pedidoId = req.params.id;
+    const { nuevo_estado, mensaje_extra } = req.body; // mensaje_extra es opcional para detalles
+    const userId = req.userId; // ID del repartidor
+
+    if (!nuevo_estado) {
+        return res.status(400).json({ message: 'Se requiere el nuevo estado.' });
+    }
+
+    try {
+        // 1. Obtener el pedido actual para obtener el historial existente
+        const { data: currentPedido, error: fetchError } = await supabase
+            .from('pedidos')
+            .select('historial_seguimiento')
+            .eq('id', pedidoId)
+            .single();
+
+        if (fetchError) {
+            console.error('Error al obtener pedido para actualizar estado:', fetchError.message);
+            return res.status(404).json({ message: 'Pedido no encontrado.' });
+        }
+
+        const currentHistorial = currentPedido.historial_seguimiento || [];
+        const newEvent = {
+            estado: nuevo_estado,
+            fecha: new Date().toISOString(),
+            mensaje: mensaje_extra || `El paquete ha cambiado a estado: ${nuevo_estado}`,
+            // Opcional: registrar quién hizo la actualización
+            // updated_by: userId 
+        };
+
+        // Añadir el nuevo evento al historial
+        const updatedHistorial = [...currentHistorial, newEvent];
+
+        // 2. Actualizar el estado_envio y el historial_seguimiento
+        const { data, error } = await supabase
+            .from('pedidos')
+            .update({
+                estado_envio: nuevo_estado, // Actualiza el campo de estado actual
+                historial_seguimiento: updatedHistorial, // Actualiza el historial
+                fecha_actualizacion: new Date().toISOString()
+            })
+            .eq('id', pedidoId)
+            .select();
+
+        if (error) {
+            console.error('Error Supabase al actualizar estado y historial:', error.message);
+            return res.status(500).json({ message: 'Error interno al actualizar el estado del pedido.' });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({ message: 'Pedido no encontrado o ID incorrecto.' });
+        }
+
+        res.status(200).json({
+            message: `Estado de pedido ${pedidoId} actualizado a ${nuevo_estado} con éxito.`,
+            pedido: data[0]
+        });
+
+    } catch (error) {
+        console.error('Error fatal en ruta de actualización de estado:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+/**
  * RUTA: GET /api/paquetes/seguimiento/:id
  * Objetivo: Permitir al cliente rastrear el estado de su pedido.
  * Creado para: HU Seguimiento de paquetes.
  */
+// Ruta para el seguimiento del cliente, ahora devuelve el historial completo
 app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     const pedidoId = req.params.id;
 
-    if (!pedidoId) {
-        return res.status(400).json({ message: 'Se requiere el ID del pedido para el seguimiento.' });
-    }
-
     try {
-        // Asumiendo que existe una tabla 'pedidos' que contiene el 'estado_envio'.
-        // NOTA: Esta consulta NO requiere token de autenticación (es pública)
-        const { data: pedido, error } = await supabase
-            .from('pedidos') // ⭐️ REEMPLAZA 'pedidos' por el nombre de tu tabla de pedidos/ventas si es diferente ⭐️
-            .select('id, direccion_envio, estado_envio, fecha_estimada_entrega')
+        const { data, error } = await supabase
+            .from('pedidos') // Asume que 'pedidos' contiene la info del seguimiento
+            .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento') // Selecciona el historial
             .eq('id', pedidoId)
-            .maybeSingle();
+            .single();
 
+        if (error && error.code === 'PGRST116') { // No rows found
+            return res.status(404).json({ message: 'Pedido no encontrado.' });
+        }
         if (error) {
-            console.error('Error Supabase al buscar pedido:', error.message);
-            return res.status(500).json({ message: 'Error interno al consultar la base de datos.' });
+            console.error('Error Supabase al obtener seguimiento:', error.message);
+            return res.status(500).json({ message: 'Error interno del servidor.' });
         }
 
-        if (!pedido) {
-            return res.status(404).json({ message: 'Pedido no encontrado o ID incorrecto.' });
+        if (!data) {
+            return res.status(404).json({ message: 'Pedido no encontrado.' });
         }
 
-        // Éxito: devolver la información de seguimiento.
+        // Si historial_seguimiento es null o vacío, inicialízalo con el estado actual
+        let historial = data.historial_seguimiento || [];
+        if (historial.length === 0 && data.estado_envio) {
+            historial.push({
+                estado: data.estado_envio,
+                fecha: data.created_at || new Date().toISOString(), // Usar fecha de creación del pedido o actual
+                mensaje: `Estado inicial: ${data.estado_envio}`
+            });
+        }
+
         res.status(200).json({
-            id: pedido.id,
-            estado: pedido.estado_envio,
-            direccion: pedido.direccion_envio,
-            fecha_estimada: pedido.fecha_estimada_entrega || 'Pendiente de asignar'
+            id: data.id,
+            direccion: data.direccion,
+            fecha_estimada: data.fecha_estimada,
+            estado_actual: data.estado_envio, // Mantener para compatibilidad
+            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)) // Ordenar por fecha
         });
 
     } catch (error) {
@@ -1337,13 +1394,6 @@ app.get('/api/products/lowstock', async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
 /**
  * Función auxiliar para encontrar la mejor promoción y calcular descuentos.
  * Esta es la clave de tu "motor de reglas".
@@ -1361,7 +1411,7 @@ function calcularDescuentoItem(producto, promociones) {
         if (promo.tipo_regla === 'MARCA' && promo.valor_regla === producto.brand) return true;
         if (promo.tipo_regla === 'PRODUCTO' && promo.valor_regla === producto._id.toString()) return true;
         if (promo.tipo_regla === 'SKU' && promo.valor_regla === producto.sku) return true;
-        
+
         return false;
     });
 
@@ -1372,7 +1422,7 @@ function calcularDescuentoItem(producto, promociones) {
         } else if (promo.tipo_descuento === 'FIJO') {
             precioCalculado = precioBase - promo.valor;
         }
-        
+
         /**if (precioCalculado < mejorPrecio) {
             mejorPrecio = precioCalculado;
             promocionAplicada = promo;
@@ -1388,19 +1438,6 @@ function calcularDescuentoItem(producto, promociones) {
         promocion_aplicada: promocionAplicada // Objeto de la promo (o null)
     };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
