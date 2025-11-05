@@ -8,22 +8,17 @@
 </head>
 <body>
      <header class="header">
-    <!-- Menú hamburguesa -->
-      <div class="menu-icon" id="menuToggle">
-        ☰
-      </div>
+      <div class="menu-icon" id="menuToggle">☰</div>
 
-    <!-- Nombre de la tienda -->
-     <a href="../../index.html">
+      <a href="../../index.html">
         <h1 class="logo">LEVEL_ONE</h1>
-     </a>
-    <!-- Barra de búsqueda -->
+      </a>
+
       <div class="search-bar">
         <input type="text" placeholder="Buscar productos...">
         <button>Buscar</button>
       </div>
 
-    <!-- Botones de usuario -->
       <div class="user-actions">
         <button id="loginBtn" class="login-btn">Iniciar sesión</button>
         <button class="cart-btn">Comprar</button>
@@ -32,10 +27,10 @@
 
     <main class="checkout-container">
         <h2>Confirmar compra</h2>
+
         <!-- LISTA DE PRODUCTOS -->
-        <div id="cartItems" class="cart-items">
-            <!-- Se llenará con JS -->
-        </div>
+        <div id="cartItems" class="cart-items"></div>
+
         <!-- TOTAL A PAGAR -->
         <div class="total-section">
             <p><strong>Subtotal: </strong> $<span id="subtotal">0</span></p>
@@ -45,31 +40,47 @@
         </div>
     </main>
 
-        <!-- VENTANA DE PAGO -->
+    <!-- VENTANA DE PAGO -->
     <div id="paymentModal" class="modal hidden">
         <div class="modal-content">
             <h3>Método de pago</h3>
+
             <label>
                 <input type="radio" name="payMethod" value="Debito"> Tarjeta de Débito
             </label><br>
+
             <label>
                 <input type="radio" name="payMethod" value="Credito"> Tarjeta de Crédito
             </label>
+
             <input type="text" id="cardNumber" placeholder="Número de tarjeta">
-            <button id="confirmPay" class="confirm-btn">Confirmar pago</button>
-            <button id="closeModal" class="cancel-btn">Cancelar</button>
+
+            <button id="confirmPayment" class="confirm-btn">Confirmar pago</button>
+            <!-- ID corregido -->
+            <button id="cancelPayment" class="cancel-btn">Cancelar compra</button>
         </div>
     </div>
 
-    <div id="orderCodeMessage" class="modal hidden">
+    <!-- MODAL DE CONFIRMACIÓN DE CANCELACIÓN -->
+    <div id="cancelModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>¿Seguro que deseas cancelar la compra?</h3>
+            <button id="yesCancel" class="confirm-btn">Sí</button>
+            <button id="noCancel" class="cancel-btn">No</button>
+        </div>
+    </div>
+
+    <!-- CÓDIGO DE PEDIDO -->
+    <div id="codeModal" class="modal hidden">
         <div class="modal-content">
             <h3>¡Compra realizada!</h3>
             <p>Tu código de pedido es:</p>
-            <h2 id="orderCode"></h2>
+            <h2 id="codigoGenerado"></h2>
             <p>Este código se envió al repartidor</p>
             <button onclick="location.href='../../index.html'">Volver al inicio</button>
         </div>
     </div>
+
     <script src="compra.js"></script>    
 </body>
 </html>

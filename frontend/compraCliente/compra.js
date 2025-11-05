@@ -23,6 +23,7 @@ document.getElementById("payBtn").addEventListener("click", () => {
 // Confirmar pago y generar código
 document.getElementById("confirmPayment").addEventListener("click", () => {
   const tarjeta = document.getElementById("cardNumber").value.trim();
+  
   if (tarjeta.length < 8) {
     alert("Ingrese un número de tarjeta válido");
     return;
@@ -37,24 +38,19 @@ document.getElementById("confirmPayment").addEventListener("click", () => {
   console.log("Código enviado al repartidor:", codigo);
 });
 
-// Abrir modal de cancelar compra
+// ✅ Abrir modal de confirmar cancelación
 document.getElementById("cancelPayment").addEventListener("click", () => {
   document.getElementById("cancelModal").style.display = "flex";
 });
 
-// Si confirma cancelar
+// ✅ Si confirma cancelar
 document.getElementById("yesCancel").addEventListener("click", () => {
   document.getElementById("paymentModal").style.display = "none";
   document.getElementById("cancelModal").style.display = "none";
-  alert("La compra ha sido cancelada.");
+  alert("✅ La compra ha sido cancelada.");
 });
 
-// Si NO cancela
+// ✅ Si NO cancela
 document.getElementById("noCancel").addEventListener("click", () => {
   document.getElementById("cancelModal").style.display = "none";
 });
-
-// Cerrar todo
-function closeAll() {
-  document.getElementById("codeModal").style.display = "none";
-}
