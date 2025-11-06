@@ -251,3 +251,17 @@ body {
   width: 100%;
   height: 100%;
 }
+
+.product-link {
+  text-decoration: none; /* Quita el subrayado */
+  color: inherit; /* Hereda el color de texto del .product-card */
+  display: block; /* Asegura que el enlace ocupe todo el espacio de la tarjeta */
+  transition: all 0.2s ease-out;
+}
+
+/* (Tu .product-card ya tiene la transición que necesitamos) */
+
+.product-link:hover .product-card {
+  transform: translateY(-5px); /* Efecto de "levantar" al pasar el mouse */
+  box-shadow: 0 8px 20px rgba(33, 25, 73, 0.4);
+}
