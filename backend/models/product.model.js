@@ -13,7 +13,14 @@ const productSchema = new mongoose.Schema({
     images: [{ type: String }], // Un array de URLs de imágenes
     active: { type: Boolean, default: true },
 
-    // Campos automáticos que Mongoose maneja
+    descuento: {
+        tipo_descuento: { type: String, enum: ['PORCENTAJE', 'MONTO'], default: null },
+        valor: { type: Number, default: null },
+        nombre_promo: { type: String, default: null },
+        activa: { type: Boolean, default: false }
+    },
+
+    
 }, {
     timestamps: true // Esto agrega 'createdAt' y 'updatedAt' automáticamente
 });

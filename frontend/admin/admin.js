@@ -27,9 +27,9 @@ class AdminPanel {
     }
 
     loadCurrentUser() {
-        const token = localStorage.getItem('supabase-token');
-        const email = localStorage.getItem('user-email');
-        const role = localStorage.getItem('user-role');
+        const token = sessionStorage.getItem('supabase-token');
+        const email = sessionStorage.getItem('user-email');
+        const role = sessionStorage.getItem('user-role');
 
         if (!token || !email || !role) {
             alert('Sesión no válida o expirada. Redirigiendo al login.');
@@ -313,7 +313,7 @@ class AdminPanel {
     async handleEditPromotion(e) {
         e.preventDefault();
         const id = document.getElementById('editPromotionId').value;
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         if (!token) { this.logout(true); return; }
 
         const data = {
@@ -357,7 +357,7 @@ class AdminPanel {
 
     async eliminarPromocion(id) {
         if (!confirm("¿Deseas eliminar esta promoción?")) return;
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         if (!token) { this.logout(true); return; }
 
         try {
@@ -383,7 +383,7 @@ class AdminPanel {
         const email = document.getElementById('userEmail').value;
         const password = document.getElementById('userPassword').value;
         const role = document.getElementById('userRole').value;
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Creando...';
@@ -415,7 +415,7 @@ class AdminPanel {
         e.preventDefault();
         const userId = document.getElementById('editUserId').value;
         const role_id = document.getElementById('editUserRole').value;
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Actualizando...';
@@ -445,7 +445,7 @@ class AdminPanel {
 
     async handleAddPromotion(e) {
         e.preventDefault();
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         if (!token) {
             alert('Error: No estás autenticado. Por favor, inicia sesión de nuevo.');
             this.logout(true);
@@ -602,7 +602,7 @@ class AdminPanel {
         }
 
         console.log('Generando reporte de ventas...');
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         if (!token) return;
 
         const button = document.querySelector('#salesReport button');
@@ -633,7 +633,7 @@ class AdminPanel {
     // --- DATA LOADERS ---
     async loadUsers() {
         console.log('Cargando usuarios desde la API...');
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         if (!token) { this.logout(true); return; }
 
         try {
@@ -658,7 +658,7 @@ class AdminPanel {
 
     async loadPromotions() {
         console.log('Cargando promociones desde la API...');
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         if (!token) { this.logout(true); return; }
 
         try {
@@ -680,7 +680,7 @@ class AdminPanel {
 
     async loadAllStats() {
         console.log('Cargando todas las estadísticas...');
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         if (!token) return;
 
         try {
@@ -725,9 +725,7 @@ class AdminPanel {
     logout(force = false) {
         const doLogout = () => {
             alert('Sesión cerrada - Redirigiendo al login...');
-            localStorage.removeItem('supabase-token');
-            localStorage.removeItem('user-email');
-            localStorage.removeItem('user-role');
+            sessionStorage.clear(); // Esto borra todo en sessionStorage
             window.location.href = '../login/login.html';
         };
         if (force) { doLogout(); }
@@ -756,7 +754,7 @@ async function deleteUser(userId) {
     if (!adminPanel) { console.error('AdminPanel no está inicializado.'); return; }
 
     if (confirm('¿Estás seguro de que deseas desactivar este usuario? El usuario ya no aparecerá en la lista')) {
-        const token = localStorage.getItem('supabase-token');
+        const token = sessionStorage.getItem('supabase-token');
         try {
             const response = await fetch(`${adminPanel.API_BASE_URL}/api/users/${userId}`, {
                 method: 'DELETE',
