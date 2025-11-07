@@ -19,7 +19,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
     // **La CORRECCIÓN: Usar 127.0.0.1:3000 para el entorno local para resolver conflictos de origen con Express.**
     const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://127.0.0.1:3000' // <-- Usar 127.0.0.1 para que el origen coincida con el servidor Express
-        : 'https://tiendaonlinepdv-hm20.onrender.com';
+        : 'https://tiendaonlinepdv.onrender.com';
 
     try {
         // Usa la URL base dinámica para el fetch

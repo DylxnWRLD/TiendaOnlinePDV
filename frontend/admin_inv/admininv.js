@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const USE_HTTP = true;
 
 // ⭐️ CORRECCIÓN: Apuntar al servidor de Render
-const RENDER_SERVER_URL = 'https://tiendaonlinepdv-hm20.onrender.com';
+const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
 
 /********** Utils UI **********/
 const $ = (s, c = document) => c.querySelector(s);
