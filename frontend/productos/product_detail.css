@@ -1,0 +1,28 @@
+body {
+    background-color: #f8f9fa; /* Color de fondo claro */
+}
+
+.container {
+    max-width: 1200px; /* Ancho máximo para el contenido principal */
+}
+
+/* Estilos para las miniaturas de imágenes */
+#productThumbnails img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    margin: 0 5px;
+    transition: border-color 0.2s;
+}
+
+#productThumbnails img:hover,
+#productThumbnails img.active {
+    border-color: #007bff; /* Color de borde para miniatura activa/hover */
+}
+
+/* Ajuste para el input de cantidad */
+#productQuantity {
+    max-width: 80px;
+}

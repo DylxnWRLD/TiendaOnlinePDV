@@ -10,7 +10,7 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 document.addEventListener('DOMContentLoaded', () => {
     // ⭐️ CORRECCIÓN CLAVE: Eliminamos el try/catch y la llamada a checkAuthentication() ⭐️
     // La función ya no existe, y si el token es inválido, el fetch lo manejará.
-    
+
     const aperturaForm = document.getElementById('aperturaForm');
     // Verificamos que el formulario exista antes de añadir el listener
     if (aperturaForm) {
@@ -26,13 +26,20 @@ async function handleAperturaSubmit(e) {
     const montoInicial = parseFloat(montoInicialInput.value);
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
-    
-    // ⭐️ CORRECCIÓN: Leemos la clave de token que tu login escribe ⭐️
-    const token = localStorage.getItem('supabase-token');
-    
+
+    // Leemos el token de sessionStorage
+    const token = sessionStorage.getItem('supabase-token');
+
     // Validación de entrada
     if (isNaN(montoInicial) || montoInicial < 0) {
         errorMessage.textContent = 'Por favor, ingresa un monto inicial válido.';
+        return;
+    }
+
+    // Validación de Token (temprana)
+    if (!token) {
+        errorMessage.textContent = 'Sesión no encontrada. Redirigiendo al login.';
+        setTimeout(() => { window.location.href = '../../login/login.html'; }, 1000);
         return;
     }
 
@@ -45,8 +52,8 @@ async function handleAperturaSubmit(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // ⭐️ CRUCIAL: Usamos la clave 'supabase-token' ⭐️
-                'Authorization': `Bearer ${token}` 
+                // ⭐️ CRUCIAL: Usamos el token correcto de sessionStorage ⭐️
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ monto_inicial: montoInicial })
         });
@@ -55,35 +62,38 @@ async function handleAperturaSubmit(e) {
 
         // 3. Manejo de Éxito (200) y Conflicto (409)
         if (response.ok || response.status === 409) {
-            
+
             if (data.corteId) {
+                // ✅ CORRECTO: El corteId SÍ va en localStorage para persistencia
                 localStorage.setItem('currentCorteId', data.corteId);
             }
-            
-            const redirectPath = './cajero.html'; 
+
+            const redirectPath = './cajero.html';
 
             const message = response.status === 409
                 ? data.message + ' Redirigiendo a tu turno activo.'
                 : 'Caja abierta exitosamente. Redirigiendo al PDV...';
-            
+
             errorMessage.textContent = message;
 
             setTimeout(() => {
-                window.location.href = redirectPath; 
+                window.location.href = redirectPath;
             }, response.status === 409 ? 1500 : 500);
 
         } else if (response.status === 401 || response.status === 403) {
             // 4. Fallo de Seguridad/Autorización (Rechazado por el BACKEND)
-            // Esto ocurre si el token es inválido o si el role_id no es 3.
-            errorMessage.textContent = 'Sesión inválida o expirada. Redirigiendo al login.';
-            // Limpia la sesión y redirige
-            localStorage.removeItem('supabase-token');
-            localStorage.removeItem('user-role');
-            
+            errorMessage.textContent = data.message || 'Sesión inválida o expirada. Redirigiendo al login.';
+
+            // ⭐️⭐️ CAMBIO AQUÍ ⭐️⭐️
+            // Limpia la sesión de sessionStorage
+            sessionStorage.removeItem('supabase-token');
+            sessionStorage.removeItem('user-role');
+            sessionStorage.removeItem('user-email');
+
             setTimeout(() => {
                 window.location.href = '../../login/login.html';
             }, 1000);
-        
+
         } else {
             // 5. Manejo de otros errores (400, 500, etc.)
             errorMessage.textContent = data.message || `Error (${response.status}) al abrir la caja.`;
@@ -95,6 +105,6 @@ async function handleAperturaSubmit(e) {
     } finally {
         // Restaura el botón al estado inicial (sin importar si hubo éxito o fallo)
         submitButton.disabled = false;
-        submitButton.textContent = 'Abrir Caja'; 
+        submitButton.textContent = 'Abrir Caja';
     }
 }

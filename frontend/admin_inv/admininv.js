@@ -1,4 +1,15 @@
-/********** Config **********/
+document.addEventListener('DOMContentLoaded', () => {
+    const role = sessionStorage.getItem('user-role');
+    const token = sessionStorage.getItem('supabase-token');
+
+    if (!token || role !== 'AdminInventario') {
+        alert('Acceso denegado. Inicia sesión como Admin de Inventario.');
+        window.location.href = '../login/login.html'; 
+    } else {
+        refresh();
+    }
+});
+
 /********** Config **********/
 const USE_HTTP = true;
 
@@ -286,10 +297,7 @@ el.next.addEventListener("click", () => { state.page++; refresh(); });
 $("#btnLogout").addEventListener("click", () => {
   if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
     
-    // Limpiamos los datos de sesión guardados por si acaso
-    localStorage.removeItem('supabase-token');
-    localStorage.removeItem('user-email');
-    localStorage.removeItem('user-role');
+    sessionStorage.clear();
     
     // Redirigimos a la página principal.
     // Usamos ../../ para subir dos niveles (desde /frontend/admin_inv/ hasta la raíz)
