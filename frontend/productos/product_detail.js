@@ -2,7 +2,7 @@
 const $ = (id) => document.getElementById(id);
 
 // URL de tu servidor de Render (asegúrate de que sea la correcta)
-const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
+const RENDER_SERVER_URL = 'https://tiendaonlinepdv-hm20.onrender.com';
 
 // Función para obtener el ID del producto de la URL
 function getProductIdFromUrl() {

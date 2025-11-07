@@ -2,7 +2,7 @@
 
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv.onrender.com';
+    : 'https://tiendaonlinepdv-hm20.onrender.com';
 
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
