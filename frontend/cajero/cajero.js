@@ -1,6 +1,7 @@
 // cajero/pdv.js
 
-const { getUserIdFromToken } = require("../../backend/server");
+// ❌ ELIMINADA: const { getUserIdFromToken } = require("../../backend/server");
+// ⬆️ ESTO CAUSABA: Uncaught ReferenceError: require is not defined ⬆️
 
 // Define la API base URL (Ajustada para Render)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -9,10 +10,10 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 
 // Obtención de datos de sesión
 const token = sessionStorage.getItem('supabase-token'); // <-- De sessionStorage
-const role = sessionStorage.getItem('user-role'); 		 // <-- De sessionStorage
+const role = sessionStorage.getItem('user-role');        // <-- De sessionStorage
 // Estos se quedan en localStorage a propósito:
 const corteId = localStorage.getItem('currentCorteId'); // <-- Corte SÍ debe ser persistente
-const SESSION_LOCK_KEY = 'pdv_lock_active'; 			 // <-- Lock SÍ debe ser compartido
+const SESSION_LOCK_KEY = 'pdv_lock_active';             // <-- Lock SÍ debe ser compartido
 
 // Estado local de la venta (el "carrito")
 let ventaActual = {
@@ -41,7 +42,7 @@ let lockHeartbeat = null;
  * Intenta adquirir o verificar la propiedad del candado de sesión.
  * La verificación se hace usando el INSTANCE_ID único por pestaña.
  * @returns {boolean} True si el candado fue adquirido o ya era nuestro.
-*/
+ */
 function acquireLock() {
     // 1. Obtener el estado actual del candado (USA LOCALSTORAGE - ESTÁ BIEN)
     const lockDataString = localStorage.getItem(SESSION_LOCK_KEY);
@@ -93,23 +94,26 @@ function releaseLock() {
 }
 
 // =========================================================================
-// UTILIDAD: Decodificar Token para obtener Email
+// UTILIDAD: Decodificar Token para obtener Email (display) e ID (transacciones)
 // =========================================================================
 function getUserInfoFromToken(token) {
-    if (!token) return { email: 'Cajero Desconocido' };
+    if (!token) return { email: 'Cajero Desconocido', userId: null };
     try {
         const payloadBase64 = token.split('.')[1];
-        if (!payloadBase64) return { email: 'Token Inválido' };
+        if (!payloadBase64) return { email: 'Token Inválido', userId: null };
 
+        // Asegura que la cadena base64 sea segura para atob
         const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
         const payload = JSON.parse(payloadJson);
 
         return {
-            email: payload.email || payload.sub || 'Email no encontrado'
+            email: payload.email || 'Email no encontrado',
+            // ⭐️ CRÍTICO: El ID del usuario (necesario para la venta) está en 'sub' (subject) ⭐️
+            userId: payload.sub || null 
         };
     } catch (e) {
         console.error("Error decodificando JWT:", e);
-        return { email: 'Error de Decodificación' };
+        return { email: 'Error de Decodificación', userId: null };
     }
 }
 
@@ -170,7 +174,6 @@ window.addEventListener('beforeunload', () => {
 // 2. LÓGICA DE CARRITO Y CÁLCULOS
 // =========================================================================
 /**
-
  * Agrega un producto al carrito, incluyendo la verificación de stock.
  * Se asume que productoMongo contiene el campo stockQty.
  */
@@ -190,10 +193,6 @@ async function agregarProducto(productoMongo) {
             alert(`❌ ${productoMongo.name} no tiene stock disponible.`);
             return;
         }
-
-
-
-
 
         let montoDescuento = 0;
 
@@ -220,20 +219,13 @@ async function agregarProducto(productoMongo) {
             console.error('Error verificando descuento:', error);
         }
 
-
-
-
-
-
         ventaActual.productos.push({
             id_producto_mongo: productoMongo._id,
             nombre_producto: productoMongo.name,
             precio_unitario: productoMongo.price,
             cantidad: 1,
-
             monto_descuento: montoDescuento,
             stock_disponible: stockDisponible 
-
         });
     }
 
@@ -281,8 +273,8 @@ function renderCarrito() {
 }
 
 /**
-* Modifica la cantidad de un producto, verificando contra el stock disponible.
-*/
+ * Modifica la cantidad de un producto, verificando contra el stock disponible.
+ */
 function modificarCantidad(index, nuevaCantidad) {
     const cant = parseInt(nuevaCantidad);
     const producto = ventaActual.productos[index];
@@ -335,9 +327,18 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
         alert('Venta inválida. Agregue productos.');
         return;
     }
+    
+    // ⭐️ CAMBIO CRÍTICO: Obtener el ID del usuario del token decodificado ⭐️
+    const userInfo = getUserInfoFromToken(token); 
+    const id_cajero = userInfo.userId;
+    
+    if (!id_cajero) {
+        alert('Error de sesión: No se pudo identificar al cajero. Vuelva a iniciar sesión.');
+        return;
+    }
 
     const payload = {
-        p_id_cajero: getUserIdFromToken(token),
+        p_id_cajero: id_cajero, // ✅ USAMOS EL ID OBTENIDO DE LA DECODIFICACIÓN
         id_corte: corteId,
         total_descuento: ventaActual.descuento,
         total_final: ventaActual.total,
@@ -375,8 +376,8 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
 }
 
 /**
-* Función que cierra la sesión de caja y muestra el reporte en un modal.
-*/
+ * Función que cierra la sesión de caja y muestra el reporte en un modal.
+ */
 async function realizarCorteDeCaja(montoContado) {
     if (!corteId) {
         alert('No hay una caja abierta para cerrar.');
@@ -397,7 +398,7 @@ async function realizarCorteDeCaja(montoContado) {
                 id_corte: corteId,
                 monto_declarado: montoContadoFloat
             })
-    });
+        });
 
     const data = await response.json();
 
@@ -481,6 +482,9 @@ function setupEventListeners() {
                     pElement.addEventListener('click', function () {
                         const productoData = JSON.parse(this.dataset.producto);
                         agregarProducto(productoData);
+                        // ⭐️ BUENA PRÁCTICA: Limpiar búsqueda después de agregar ⭐️
+                        document.getElementById('input-sku').value = '';
+                        resultadosDiv.innerHTML = '<p class="instruccion">Escribe o escanea para buscar...</p>';
                     });
 
                     resultadosDiv.appendChild(pElement);
