@@ -196,36 +196,13 @@ async function agregarProducto(productoMongo) {
 
         let montoDescuento = 0;
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/promociones/producto/${productoMongo._id}`);
-            if (response.ok) {
-                const promo = await response.json();
-                
-                if (promo && promo.activa) {
-                    if (promo.tipo === "PORCENTAJE") {
-                        montoDescuento = productoMongo.price * (promo.valor / 100);
-                        console.log(`💸 Descuento aplicado a ${productoMongo.name}: ${promo.valor}% (-$${montoDescuento.toFixed(2)})`);
-                    } else if (promo.tipo === "FIJO") {
-                        montoDescuento = promo.valor;
-                        console.log(`💸 Descuento fijo aplicado a ${productoMongo.name}: -$${montoDescuento.toFixed(2)})`);
-                    }
-                } else {
-                    console.log(`ℹ️ ${productoMongo.name} no tiene descuento activo.`);
-                }
-            }else {
-                console.warn(`⚠️ No se pudo verificar descuento para ${productoMongo.name}.`);
-            }
-        } catch (error) {
-            console.error('Error verificando descuento:', error);
-        }
-
         ventaActual.productos.push({
             id_producto_mongo: productoMongo._id,
             nombre_producto: productoMongo.name,
             precio_unitario: productoMongo.price,
             cantidad: 1,
             monto_descuento: montoDescuento,
-            stock_disponible: stockDisponible 
+            //stock_disponible: stockDisponible 
         });
     }
 
@@ -338,7 +315,7 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
     }
 
     const payload = {
-        p_id_cajero: id_cajero, // ✅ USAMOS EL ID OBTENIDO DE LA DECODIFICACIÓN
+        p_id_cajero: id_cajero,
         id_corte: corteId,
         total_descuento: ventaActual.descuento,
         total_final: ventaActual.total,

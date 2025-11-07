@@ -1194,12 +1194,9 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     const id_cajero = req.userId; // ID del usuario autenticado (cajero)
     const { id_corte, total_descuento, total_final, metodo_pago, detalles } = req.body;
 
-    console.log('🧾 Venta recibida:', { id_cajero, id_corte, metodo_pago, total_final, total_descuento });
-    console.log('🛒 Detalles:', detalles);
-
     try {
         // 1. **Transacción de Venta en PostgreSQL**
-         console.log('➡️ Llamando a función registrar_venta en Supabase...');
+        console.log('➡️ Llamando a función registrar_venta en Supabase...');
         // Llama a la función PL/pgSQL
         const { data, error } = await supabase
             .rpc('registrar_venta', {
@@ -1212,10 +1209,7 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
             })
             .single();
 
-        if (error){
-            console.error('❌ Error en Supabase RPC registrar_venta:', error);
-            throw new Error(error.message);
-        } 
+        if (error) throw new Error(error.message);
 
         const id_venta = data.id_v;
         const ticket_numero = data.ticket_num;
