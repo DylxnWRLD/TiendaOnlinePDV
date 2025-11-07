@@ -633,6 +633,34 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
 
 
 
+
+
+
+app.get('/api/promociones/:idProducto', async (req, res) => {
+    try {
+        const { idProducto } = req.params;
+        const producto = await Producto.findById(idProducto);
+
+        if (!producto || !producto.promocion) {
+            return res.json({ activa: false });
+        }
+
+        return res.json(producto.promocion); // {tipo, valor, activa}
+    } catch (err) {
+        console.error('Error obteniendo promoción:', err);
+        res.status(500).json({ error: 'Error al obtener promoción.' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
 // ===============================================
 // RUTA PARA CREAR PROMOCIONES (ADMIN)
 // ===============================================

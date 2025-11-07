@@ -172,7 +172,7 @@ window.addEventListener('beforeunload', () => {
  * Agrega un producto al carrito, incluyendo la verificación de stock.
  * Se asume que productoMongo contiene el campo stockQty.
  */
-function agregarProducto(productoMongo) {
+async function agregarProducto(productoMongo) {
     const index = ventaActual.productos.findIndex(p => p.id_producto_mongo === productoMongo._id);
     const stockDisponible = productoMongo.stockQty; 
 
@@ -187,12 +187,47 @@ function agregarProducto(productoMongo) {
             alert(`❌ ${productoMongo.name} no tiene stock disponible.`);
             return;
         }
+
+
+
+
+
+        let montoDescuento = 0;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/promociones/${productoMongo._id}`);
+            if (response.ok) {
+                const promo = await response.json();
+                
+                if (promo && promo.activa) {
+                    if (promo.tipo === "PORCENTAJE") {
+                        montoDescuento = productoMongo.price * (promo.valor / 100);
+                        console.log(`💸 Descuento aplicado a ${productoMongo.name}: ${promo.valor}% (-$${montoDescuento.toFixed(2)})`);
+                    } else if (promo.tipo === "FIJO") {
+                        montoDescuento = promo.valor;
+                        console.log(`💸 Descuento fijo aplicado a ${productoMongo.name}: -$${montoDescuento.toFixed(2)})`);
+                    }
+                } else {
+                    console.log(`ℹ️ ${productoMongo.name} no tiene descuento activo.`);
+                }
+            }else {
+                console.warn(`⚠️ No se pudo verificar descuento para ${productoMongo.name}.`);
+            }
+        } catch (error) {
+            console.error('Error verificando descuento:', error);
+        }
+
+
+
+
+
+
         ventaActual.productos.push({
             id_producto_mongo: productoMongo._id, 
             nombre_producto: productoMongo.name, 
             precio_unitario: productoMongo.price, 
             cantidad: 1,
-            monto_descuento: 0,
+            monto_descuento: montoDescuento,
             stock_disponible: stockDisponible 
         });
     }
