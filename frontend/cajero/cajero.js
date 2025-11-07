@@ -1,5 +1,7 @@
 // cajero/pdv.js
 
+const { getUserIdFromToken } = require("../../backend/server");
+
 // Define la API base URL (Ajustada para Render)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
@@ -196,7 +198,7 @@ async function agregarProducto(productoMongo) {
         let montoDescuento = 0;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/promociones/${productoMongo._id}`);
+            const response = await fetch(`${API_BASE_URL}/api/promociones/producto/${productoMongo._id}`);
             if (response.ok) {
                 const promo = await response.json();
                 
@@ -335,6 +337,7 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
     }
 
     const payload = {
+        p_id_cajero: getUserIdFromToken(token),
         id_corte: corteId,
         total_descuento: ventaActual.descuento,
         total_final: ventaActual.total,

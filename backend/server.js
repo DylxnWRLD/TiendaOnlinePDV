@@ -636,16 +636,22 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
 
 
 
-app.get('/api/promociones/:idProducto', async (req, res) => {
+app.get('/api/promociones/producto/:idProducto', async (req, res) => {
     try {
         const { idProducto } = req.params;
         const producto = await Producto.findById(idProducto);
 
-        if (!producto || !producto.promocion) {
+        if (!producto || !producto.descuento || !producto.descuento.activa) {
             return res.json({ activa: false });
         }
 
-        return res.json(producto.promocion); // {tipo, valor, activa}
+        const promoParaCajero = {
+            activa: producto.descuento.activa,
+            tipo: producto.descuento.tipo_descuento, // <-- Traduce 'tipo_descuento' a 'tipo'
+            valor: producto.descuento.valor
+        };
+
+        return res.json(promoParaCajero); // {tipo, valor, activa}
     } catch (err) {
         console.error('Error obteniendo promoción:', err);
         res.status(500).json({ error: 'Error al obtener promoción.' });
@@ -1199,7 +1205,7 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
             .rpc('registrar_venta', {
                 p_id_cajero: id_cajero,
                 p_id_corte: id_corte,
-                p_total_descuento: total_descuento,
+                p_total_descuento: total_descuento || 0,
                 p_total_final: total_final,
                 p_metodo_pago: metodo_pago,
                 p_detalles: detalles // Pasa el array de detalles como JSONB
