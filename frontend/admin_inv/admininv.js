@@ -10,10 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-/********** Config **********/
+/********** Configuración **********/
 const USE_HTTP = true;
 
-// ⭐️ CORRECCIÓN: Apuntar al servidor de Render
+// Apuntar al servidor de Render
 const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
 
 /********** Utils UI **********/
@@ -53,27 +53,23 @@ class HttpAdapter {
     if (!r.ok) throw new Error("Error listando productos");
     return r.json();
   }
-  // Esta es la función que tienes que arreglar
   async get(id) {
-    // ⬇️ CORRECCIÓN: Usar backticks (`) en lugar de $[ ⬇️
     const r = await fetch(`${RENDER_SERVER_URL}/api/products/${id}`);
 
     if (!r.ok) throw new Error("No encontrado");
     return r.json();
   }
-  async create(input) { // 'input' ahora es el FormData
-    // ⭐️ CAMBIO: quitamos headers['Content-Type'] y JSON.stringify ⭐️
+  async create(input) {
     const r = await fetch(`${RENDER_SERVER_URL}/api/products`, {
       method: "POST",
       body: input // Enviamos el FormData directamente
     });
-    // El navegador pondrá el 'Content-Type: multipart/form-data' automáticamente
 
     if (!r.ok) throw new Error((await r.json()).message || "Error creando");
     return r.json();
   }
   async update(id, patch) { // 'patch' ahora es FormData
-    // ⭐️ CORRECCIÓN: Enviar como FormData, quitando cabeceras JSON
+    // Enviar como FormData, quitando cabeceras JSON
     const r = await fetch(`${RENDER_SERVER_URL}/api/products/${id}`, {
       method: "PUT",
       body: patch // Enviar FormData directamente
@@ -82,13 +78,13 @@ class HttpAdapter {
     return r.json();
   }
   async remove(id) {
-    // ⬇️ CORRECCIÓN: Añadir /${id} al final de la URL ⬇️
+    // Añadir /${id} al final de la URL ⬇
     const r = await fetch(`${RENDER_SERVER_URL}/api/products/${id}`, { method: "DELETE" });
     if (!r.ok) throw new Error("Error eliminando");
     return { ok: true };
   }
   async adjust({ productId, type, quantity, reason }) {
-    // ⬇️ CORRECCIÓN: Usa backticks (`) y quita credentials ⬇️
+    // Usa backticks (`) y quita credentials
     const r = await fetch(`${RENDER_SERVER_URL}/api/stock/adjust`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ productId, type, quantity, reason })
@@ -97,9 +93,9 @@ class HttpAdapter {
     return r.json();
   }
 
-  // ⭐️ NUEVA FUNCIÓN: Obtener productos con stock bajo ⭐️
+  // Obtener productos con stock bajo ⭐️
   async getLowStock() {
-    // ⭐️ CORRECCIÓN: Usar la URL completa ⭐️
+    // Usar la URL completa ⭐️
     const r = await fetch(`${RENDER_SERVER_URL}/api/products/lowstock`);
     if (!r.ok) throw new Error("Error obteniendo alerta de stock");
     return r.json();
@@ -169,7 +165,6 @@ class MemoryAdapter {
     let q = Number(quantity || 0);
     if (!Number.isFinite(q) || q <= 0) throw new Error("Cantidad inválida");
     if (type === "OUT") q = -q;
-    // type==="ADJUST" aplica delta como venga
     p.stockQty = Math.max(0, (Number(p.stockQty) || 0) + q);
     this.persist(); setLastChange();
     return { ok: true, stockQty: p.stockQty };
@@ -261,7 +256,7 @@ function paginate(total) {
 }
 
 
-// ⭐️ NUEVA FUNCIÓN: Verificar y mostrar alerta de stock bajo ⭐️
+// Verificar y mostrar alerta de stock bajo 
 async function checkLowStock() {
   try {
     const lowStockItems = await api.getLowStock();
@@ -284,7 +279,7 @@ async function checkLowStock() {
 async function refresh() {
   const { items, total } = await api.list(state);
   renderRows(items); paginate(total); updateLast();
-  checkLowStock(); // ⭐️ Llamada a la nueva función
+  checkLowStock(); 
 }
 
 /********** Handlers **********/
@@ -309,7 +304,7 @@ $$("[data-close]").forEach(b => b.addEventListener("click", closeModals));
 [el.modalForm, el.modalStock].forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
 
 el.save.addEventListener("click", async () => {
-  // ⭐️ CRÍTICO: Leer el ID del campo oculto ANTES de crear el payload ⭐️
+  // Leer el ID del campo oculto ANTES de crear el payload 
   const productId = $("#id").value.trim();
   const payload = collectForm(); // Contiene solo los campos del producto (sin ID)
 
@@ -388,7 +383,7 @@ function fillForm(p) {
 // En frontend/admin_inv/admininv.js
 
 function collectForm() {
-  // 1. Primero validamos los datos de texto (como antes)
+  // validamos los datos de texto
   // Se quitó la lectura del ID ya que solo enviamos los campos a actualizar/crear.
   const sku = $("#sku").value.trim();
   const name = $("#name").value.trim();
@@ -398,10 +393,10 @@ function collectForm() {
     throw new Error("Completa SKU, Nombre y Precio");
   }
 
-  // 2. ⭐️ Creamos un objeto FormData ⭐️
+  // Creamos un objeto FormData 
   const formData = new FormData();
 
-  // 3. Agregamos todos los campos de texto al FormData
+  // Agregamos todos los campos de texto al FormData
   formData.append('sku', sku);
   formData.append('name', name);
   formData.append('brand', $("#brand").value.trim());
@@ -411,14 +406,14 @@ function collectForm() {
   formData.append('description', $("#desc").value.trim());
   formData.append('active', $("#active").checked);
 
-  // 4. Buscamos el archivo de imagen
+  // Buscamos el archivo de imagen
   const imageFile = $("#imageUpload").files[0];
 
   if (imageFile) {
     formData.append('imageUpload', imageFile);
   }
 
-  // 5. Devolvemos el FormData
+  // Devolvemos el FormData
   return formData;
 }
 
@@ -427,4 +422,4 @@ function escape(s = "") { return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<'
 function escapeAttr(s = "") { return s.replace(/"/g, "&quot;"); }
 
 /********** Init **********/
-refresh(); // <--- Esto ya llama a checkLowStock()
+refresh();
