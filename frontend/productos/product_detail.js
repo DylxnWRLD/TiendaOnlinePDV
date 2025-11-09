@@ -2,7 +2,7 @@
 // 🔹 CONFIGURACIÓN Y UTILIDADES
 // #################################################
 const $ = (id) => document.getElementById(id);
-const RENDER_SERVER_URL = 'https://tiendaonlinepdv-hm20.onrender.com';
+const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
 
 let currentProduct = null;
 let currentStockQty = 0; 
@@ -63,7 +63,8 @@ function saveCart(cart) {
 
 function updateCartUI(cart) {
     const cartCountElement = $('cart-count');
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    // Suma la cantidad total de productos, no la cantidad de ítems únicos.
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0); 
     if (cartCountElement) {
         cartCountElement.textContent = totalItems;
     }
@@ -83,19 +84,32 @@ function addToCart(productId, quantityToAdd) {
         newQuantity = existingItem.quantity + quantityToAdd;
     }
     
+    // Validar Stock
     if (newQuantity > currentStockQty) {
-        showToast(`Error: Solo quedan ${currentStockQty} unidades en stock. No se pudo agregar.`, 'err');
-        return;
+        // Calcular cuánto se puede agregar realmente
+        const availableToAdd = currentStockQty - (existingItem ? existingItem.quantity : 0);
+        
+        if (availableToAdd > 0) {
+             // Si el stock permite al menos agregar uno de lo que pidió
+             showToast(`Advertencia: Solo pudimos agregar ${availableToAdd} unidad(es) más. Stock máximo alcanzado.`, 'err');
+             newQuantity = currentStockQty; // Ajustar a stock máximo
+             quantityToAdd = availableToAdd; // Cantidad REALMENTE agregada
+        } else {
+             // El carrito ya tiene el stock máximo
+             showToast(`Error: Ya tienes ${existingItem.quantity} unidades. No hay más stock (${currentStockQty}).`, 'err');
+             return;
+        }
     }
 
     if (existingItem) {
         existingItem.quantity = newQuantity;
-        showToast(`Se agregaron ${quantityToAdd} unidades más de ${currentProduct.name}.`, 'ok');
+        showToast(`Se agregaron ${quantityToAdd} unidad(es) más de ${currentProduct.name}.`, 'ok');
     } else {
         cart.push({
-            id: productId,
+            id: currentProduct._id, // Usar _id del objeto currentProduct
             nombre: currentProduct.name,
             precio: currentProduct.price,
+            imagen: currentProduct.images && currentProduct.images[0] ? currentProduct.images[0] : 'https://placehold.co/50x50/ADB5BD/1f2937?text=Game',
             quantity: quantityToAdd
         });
         showToast(`"${currentProduct.name}" agregado al carrito.`, 'ok');
@@ -103,12 +117,32 @@ function addToCart(productId, quantityToAdd) {
 
     saveCart(cart);
     
-    // Abrimos el modal si está inicializado
-    if (cartModalInstance) {
-        renderCartModal(); 
-        cartModalInstance.show(); 
+    // Renderiza el modal para actualizar el contenido al instante si está visible o si se abre justo después.
+    renderCartModal(); 
+}
+
+function updateCartItemQuantity(productId, newQuantity) {
+    let cart = loadCart();
+    const itemIndex = cart.findIndex(item => item.id === productId);
+
+    if (itemIndex > -1) {
+        const product = cart[itemIndex];
+        
+        if (newQuantity > currentStockQty) { // Asumiendo que el stock es el mismo para todos los ítems por simplicidad.
+            showToast(`Error: Solo quedan ${currentStockQty} unidades en stock.`, 'err');
+            newQuantity = currentStockQty;
+        } else if (newQuantity < 1) {
+            // Si la cantidad es 0 o menos, lo eliminamos
+            removeFromCart(productId);
+            return;
+        }
+        
+        product.quantity = newQuantity;
+        saveCart(cart);
+        renderCartModal(); // Actualizar el renderizado del modal
     }
 }
+
 
 function removeFromCart(productId) {
     let cart = loadCart();
@@ -132,23 +166,22 @@ function renderCartModal() {
     const cart = loadCart();
     const container = $('cartItemsContainer');
     const totalElement = $('cart-total-price');
-    const emptyMsg = $('emptyCartMessage'); // ✅ Este elemento existe en el HTML
-    const checkoutBtn = $('checkoutBtnModal'); // ✅ Corregida la referencia a tu HTML
+    const emptyMsg = $('emptyCartMessage'); 
+    const checkoutBtn = $('checkoutBtnModal'); 
 
-    // Comprobamos que el elemento exista antes de manipular su estilo
     if (!container || !totalElement || !emptyMsg || !checkoutBtn) {
-         console.error("Error: Faltan elementos clave del modal. Asegúrate de que los IDs estén correctos.");
-         return;
+          console.error("Error: Faltan elementos clave del modal. Asegúrate de que los IDs estén correctos.");
+          return;
     }
 
     container.innerHTML = '';
     let total = 0;
 
     if (cart.length === 0) {
-        emptyMsg.style.display = 'block'; // Muestra el mensaje
+        emptyMsg.style.display = 'block'; 
         checkoutBtn.disabled = true;
     } else {
-        emptyMsg.style.display = 'none'; // Oculta el mensaje
+        emptyMsg.style.display = 'none'; 
         checkoutBtn.disabled = false;
         
         cart.forEach(item => {
@@ -156,21 +189,32 @@ function renderCartModal() {
             total += lineTotal;
 
             const itemDiv = document.createElement('div');
-            // Usamos clases de Bootstrap (d-flex, align-items-center, etc.)
-            itemDiv.className = 'd-flex justify-content-between align-items-center py-2 border-bottom';
+            // Usamos la clase 'cart-item-row' para identificar los elementos de item
+            itemDiv.className = 'd-flex justify-content-between align-items-center py-2 border-bottom cart-item-row';
             itemDiv.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <img src="https://placehold.co/50x50/ADB5BD/1f2937?text=Game" class="rounded me-3" alt="${item.nombre}">
+                <div class="d-flex align-items-center col-6">
+                    <img src="${item.imagen}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;" alt="${item.nombre}">
                     <div>
                         <p class="mb-0 fw-semibold">${item.nombre}</p>
-                        <small class="text-muted">${item.quantity} x $${item.precio.toFixed(2)}</small>
+                        <small class="text-muted">$${item.precio.toFixed(2)} c/u</small>
                     </div>
                 </div>
-                <div class="d-flex align-items-center">
-                    <span class="fw-bold me-3">$${lineTotal.toFixed(2)}</span>
-                    <!-- Botón de eliminación con Font Awesome -->
+                
+                <div class="col-3">
+                    <div class="input-group input-group-sm w-75">
+                        <button class="btn btn-outline-secondary btn-sm minus-cart-modal" type="button" data-id="${item.id}">-</button>
+                        <input type="number" class="form-control text-center cart-qty-modal" value="${item.quantity}" min="1" data-id="${item.id}" readonly style="width: 20px;">
+                        <button class="btn btn-outline-secondary btn-sm plus-cart-modal" type="button" data-id="${item.id}">+</button>
+                    </div>
+                </div>
+                
+                <div class="col-2 text-end">
+                    <span class="fw-bold">$${lineTotal.toFixed(2)}</span>
+                </div>
+                
+                <div class="col-1 text-end">
                     <button 
-                        class="btn btn-sm btn-outline-danger" 
+                        class="btn btn-sm btn-outline-danger remove-cart-item-btn" 
                         data-id="${item.id}"
                         title="Eliminar Producto">
                         <i class="fas fa-trash"></i>
@@ -178,16 +222,47 @@ function renderCartModal() {
                 </div>
             `;
             container.appendChild(itemDiv);
-
-            // Añadir evento al botón de eliminar
-            itemDiv.querySelector('.btn-outline-danger').addEventListener('click', (e) => {
-                const productId = e.currentTarget.getAttribute('data-id');
-                removeFromCart(productId);
-            });
         });
+
+        // 🚨 AÑADIR LISTENERS DINÁMICOS DESPUÉS DE RENDERIZAR
+        setupCartItemListeners();
     }
 
     totalElement.textContent = `$${total.toFixed(2)}`;
+}
+
+// Nueva función para configurar los listeners de los ítems del carrito (Eliminar, +/–)
+function setupCartItemListeners() {
+    // 1. Botón de Eliminar
+    document.querySelectorAll('.remove-cart-item-btn').forEach(button => {
+        // Aseguramos que el listener se agregue solo una vez si es posible, o re-agregamos después de cada render.
+        // Usaremos .replaceWith() si se quiere optimizar, pero re-agregar es más simple.
+        button.onclick = (e) => { 
+            const productId = e.currentTarget.getAttribute('data-id');
+            removeFromCart(productId);
+        };
+    });
+
+    // 2. Botón de Aumentar Cantidad
+    document.querySelectorAll('.plus-cart-modal').forEach(button => {
+        button.onclick = (e) => {
+            const productId = e.currentTarget.getAttribute('data-id');
+            const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
+            const newQuantity = parseInt(input.value) + 1;
+            updateCartItemQuantity(productId, newQuantity);
+        };
+    });
+    
+    // 3. Botón de Disminuir Cantidad
+    document.querySelectorAll('.minus-cart-modal').forEach(button => {
+        button.onclick = (e) => {
+            const productId = e.currentTarget.getAttribute('data-id');
+            const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
+            const newQuantity = parseInt(input.value) - 1;
+            // updateCartItemQuantity se encarga de llamar a removeFromCart si newQuantity < 1
+            updateCartItemQuantity(productId, newQuantity); 
+        };
+    });
 }
 
 
@@ -196,7 +271,7 @@ function renderCartModal() {
 // #################################################
 
 async function fetchProductDetails(productId) {
-    // ... (El código de fetchProductDetails se mantiene igual) ...
+    // ... (Tu código de fetchProductDetails se mantiene igual) ...
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}`);
 
@@ -250,7 +325,7 @@ async function fetchProductDetails(productId) {
 }
 
 function displayProductDetails(product) {
-    // ... (El código de displayProductDetails se mantiene igual) ...
+    // ... (Tu código de displayProductDetails se mantiene igual) ...
     $('productTitlePage').textContent = `${product.name} - LEVEL ONE`;
     $('productName').textContent = product.name;
     $('productSku').textContent = product.sku;
@@ -308,6 +383,7 @@ function displayProductDetails(product) {
                 thumbImg.alt = `${product.name} miniatura ${index + 1}`;
                 // Clases de Bootstrap
                 thumbImg.className = 'img-thumbnail rounded mx-1 cursor-pointer';
+                thumbImg.style.width = '75px'; // Añadir estilo para miniatura
                 if (index === 0) {
                     thumbImg.classList.add('border', 'border-primary');
                 }
@@ -328,14 +404,19 @@ function displayProductDetails(product) {
     const detailsList = $('productDetailsList');
     if (detailsList) {
         detailsList.innerHTML = ''; 
-        if (product.description) {
-            product.description.split('\n').forEach(line => {
-                if(line.trim() !== '') {
-                    const li = document.createElement('li');
-                    li.textContent = line.trim();
-                    detailsList.appendChild(li);
-                }
-            });
+        // Mostrar detalles como una lista, asumiendo que el campo 'description'
+        // ahora contiene texto normal, no una lista. Usaremos detalles mockeados.
+        const mockDetails = {
+            "Material": "Plástico ABS reforzado",
+            "Peso": "2.5 kg",
+            "Conectividad": "Wi-Fi 6, Bluetooth 5.0"
+        };
+        
+        // Cargar detalles mockeados
+        for (const [key, value] of Object.entries(mockDetails)) {
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>${key}:</strong> ${value}`;
+            detailsList.appendChild(li);
         }
     }
 }
@@ -357,7 +438,7 @@ function setupQuantityControls() {
             if (!isNaN(current) && current < currentStockQty) { 
                 quantityInput.value = current + 1;
             } else if (!isNaN(current) && current >= currentStockQty) {
-                 showToast(`Stock máximo alcanzado (${currentStockQty} unidades).`, 'info');
+                   showToast(`Stock máximo alcanzado (${currentStockQty} unidades).`, 'info');
             }
         });
     }
@@ -394,16 +475,18 @@ function setupActionButtons() {
         }
         const quantity = parseInt(quantityInput.value);
         addToCart(currentProduct._id, quantity);
+        // Opcional: Re-establecer la cantidad a 1 después de añadir
+        quantityInput.value = 1;
     });
     
     // 2. Comprar Ahora (Agrega al carrito y redirige)
     $('buyNowBtn').addEventListener('click', () => {
-         if (!currentProduct) return;
-         const quantity = parseInt(quantityInput.value);
-         addToCart(currentProduct._id, quantity);
-         
-         // Redirección al checkout
-         window.location.href = '../../detalle_pedido.html'; 
+          if (!currentProduct) return;
+          const quantity = parseInt(quantityInput.value);
+          addToCart(currentProduct._id, quantity);
+          
+          // Redirección al checkout
+          window.location.href = '../../detalle_pedido.html'; 
     });
     
     // 3. Botón de Checkout dentro del Modal
@@ -434,14 +517,16 @@ function setupCartModal() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Cargar datos y desplegar UI
+    // 1. Inicializar el contador del carrito ANTES de cargar los productos
+    updateCartUI(loadCart()); 
+
+    // 2. Cargar datos y desplegar UI
     fetchProductDetails(getProductIdFromUrl());
     
-    // 2. Configurar controles y botones
+    // 3. Configurar controles y botones
     setupQuantityControls();
     setupActionButtons();
     
-    // 3. Configurar el modal de carrito (Bootstrap)
+    // 4. Configurar el modal de carrito (Bootstrap)
     setupCartModal();
-    updateCartUI(loadCart()); // Inicializar el contador
 });
