@@ -2,7 +2,7 @@
 // 🔹 CONFIGURACIÓN Y UTILIDADES
 // #################################################
 const $ = (id) => document.getElementById(id);
-const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
+const RENDER_SERVER_URL = 'https://tiendaonlinepdv-hm20.onrender.com';
 
 let currentProduct = null;
 let currentStockQty = 0; 
@@ -103,9 +103,8 @@ function addToCart(productId, quantityToAdd) {
 
     saveCart(cart);
     
-    // 🛑 SOLUCIÓN VISUAL: Abrir el modal inmediatamente después de agregar 🛑
+    // Abrimos el modal si está inicializado
     if (cartModalInstance) {
-        // Aseguramos que el contenido del modal esté actualizado antes de mostrar
         renderCartModal(); 
         cartModalInstance.show(); 
     }
@@ -133,17 +132,23 @@ function renderCartModal() {
     const cart = loadCart();
     const container = $('cartItemsContainer');
     const totalElement = $('cart-total-price');
-    const emptyMsg = $('emptyCartMessage');
-    const checkoutBtn = $('checkoutBtnModal');
+    const emptyMsg = $('emptyCartMessage'); // ✅ Este elemento existe en el HTML
+    const checkoutBtn = $('checkoutBtnModal'); // ✅ Corregida la referencia a tu HTML
+
+    // Comprobamos que el elemento exista antes de manipular su estilo
+    if (!container || !totalElement || !emptyMsg || !checkoutBtn) {
+         console.error("Error: Faltan elementos clave del modal. Asegúrate de que los IDs estén correctos.");
+         return;
+    }
 
     container.innerHTML = '';
     let total = 0;
 
     if (cart.length === 0) {
-        emptyMsg.style.display = 'block';
+        emptyMsg.style.display = 'block'; // Muestra el mensaje
         checkoutBtn.disabled = true;
     } else {
-        emptyMsg.style.display = 'none';
+        emptyMsg.style.display = 'none'; // Oculta el mensaje
         checkoutBtn.disabled = false;
         
         cart.forEach(item => {
@@ -191,6 +196,7 @@ function renderCartModal() {
 // #################################################
 
 async function fetchProductDetails(productId) {
+    // ... (El código de fetchProductDetails se mantiene igual) ...
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}`);
 
@@ -203,7 +209,6 @@ async function fetchProductDetails(productId) {
         }
 
         const product = await response.json();
-        // Fallback de stock para que la lógica funcione si la API no lo devuelve
         const stock = product.stockQty || 20; 
 
         currentProduct = { 
@@ -245,9 +250,7 @@ async function fetchProductDetails(productId) {
 }
 
 function displayProductDetails(product) {
-    // Implementación de displayProductDetails (omito por brevedad, asumiendo que ya funciona con tu HTML)
-    // ... Tu lógica de displayProductDetails va aquí ...
-
+    // ... (El código de displayProductDetails se mantiene igual) ...
     $('productTitlePage').textContent = `${product.name} - LEVEL ONE`;
     $('productName').textContent = product.name;
     $('productSku').textContent = product.sku;
@@ -347,7 +350,7 @@ function setupQuantityControls() {
     const plusBtn = $('plusQuantity');
     const minusBtn = $('minusQuantity');
 
-    // ... (Lógica de +/- y validación manual de cantidad) ...
+    // Botones +/-
     if (plusBtn) {
         plusBtn.addEventListener('click', () => {
             let current = parseInt(quantityInput.value);
@@ -393,7 +396,7 @@ function setupActionButtons() {
         addToCart(currentProduct._id, quantity);
     });
     
-    // 2. Comprar Ahora
+    // 2. Comprar Ahora (Agrega al carrito y redirige)
     $('buyNowBtn').addEventListener('click', () => {
          if (!currentProduct) return;
          const quantity = parseInt(quantityInput.value);
@@ -407,7 +410,7 @@ function setupActionButtons() {
     $('checkoutBtnModal').addEventListener('click', () => {
         const cart = loadCart();
         if (cart.length > 0) {
-            cartModalInstance.hide(); // Oculta el modal
+            cartModalInstance.hide(); // Oculta el modal de Bootstrap
             window.location.href = '../../detalle_pedido.html'; 
         } else {
             showToast('El carrito está vacío. Agrega productos antes de pagar.', 'err');
@@ -418,7 +421,7 @@ function setupActionButtons() {
 function setupCartModal() {
     const cartModalElement = $('cartModal');
     
-    // 🛑 Crea la instancia de Bootstrap Modal
+    // Crea la instancia de Bootstrap Modal
     if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         cartModalInstance = new bootstrap.Modal(cartModalElement);
     }
