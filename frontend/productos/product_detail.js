@@ -112,9 +112,10 @@ function addToCart(productId, quantityToAdd) {
     }
 
     saveCart(cart);
-    
-    // Renderiza el modal para actualizar el contenido al instante.
+    updateCartUI(cart);
     renderCartModal(); 
+    setupModalDelegation(); 
+
 }
 
 function updateCartItemQuantity(productId, newQuantity) {
@@ -140,7 +141,9 @@ function updateCartItemQuantity(productId, newQuantity) {
         
         product.quantity = newQuantity;
         saveCart(cart);
+        updateCartUI(cart);
         renderCartModal(); // Actualizar el renderizado del modal
+        setupModalDelegation(); // ✅ Asegura que los botones del modal sigan funcionando después de actualizar
     }
 }
 
@@ -155,7 +158,10 @@ function removeFromCart(productId) {
     }
 
     saveCart(cart);
+    updateCartUI(cart);
     renderCartModal(); // Vuelve a renderizar el modal
+    setupModalDelegation(); // ✅ Asegura que los botones del modal sigan funcionando después de actualizar
+
 }
 
 
@@ -228,6 +234,10 @@ function renderCartModal() {
     }
 
     totalElement.textContent = `$${total.toFixed(2)}`;
+    updateCartUI(cart); 
+    setupModalDelegation(); 
+
+
 }
 
 // ** FUNCIÓN ELIMINADA: setupCartItemListeners() **
