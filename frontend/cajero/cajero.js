@@ -18,8 +18,8 @@ let ventaActual = {
     total: 0
 };
 
-// ⭐️ VARIABLE: Guarda el último monto declarado temporalmente para modificación
-let montoDeclaradoTemporal = 0; 
+// ⭐️ VARIABLE ELIMINADA: Ya no se usa montoDeclaradoTemporal. 
+// Usaremos localStorage.corteReporteTemporal en su lugar.
 
 // ⭐️ ID ÚNICO DE ESTA INSTANCIA/PESTAÑA ⭐️
 const INSTANCE_ID = Date.now() + Math.random().toString(36).substring(2);
@@ -337,7 +337,8 @@ async function finalizarVenta(metodoPago, montoRecibido = null) {
 }
 
 /**
- * Función que cierra la sesión de caja y muestra el reporte en un modal.
+ * Función que realiza el CÁLCULO/REPORTE del corte (no el cierre definitivo en la BD).
+ * ⚠️ Asume que tu backend tiene un endpoint /api/caja/calcular_reporte que llama a la nueva RPC.
  */
 async function realizarCorteDeCaja(montoContado) {
     if (!corteId) {
@@ -352,29 +353,35 @@ async function realizarCorteDeCaja(montoContado) {
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/caja/cerrar`, {
+        // ⭐️ CAMBIO CRÍTICO: Llamar al endpoint de CÁLCULO/REPORTE ⭐️
+        const response = await fetch(`${API_BASE_URL}/api/caja/calcular_reporte`, { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ 
                 id_corte: corteId,
-                monto_declarado: montoContadoFloat 
+                monto_declarado: montoContadoFloat // Se envía el monto contado actual
             })
         });
         
         const data = await response.json();
         
         if (!response.ok) {
-            throw new Error(data.message || 'Error al cerrar la caja.');
+            // El modal de entrada (`modal-corte-caja`) permanece abierto para corregir.
+            throw new Error(data.message || 'Error al calcular el corte.');
         }
 
-        // Si la llamada fue exitosa (solo la primera vez), cerramos el modal de entrada
+        // 1. Cerramos el modal de entrada. EL CORTE SIGUE ABIERTO EN LA BD.
         document.getElementById('modal-corte-caja').style.display = 'none';
 
-        // ⭐️ GUARDAR VALOR TEMPORAL PARA POSIBLES MODIFICACIONES ⭐️
-        montoDeclaradoTemporal = montoContadoFloat;
-
-        // Lógica de visualización del reporte en modal
+        // 2. Preparamos y Guardamos el Reporte Temporal
         const reporte = data.reporte;
+        // Agregamos el monto_declarado al objeto reporte para el cierre final y la corrección
+        reporte.monto_declarado = montoContadoFloat; 
+        
+        // ⭐️ GUARDAR EL REPORTE COMPLETO EN LOCALSTORAGE ⭐️
+        localStorage.setItem('corteReporteTemporal', JSON.stringify(reporte));
+
+        // 3. Lógica de visualización del reporte
         const diferencia = reporte.diferencia;
 
         document.getElementById('reporte-inicial').textContent = reporte.monto_inicial.toFixed(2);
@@ -386,13 +393,57 @@ async function realizarCorteDeCaja(montoContado) {
         const diferenciaSpan = document.getElementById('reporte-diferencia');
         diferenciaSpan.closest('td').style.color = diferencia < 0 ? '#f44336' : (diferencia > 0.01 ? '#ffc107' : '#4caf50');
         
-        // ESTO MUESTRA EL MODAL Y ES LA PAUSA ANTES DEL LOGIN
+        // 4. Mostrar el modal de reporte
         document.getElementById('modal-reporte-corte').style.display = 'block'; 
 
     } catch (error) {
         console.error('Error al realizar corte:', error);
-        // El modal de entrada (`modal-corte-caja`) permanece abierto para corregir.
-        alert(`❌ Fallo al realizar el corte: ${error.message}`);
+        alert(`❌ Fallo al realizar el cálculo: ${error.message}`);
+    }
+}
+
+/**
+ * Función que realiza el cierre DEFINITIVO de la caja,
+ * usando los datos del reporte temporal almacenado.
+ * ⚠️ Llama al nuevo endpoint /api/caja/cerrar_definitivo
+ */
+async function aceptarYFinalizarCorte() {
+    const reporteString = localStorage.getItem('corteReporteTemporal');
+    if (!reporteString) {
+        alert('No hay un reporte de corte para finalizar. Intente el cálculo de nuevo.');
+        return;
+    }
+    const reporte = JSON.parse(reporteString);
+
+    try {
+        // ⭐️ CAMBIO CRÍTICO: Llamar al endpoint de CIERRE DEFINITIVO ⭐️
+        const response = await fetch(`${API_BASE_URL}/api/caja/cerrar_definitivo`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ 
+                id_corte: corteId,
+                monto_declarado: reporte.monto_declarado,
+                monto_calculado: reporte.monto_calculado // Enviamos el valor ya calculado
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al cerrar la caja definitivamente.');
+        }
+
+        // Éxito: Limpiar sesión y redirigir
+        document.getElementById('modal-reporte-corte').style.display = 'none';
+        localStorage.removeItem('currentCorteId');
+        localStorage.removeItem('corteReporteTemporal'); // Limpiar el reporte temporal
+        localStorage.removeItem('supabase-token');
+        if (lockHeartbeat) clearInterval(lockHeartbeat);
+        releaseLock(); 
+        window.location.href = '../login/login.html';
+
+    } catch (error) {
+        console.error('Error al finalizar corte:', error);
+        alert(`❌ Fallo al finalizar el corte. La caja permanece abierta: ${error.message}`);
     }
 }
 
@@ -415,6 +466,7 @@ function setupEventListeners() {
     // ⭐️ 5.A. Manejo Seguro de Botones de Cierre de Modales (Usando IDs) ⭐️
     document.getElementById('close-modal-efectivo')?.addEventListener('click', () => cerrarModal('modal-efectivo'));
     document.getElementById('close-modal-corte')?.addEventListener('click', () => cerrarModal('modal-corte-caja'));
+    // Este solo oculta el reporte, el cierre definitivo está en el botón 'Aceptar'
     document.getElementById('close-modal-reporte')?.addEventListener('click', () => cerrarModal('modal-reporte-corte'));
     
     // 5.1. Búsqueda de Productos 
@@ -502,7 +554,19 @@ function setupEventListeners() {
              alert('No hay una caja abierta para cerrar.');
              return;
         }
-        document.getElementById('monto-contado').value = ''; 
+        // Limpiar el campo o cargar el último valor si existe un reporte temporal
+        const reporteString = localStorage.getItem('corteReporteTemporal');
+        if (reporteString) {
+             try {
+                const reporte = JSON.parse(reporteString);
+                document.getElementById('monto-contado').value = reporte.monto_declarado.toFixed(2);
+            } catch(e) {
+                 document.getElementById('monto-contado').value = '';
+            }
+        } else {
+            document.getElementById('monto-contado').value = ''; 
+        }
+
         document.getElementById('modal-corte-caja').style.display = 'block';
         document.getElementById('monto-contado').focus();
     });
@@ -511,6 +575,7 @@ function setupEventListeners() {
     document.getElementById('btn-confirmar-corte')?.addEventListener('click', () => {
         const montoContado = document.getElementById('monto-contado').value;
         if (montoContado !== null && !isNaN(parseFloat(montoContado))) {
+            // ⭐️ LLAMA A realizarCorteDeCaja (solo CALCULA el reporte) ⭐️
             realizarCorteDeCaja(parseFloat(montoContado));
         } else {
             alert("Monto inválido. Por favor, ingrese un valor numérico positivo.");
@@ -526,27 +591,30 @@ function setupEventListeners() {
         // 2. Abrir el modal de entrada de datos
         document.getElementById('modal-corte-caja').style.display = 'block';
         
-        // 3. Precargar el último monto declarado y enfocar
-        document.getElementById('monto-contado').value = montoDeclaradoTemporal.toFixed(2);
+        // 3. Precargar el último monto declarado del reporte temporal (para corrección)
+        const reporteString = localStorage.getItem('corteReporteTemporal');
+        if (reporteString) {
+            try {
+                const reporte = JSON.parse(reporteString);
+                // Precargamos el último monto declarado por el usuario
+                document.getElementById('monto-contado').value = reporte.monto_declarado.toFixed(2);
+            } catch (e) {
+                console.error("Error al parsear reporte temporal:", e);
+            }
+        }
         document.getElementById('monto-contado').focus();
     });
 
     // Aceptar Reporte y Cerrar Sesión Definitivamente
     document.getElementById('btn-aceptar-reporte')?.addEventListener('click', () => {
-        document.getElementById('modal-reporte-corte').style.display = 'none';
-        localStorage.removeItem('currentCorteId');
-        localStorage.removeItem('supabase-token'); 
-        // Detener heartbeat y liberar lock antes de redirigir
-        if (lockHeartbeat) clearInterval(lockHeartbeat);
-        releaseLock(); 
-        // CAMBIO: Redirige al login en lugar de a la apertura de caja
-        window.location.href = '../login/login.html';
+        // ⭐️ LLAMA A aceptarYFinalizarCorte (CIERRA LA CAJA EN BD) ⭐️
+        aceptarYFinalizarCorte();
     });
     
     // Lógica de Logout MODIFICADA: Ahora obliga a realizar corte a través del modal
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (!corteId) {
-            // Detener heartbeat y liberar lock antes de limpiar y redirigir
+            // Cierre de sesión normal si no hay corte activo
             if (lockHeartbeat) clearInterval(lockHeartbeat);
             releaseLock(); 
             localStorage.clear();
@@ -555,6 +623,7 @@ function setupEventListeners() {
         }
         
         if (confirm('Al cerrar sesión se realizará el Corte de Caja. ¿Continuar?')) {
+            // Muestra el modal de entrada para iniciar el flujo de corte/cierre
             document.getElementById('monto-contado').value = ''; 
             document.getElementById('modal-corte-caja').style.display = 'block';
             document.getElementById('monto-contado').focus();
