@@ -1,6 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
-const bodyParser = require('body-parser');
+
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -100,7 +100,7 @@ function traducirErrorSupabase(originalMessage) {
 
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 
 // ===============================================
@@ -314,6 +314,31 @@ app.put('/api/products/:id', upload.single('imageUpload'), async (req, res) => {
         });
     }
 });
+
+/**
+ * RUTA: GET /api/products/lowstock
+ * Objetivo: Obtener la lista de productos con stockQty <= minStock.
+ * Creado para: Sprint 2 - HU "Alertas automáticas de stock"
+ * Panel: admin_inv
+ */
+app.get('/api/products/lowstock', async (req, res) => {
+    try {
+        // Busca productos donde el stock actual (stockQty) es menor o igual al stock mínimo (minStock)
+        const productosLowStock = await Product.find({
+            $expr: { $lte: ['$stockQty', '$minStock'] },
+            active: true // Solo productos activos
+        }).select('sku name stockQty minStock');
+
+        res.status(200).json(productosLowStock);
+    } catch (error) {
+        console.error('Error al obtener productos con stock bajo:', error.message);
+        res.status(500).json({
+            message: 'Error interno del servidor al consultar stock bajo.',
+            details: error.message
+        });
+    }
+});
+
 
 /**
  * RUTA: GET /api/products/:id
@@ -1402,29 +1427,6 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     }
 });
 
-/**
- * RUTA: GET /api/products/lowstock
- * Objetivo: Obtener la lista de productos con stockQty <= minStock.
- * Creado para: Sprint 2 - HU "Alertas automáticas de stock"
- * Panel: admin_inv
- */
-app.get('/api/products/lowstock', async (req, res) => {
-    try {
-        // Busca productos donde el stock actual (stockQty) es menor o igual al stock mínimo (minStock)
-        const productosLowStock = await Product.find({
-            $expr: { $lte: ['$stockQty', '$minStock'] },
-            active: true // Solo productos activos
-        }).select('sku name stockQty minStock');
-
-        res.status(200).json(productosLowStock);
-    } catch (error) {
-        console.error('Error al obtener productos con stock bajo:', error.message);
-        res.status(500).json({
-            message: 'Error interno del servidor al consultar stock bajo.',
-            details: error.message
-        });
-    }
-});
 
 
 // ===============================================
