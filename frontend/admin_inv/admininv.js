@@ -330,7 +330,7 @@ function openCreate() {
   $("#id").value = "";
   $("#active").checked = true;
   $("#formTitle").textContent = "Nuevo producto";
-  el.modalForm.classList.remove("hidden");
+  el.modalForm.style.display = 'flex';
 }
 
 async function openEdit(id) {
@@ -343,7 +343,7 @@ async function openEdit(id) {
 
     // 3. Muestra el modal
     $("#formTitle").textContent = "Editar producto";
-    el.modalForm.classList.remove("hidden");
+    el.modalForm.style.display = 'flex';
 
   } catch (err) {
     // 4. Muestra un error si no se pudo cargar el producto
@@ -363,10 +363,13 @@ function openAdjust(id) {
   $("#adjType").value = "IN";
   $("#adjQty").value = 1;
   $("#adjReason").value = "";
-  el.modalStock.classList.remove("hidden");
+  el.modalStock.style.display = 'flex';
 }
 
-function closeModals() { el.modalForm.classList.add("hidden"); el.modalStock.classList.add("hidden"); }
+function closeModals() { 
+  el.modalForm.style.display = 'none'; // ⬅️ CAMBIO AQUÍ
+  el.modalStock.style.display = 'none'; // ⬅️ CAMBIO AQUÍ
+}
 
 function fillForm(p) {
   $("#id").value = p?._id || "";
