@@ -125,25 +125,23 @@ function updateCartItemQuantity(productId, newQuantity) {
     if (itemIndex > -1) {
         const product = cart[itemIndex];
         
-        // Aquí necesitas obtener el stock real, idealmente del objeto producto en el carrito si lo tuvieras, 
-        // pero por simplicidad usamos el stock global del producto actual.
-        // **NOTA:** Esto funcionará correctamente solo si el producto actual es el que se está modificando.
-        let itemStock = currentProduct && currentProduct._id === productId ? currentStockQty : 99; // Fallback
+        // Validar stock
+        let itemStock = currentProduct && currentProduct._id === productId ? currentStockQty : 99;
         
         if (newQuantity > itemStock) { 
             showToast(`Error: Solo quedan ${itemStock} unidades en stock.`, 'err');
             newQuantity = itemStock;
         } else if (newQuantity < 1) {
-            // Si la cantidad es 0 o menos, lo eliminamos
             removeFromCart(productId);
             return;
         }
         
+        console.log('🔄 Actualizando cantidad:', product.nombre, 'de', product.quantity, 'a', newQuantity);
         product.quantity = newQuantity;
         saveCart(cart);
-        updateCartUI(cart);
-        renderCartModal(); // Actualizar el renderizado del modal
-        setupModalDelegation(); // ✅ Asegura que los botones del modal sigan funcionando después de actualizar
+        
+        // ✅ Forzar actualización visual inmediata
+        renderCartModal();
     }
 }
 
@@ -177,18 +175,27 @@ function renderCartModal() {
     const checkoutBtn = $('checkoutBtnModal'); 
 
     if (!container || !totalElement || !emptyMsg || !checkoutBtn) {
-          console.error("Error: Faltan elementos clave del modal. Asegúrate de que los IDs estén correctos.");
-          return;
+        console.error("Error: Faltan elementos clave del modal.");
+        return;
     }
 
-    container.innerHTML = '';
+    // ✅ CORREGIDO: Preservar el mensaje de carrito vacío
+    container.innerHTML = ''; // Limpiar todo
+    
+    // Recrear el mensaje de carrito vacío
+    const emptyMessage = document.createElement('p');
+    emptyMessage.id = 'emptyCartMessage';
+    emptyMessage.className = 'text-center text-muted';
+    emptyMessage.textContent = 'Tu carrito está vacío.';
+    container.appendChild(emptyMessage);
+
     let total = 0;
 
     if (cart.length === 0) {
-        emptyMsg.style.display = 'block'; 
+        emptyMessage.style.display = 'block'; 
         checkoutBtn.disabled = true;
     } else {
-        emptyMsg.style.display = 'none'; 
+        emptyMessage.style.display = 'none'; 
         checkoutBtn.disabled = false;
         
         cart.forEach(item => {
@@ -229,14 +236,10 @@ function renderCartModal() {
             `;
             container.appendChild(itemDiv);
         });
-
-        // NOTA: Se eliminó la llamada a setupCartItemListeners()
     }
 
     totalElement.textContent = `$${total.toFixed(2)}`;
-    updateCartUI(cart); 
-    setupModalDelegation(); 
-
+    updateCartUI(cart);
 
 }
 
@@ -401,33 +404,49 @@ function displayProductDetails(product) {
 // #################################################
 function setupModalDelegation() {
     const container = $('cartItemsContainer');
+    
+    if (!container) {
+        console.error('❌ No se encontró el contenedor del carrito');
+        return;
+    }
 
-    if (container) {
-        // Agrega un listener AL CONTENEDOR, no a los botones individuales.
-        container.addEventListener('click', (e) => {
+    console.log('✅ Configurando delegación de eventos del modal');
+
+    // Usar event delegation en el modal completo
+    const modalElement = document.getElementById('cartModal');
+    if (modalElement) {
+        modalElement.addEventListener('click', function(e) {
             const target = e.target;
-            // Busca el botón real que tiene el data-id, incluso si se hizo clic en el ícono (<i>)
-            const button = target.closest('.remove-cart-item-btn') || 
-                           target.closest('.plus-cart-modal') || 
-                           target.closest('.minus-cart-modal');
             
-            if (!button) return; 
+            // Buscar el botón clickeado (incluye íconos Font Awesome)
+            const button = target.closest('.remove-cart-item-btn') || 
+                          target.closest('.plus-cart-modal') || 
+                          target.closest('.minus-cart-modal');
+            
+            if (!button) return;
 
             const productId = button.getAttribute('data-id');
-            const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
-            let newQuantity;
+            console.log('🔄 Botón clickeado:', button.className, 'Product ID:', productId);
 
             if (button.classList.contains('remove-cart-item-btn')) {
-                // 1. Eliminar producto
+                console.log('🗑️ Eliminando producto:', productId);
                 removeFromCart(productId);
-            } else if (button.classList.contains('plus-cart-modal')) {
-                // 2. Aumentar cantidad
-                newQuantity = parseInt(input.value) + 1;
-                updateCartItemQuantity(productId, newQuantity);
-            } else if (button.classList.contains('minus-cart-modal')) {
-                // 3. Disminuir cantidad
-                newQuantity = parseInt(input.value) - 1;
-                updateCartItemQuantity(productId, newQuantity);
+            } 
+            else if (button.classList.contains('plus-cart-modal')) {
+                const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
+                if (input) {
+                    const newQuantity = parseInt(input.value) + 1;
+                    console.log('➕ Aumentando cantidad:', productId, 'a', newQuantity);
+                    updateCartItemQuantity(productId, newQuantity);
+                }
+            } 
+            else if (button.classList.contains('minus-cart-modal')) {
+                const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
+                if (input) {
+                    const newQuantity = parseInt(input.value) - 1;
+                    console.log('➖ Disminuyendo cantidad:', productId, 'a', newQuantity);
+                    updateCartItemQuantity(productId, newQuantity);
+                }
             }
         });
     }
@@ -514,15 +533,22 @@ function setupActionButtons() {
 function setupCartModal() {
     const cartModalElement = $('cartModal');
     
-    // Crea la instancia de Bootstrap Modal
     if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         cartModalInstance = new bootstrap.Modal(cartModalElement);
     }
     
-    // Listener para asegurar que el contenido se renderice justo antes de mostrar el modal
-    cartModalElement.addEventListener('show.bs.modal', renderCartModal);
+    // ✅ SOLO renderizar cuando el modal se vaya a mostrar
+    cartModalElement.addEventListener('show.bs.modal', function() {
+        console.log('🎯 Modal abierto - renderizando carrito');
+        renderCartModal();
+    });
 
-    // Nota: El botón #cartBtn ya abre el modal automáticamente gracias a data-bs-toggle/target
+    // ✅ También actualizar cuando se cierre y vuelva a abrir
+    cartModalElement.addEventListener('hidden.bs.modal', function() {
+        console.log('📦 Modal cerrado');
+        // Actualizar contador en header por si hubo cambios
+        updateCartUI(loadCart());
+    });
 }
 
 
@@ -530,16 +556,26 @@ function setupCartModal() {
 updateCartUI(loadCart()); 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Cargar datos y desplegar UI
+    console.log('🔄 Inicializando página de detalle...');
+    
+    // 1. Cargar producto
     fetchProductDetails(getProductIdFromUrl());
     
-    // 2. Configurar controles y botones
+    // 2. Configurar controles básicos
     setupQuantityControls();
     setupActionButtons();
     
-    // 3. Configurar el modal de carrito (Bootstrap)
+    // 3. Configurar modal (UNA VEZ)
     setupCartModal();
     
-    // 4. Configurar la Delegación de Eventos para el Modal (Se ejecuta una sola vez)
+    // 4. Configurar delegación de eventos (UNA VEZ)
     setupModalDelegation();
+    
+    // 5. Inicializar UI del carrito
+    updateCartUI(loadCart());
+    
+    console.log('✅ Página inicializada correctamente');
+    
+    // Debug: ver estado inicial
+    console.log('🛒 Carrito inicial:', loadCart());
 });
