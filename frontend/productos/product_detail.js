@@ -46,7 +46,6 @@ function showToast(message, type = 'info') {
     bsToast.show();
 }
 
-
 // #################################################
 // 🔸 LÓGICA DEL CARRITO (LOCALSTORAGE)
 // #################################################
@@ -86,17 +85,14 @@ function addToCart(productId, quantityToAdd) {
     
     // Validar Stock
     if (newQuantity > currentStockQty) {
-        // Calcular cuánto se puede agregar realmente
         const availableToAdd = currentStockQty - (existingItem ? existingItem.quantity : 0);
         
         if (availableToAdd > 0) {
-             // Si el stock permite al menos agregar uno de lo que pidió
              showToast(`Advertencia: Solo pudimos agregar ${availableToAdd} unidad(es) más. Stock máximo alcanzado.`, 'err');
-             newQuantity = currentStockQty; // Ajustar a stock máximo
-             quantityToAdd = availableToAdd; // Cantidad REALMENTE agregada
+             newQuantity = currentStockQty; 
+             quantityToAdd = availableToAdd; 
         } else {
-             // El carrito ya tiene el stock máximo
-             showToast(`Error: Ya tienes ${existingItem.quantity} unidades. No hay más stock (${currentStockQty}).`, 'err');
+             showToast(`Error: Ya tienes ${existingItem ? existingItem.quantity : 0} unidades. No hay más stock (${currentStockQty}).`, 'err');
              return;
         }
     }
@@ -106,7 +102,7 @@ function addToCart(productId, quantityToAdd) {
         showToast(`Se agregaron ${quantityToAdd} unidad(es) más de ${currentProduct.name}.`, 'ok');
     } else {
         cart.push({
-            id: currentProduct._id, // Usar _id del objeto currentProduct
+            id: currentProduct._id, 
             nombre: currentProduct.name,
             precio: currentProduct.price,
             imagen: currentProduct.images && currentProduct.images[0] ? currentProduct.images[0] : 'https://placehold.co/50x50/ADB5BD/1f2937?text=Game',
@@ -117,7 +113,7 @@ function addToCart(productId, quantityToAdd) {
 
     saveCart(cart);
     
-    // Renderiza el modal para actualizar el contenido al instante si está visible o si se abre justo después.
+    // Renderiza el modal para actualizar el contenido al instante.
     renderCartModal(); 
 }
 
@@ -128,9 +124,14 @@ function updateCartItemQuantity(productId, newQuantity) {
     if (itemIndex > -1) {
         const product = cart[itemIndex];
         
-        if (newQuantity > currentStockQty) { // Asumiendo que el stock es el mismo para todos los ítems por simplicidad.
-            showToast(`Error: Solo quedan ${currentStockQty} unidades en stock.`, 'err');
-            newQuantity = currentStockQty;
+        // Aquí necesitas obtener el stock real, idealmente del objeto producto en el carrito si lo tuvieras, 
+        // pero por simplicidad usamos el stock global del producto actual.
+        // **NOTA:** Esto funcionará correctamente solo si el producto actual es el que se está modificando.
+        let itemStock = currentProduct && currentProduct._id === productId ? currentStockQty : 99; // Fallback
+        
+        if (newQuantity > itemStock) { 
+            showToast(`Error: Solo quedan ${itemStock} unidades en stock.`, 'err');
+            newQuantity = itemStock;
         } else if (newQuantity < 1) {
             // Si la cantidad es 0 o menos, lo eliminamos
             removeFromCart(productId);
@@ -189,7 +190,6 @@ function renderCartModal() {
             total += lineTotal;
 
             const itemDiv = document.createElement('div');
-            // Usamos la clase 'cart-item-row' para identificar los elementos de item
             itemDiv.className = 'd-flex justify-content-between align-items-center py-2 border-bottom cart-item-row';
             itemDiv.innerHTML = `
                 <div class="d-flex align-items-center col-6">
@@ -203,7 +203,7 @@ function renderCartModal() {
                 <div class="col-3">
                     <div class="input-group input-group-sm w-75">
                         <button class="btn btn-outline-secondary btn-sm minus-cart-modal" type="button" data-id="${item.id}">-</button>
-                        <input type="number" class="form-control text-center cart-qty-modal" value="${item.quantity}" min="1" data-id="${item.id}" readonly style="width: 20px;">
+                        <input type="number" class="form-control text-center cart-qty-modal" value="${item.quantity}" min="1" data-id="${item.id}" disabled style="width: 20px;">
                         <button class="btn btn-outline-secondary btn-sm plus-cart-modal" type="button" data-id="${item.id}">+</button>
                     </div>
                 </div>
@@ -224,54 +224,20 @@ function renderCartModal() {
             container.appendChild(itemDiv);
         });
 
-        // 🚨 AÑADIR LISTENERS DINÁMICOS DESPUÉS DE RENDERIZAR
-        setupCartItemListeners();
+        // NOTA: Se eliminó la llamada a setupCartItemListeners()
     }
 
     totalElement.textContent = `$${total.toFixed(2)}`;
 }
 
-// Nueva función para configurar los listeners de los ítems del carrito (Eliminar, +/–)
-function setupCartItemListeners() {
-    // 1. Botón de Eliminar
-    document.querySelectorAll('.remove-cart-item-btn').forEach(button => {
-        // Aseguramos que el listener se agregue solo una vez si es posible, o re-agregamos después de cada render.
-        // Usaremos .replaceWith() si se quiere optimizar, pero re-agregar es más simple.
-        button.onclick = (e) => { 
-            const productId = e.currentTarget.getAttribute('data-id');
-            removeFromCart(productId);
-        };
-    });
-
-    // 2. Botón de Aumentar Cantidad
-    document.querySelectorAll('.plus-cart-modal').forEach(button => {
-        button.onclick = (e) => {
-            const productId = e.currentTarget.getAttribute('data-id');
-            const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
-            const newQuantity = parseInt(input.value) + 1;
-            updateCartItemQuantity(productId, newQuantity);
-        };
-    });
-    
-    // 3. Botón de Disminuir Cantidad
-    document.querySelectorAll('.minus-cart-modal').forEach(button => {
-        button.onclick = (e) => {
-            const productId = e.currentTarget.getAttribute('data-id');
-            const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
-            const newQuantity = parseInt(input.value) - 1;
-            // updateCartItemQuantity se encarga de llamar a removeFromCart si newQuantity < 1
-            updateCartItemQuantity(productId, newQuantity); 
-        };
-    });
-}
+// ** FUNCIÓN ELIMINADA: setupCartItemListeners() **
 
 
 // #################################################
-// 🔹 CARGA Y DESPLIEGUE DE DETALLES (Tu lógica original)
+// 🔹 CARGA Y DESPLIEGUE DE DETALLES 
 // #################################################
 
 async function fetchProductDetails(productId) {
-    // ... (Tu código de fetchProductDetails se mantiene igual) ...
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}`);
 
@@ -325,7 +291,6 @@ async function fetchProductDetails(productId) {
 }
 
 function displayProductDetails(product) {
-    // ... (Tu código de displayProductDetails se mantiene igual) ...
     $('productTitlePage').textContent = `${product.name} - LEVEL ONE`;
     $('productName').textContent = product.name;
     $('productSku').textContent = product.sku;
@@ -404,8 +369,6 @@ function displayProductDetails(product) {
     const detailsList = $('productDetailsList');
     if (detailsList) {
         detailsList.innerHTML = ''; 
-        // Mostrar detalles como una lista, asumiendo que el campo 'description'
-        // ahora contiene texto normal, no una lista. Usaremos detalles mockeados.
         const mockDetails = {
             "Material": "Plástico ABS reforzado",
             "Peso": "2.5 kg",
@@ -418,6 +381,45 @@ function displayProductDetails(product) {
             li.innerHTML = `<strong>${key}:</strong> ${value}`;
             detailsList.appendChild(li);
         }
+    }
+}
+
+
+// #################################################
+// 💥 NUEVA FUNCIÓN: DELEGACIÓN DE EVENTOS DEL MODAL
+// Esta función se ejecuta UNA SOLA VEZ para gestionar todos los clics en el modal.
+// #################################################
+function setupModalDelegation() {
+    const container = $('cartItemsContainer');
+
+    if (container) {
+        // Agrega un listener AL CONTENEDOR, no a los botones individuales.
+        container.addEventListener('click', (e) => {
+            const target = e.target;
+            // Busca el botón real que tiene el data-id, incluso si se hizo clic en el ícono (<i>)
+            const button = target.closest('.remove-cart-item-btn') || 
+                           target.closest('.plus-cart-modal') || 
+                           target.closest('.minus-cart-modal');
+            
+            if (!button) return; 
+
+            const productId = button.getAttribute('data-id');
+            const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
+            let newQuantity;
+
+            if (button.classList.contains('remove-cart-item-btn')) {
+                // 1. Eliminar producto
+                removeFromCart(productId);
+            } else if (button.classList.contains('plus-cart-modal')) {
+                // 2. Aumentar cantidad
+                newQuantity = parseInt(input.value) + 1;
+                updateCartItemQuantity(productId, newQuantity);
+            } else if (button.classList.contains('minus-cart-modal')) {
+                // 3. Disminuir cantidad
+                newQuantity = parseInt(input.value) - 1;
+                updateCartItemQuantity(productId, newQuantity);
+            }
+        });
     }
 }
 
@@ -475,8 +477,6 @@ function setupActionButtons() {
         }
         const quantity = parseInt(quantityInput.value);
         addToCart(currentProduct._id, quantity);
-        // Opcional: Re-establecer la cantidad a 1 después de añadir
-        quantityInput.value = 1;
     });
     
     // 2. Comprar Ahora (Agrega al carrito y redirige)
@@ -516,17 +516,20 @@ function setupCartModal() {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicializar el contador del carrito ANTES de cargar los productos
-    updateCartUI(loadCart()); 
+// Ejecutar inmediatamente al cargar el script para inicializar el contador del header
+updateCartUI(loadCart()); 
 
-    // 2. Cargar datos y desplegar UI
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Cargar datos y desplegar UI
     fetchProductDetails(getProductIdFromUrl());
     
-    // 3. Configurar controles y botones
+    // 2. Configurar controles y botones
     setupQuantityControls();
     setupActionButtons();
     
-    // 4. Configurar el modal de carrito (Bootstrap)
+    // 3. Configurar el modal de carrito (Bootstrap)
     setupCartModal();
+    
+    // 4. Configurar la Delegación de Eventos para el Modal (Se ejecuta una sola vez)
+    setupModalDelegation();
 });
