@@ -432,3 +432,172 @@ main {
 .reviews-section p {
     color: var(--color-texto-secundario);
 }
+
+/* ================================================= */
+/* ⭐️ INICIO DE ESTILOS PARA MODAL Y TOAST (CSS Puro) ⭐️ */
+/* ================================================= */
+
+/* ======================================= */
+/* ESTILOS PARA EL MODAL DEL CARRITO
+/* ======================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    /* 'display: none;' se controla por JS */
+}
+
+.modal-content {
+    background-color: var(--color-superficie);
+    width: 90%;
+    max-width: 700px;
+    border-radius: 12px;
+    box-shadow: var(--sombra-elevada);
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-title {
+    color: var(--color-primario-oscuro);
+    font-size: 1.5rem;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--color-texto-secundario);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    padding: 20px 25px;
+    overflow-y: auto;
+    /* Para scroll si hay muchos items */
+}
+
+.empty-cart-msg {
+    text-align: center;
+    color: var(--color-texto-secundario);
+    padding: 30px 0;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #eee;
+    background-color: var(--color-fondo);
+    border-radius: 0 0 12px 12px;
+}
+
+.total-price-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+#cart-total-price {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-acento-vibrante);
+}
+
+/* Estilos para los items del carrito (los puedes personalizar) */
+.cart-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.cart-item-row img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 15px;
+}
+
+.cart-item-info {
+    flex: 1;
+}
+
+.cart-item-info p {
+    margin: 0;
+    font-weight: 600;
+}
+
+.cart-item-info small {
+    color: var(--color-texto-secundario);
+}
+
+.cart-item-qty {
+    display: flex;
+    align-items: center;
+}
+
+
+
+/* ======================================= */
+/* ESTILOS PARA LOS TOASTS (Notificaciones)
+/* ======================================= */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    box-shadow: var(--sombra-elevada);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+}
+
+/* Modificador para mostrar el toast */
+.toast-show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+/* Colores de Toast */
+.toast-info {
+    background-color: var(--color-texto-secundario);
+}
+
+.toast-ok {
+    background-color: #198754;
+    /* Verde éxito */
+}
+
+.toast-err {
+    background-color: #dc3545;
+    /* Rojo error */
+}

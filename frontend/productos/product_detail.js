@@ -5,46 +5,50 @@ const $ = (id) => document.getElementById(id);
 const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
 
 let currentProduct = null;
-let currentStockQty = 0; 
-// 🛑 Instancia de Modal de Bootstrap (necesaria para controlar el modal)
-let cartModalInstance = null; 
+let currentStockQty = 0;
 
 // Función para obtener el ID del producto de la URL
 function getProductIdFromUrl() {
     const params = new URLSearchParams(window.location.search);
-    // Usamos un ID de prueba si no hay uno, para fines de demostración de la interfaz
-    return params.get('id') || '690e30791482493fe2cd7db3'; 
+    // Usamos un ID de prueba si no hay uno
+    return params.get('id') || '690e30791482493fe2cd7db3';
 }
 
-// Función para mostrar un Toast de mensaje (Usando la API de Bootstrap)
+// ⭐️ MODIFICADA: Función para mostrar un Toast (CSS Puro)
 function showToast(message, type = 'info') {
-    const toastContainer = document.querySelector('.toast-container');
-    if (!toastContainer || typeof bootstrap === 'undefined' || !bootstrap.Toast) {
-        // Fallback si Bootstrap JS no cargó (aunque debería)
+    const toastContainer = $('toastContainer');
+    if (!toastContainer) {
         console.log(`[TOAST - ${type.toUpperCase()}]: ${message}`);
         return;
     }
 
-    // Clases de color de Bootstrap
-    const colorClass = type === 'ok' ? 'text-bg-success' : type === 'err' ? 'text-bg-danger' : 'text-bg-info';
+    // Clases de color (de tu CSS)
+    const colorClass = type === 'ok' ? 'toast-ok' : type === 'err' ? 'toast-err' : 'toast-info';
 
     const toastElement = document.createElement('div');
-    toastElement.className = `toast align-items-center ${colorClass} border-0`;
-    toastElement.setAttribute('role', 'alert');
-    toastElement.setAttribute('aria-live', 'assertive');
-    toastElement.setAttribute('aria-atomic', 'true');
-    toastElement.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
+    toastElement.className = `toast ${colorClass}`;
+    toastElement.textContent = message;
+
     toastContainer.appendChild(toastElement);
 
-    // Crea y muestra la instancia de Toast de Bootstrap
-    const bsToast = new bootstrap.Toast(toastElement, { delay: 4000 });
-    bsToast.show();
+    // Forzar re-dibujo para animar la entrada
+    setTimeout(() => {
+        toastElement.classList.add('toast-show');
+    }, 10); // Pequeño delay
+
+    // Ocultar y eliminar el toast
+    setTimeout(() => {
+        toastElement.classList.remove('toast-show');
+        // Eliminar del DOM después de que termine la animación de salida
+        toastElement.addEventListener('transitionend', () => {
+            // Asegurarse de que el nodo todavía existe antes de intentar eliminarlo
+            if (toastElement.parentNode === toastContainer) {
+                toastContainer.removeChild(toastElement);
+            }
+        });
+    }, 4000); // Duración del toast
 }
+
 
 // #################################################
 // 🔸 LÓGICA DEL CARRITO (LOCALSTORAGE)
@@ -57,13 +61,13 @@ function loadCart() {
 
 function saveCart(cart) {
     localStorage.setItem('shoppingCart', JSON.stringify(cart));
-    updateCartUI(cart); 
+    updateCartUI(cart);
 }
 
 function updateCartUI(cart) {
     const cartCountElement = $('cart-count');
     // Suma la cantidad total de productos, no la cantidad de ítems únicos.
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0); 
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     if (cartCountElement) {
         cartCountElement.textContent = totalItems;
     }
@@ -82,18 +86,18 @@ function addToCart(productId, quantityToAdd) {
     if (existingItem) {
         newQuantity = existingItem.quantity + quantityToAdd;
     }
-    
+
     // Validar Stock
     if (newQuantity > currentStockQty) {
         const availableToAdd = currentStockQty - (existingItem ? existingItem.quantity : 0);
-        
+
         if (availableToAdd > 0) {
-             showToast(`Advertencia: Solo pudimos agregar ${availableToAdd} unidad(es) más. Stock máximo alcanzado.`, 'err');
-             newQuantity = currentStockQty; 
-             quantityToAdd = availableToAdd; 
+            showToast(`Advertencia: Solo pudimos agregar ${availableToAdd} unidad(es) más. Stock máximo alcanzado.`, 'err');
+            newQuantity = currentStockQty;
+            quantityToAdd = availableToAdd;
         } else {
-             showToast(`Error: Ya tienes ${existingItem ? existingItem.quantity : 0} unidades. No hay más stock (${currentStockQty}).`, 'err');
-             return;
+            showToast(`Error: Ya tienes ${existingItem ? existingItem.quantity : 0} unidades. No hay más stock (${currentStockQty}).`, 'err');
+            return;
         }
     }
 
@@ -102,7 +106,7 @@ function addToCart(productId, quantityToAdd) {
         showToast(`Se agregaron ${quantityToAdd} unidad(es) más de ${currentProduct.name}.`, 'ok');
     } else {
         cart.push({
-            id: currentProduct._id, 
+            id: currentProduct._id,
             nombre: currentProduct.name,
             precio: currentProduct.price,
             imagen: currentProduct.images && currentProduct.images[0] ? currentProduct.images[0] : 'https://placehold.co/50x50/ADB5BD/1f2937?text=Game',
@@ -113,9 +117,7 @@ function addToCart(productId, quantityToAdd) {
 
     saveCart(cart);
     updateCartUI(cart);
-    renderCartModal(); 
-    setupModalDelegation(); 
-
+    renderCartModal(); // Actualiza el modal (incluso si está oculto)
 }
 
 function updateCartItemQuantity(productId, newQuantity) {
@@ -124,23 +126,23 @@ function updateCartItemQuantity(productId, newQuantity) {
 
     if (itemIndex > -1) {
         const product = cart[itemIndex];
-        
-        // Validar stock
-        let itemStock = currentProduct && currentProduct._id === productId ? currentStockQty : 99;
-        
-        if (newQuantity > itemStock) { 
+
+        // Validar stock (usa el stock actual si es el producto de la página, o 99 como default)
+        let itemStock = (currentProduct && currentProduct._id === productId) ? currentStockQty : 99;
+
+        if (newQuantity > itemStock) {
             showToast(`Error: Solo quedan ${itemStock} unidades en stock.`, 'err');
             newQuantity = itemStock;
         } else if (newQuantity < 1) {
+            // Si la cantidad es 0 o menos, elimina el item
             removeFromCart(productId);
             return;
         }
-        
-        console.log('🔄 Actualizando cantidad:', product.nombre, 'de', product.quantity, 'a', newQuantity);
+
         product.quantity = newQuantity;
         saveCart(cart);
-        
-        // ✅ Forzar actualización visual inmediata
+
+        // Forzar actualización visual
         renderCartModal();
     }
 }
@@ -148,102 +150,77 @@ function updateCartItemQuantity(productId, newQuantity) {
 
 function removeFromCart(productId) {
     let cart = loadCart();
-    const initialLength = cart.length;
     cart = cart.filter(item => item.id !== productId);
-    
-    if (cart.length < initialLength) {
-        showToast('Producto eliminado del carrito.', 'info');
-    }
+    showToast('Producto eliminado del carrito.', 'info');
 
     saveCart(cart);
     updateCartUI(cart);
     renderCartModal(); // Vuelve a renderizar el modal
-    setupModalDelegation(); // ✅ Asegura que los botones del modal sigan funcionando después de actualizar
-
 }
 
 
 // #################################################
-// ⚡ VISUALIZACIÓN DEL CARRITO (Modal - Usando clases Bootstrap)
+// ⚡ VISUALIZACIÓN DEL CARRITO (CSS Puro)
 // #################################################
 
 function renderCartModal() {
     const cart = loadCart();
     const container = $('cartItemsContainer');
     const totalElement = $('cart-total-price');
-    const emptyMsg = $('emptyCartMessage'); 
-    const checkoutBtn = $('checkoutBtnModal'); 
+    // const emptyMsg = $('emptyCartMessage'); // <--- ❌ ELIMINAMOS ESTA LÍNEA
+    const checkoutBtn = $('checkoutBtnModal');
 
-    if (!container || !totalElement || !emptyMsg || !checkoutBtn) {
-        console.error("Error: Faltan elementos clave del modal.");
+    // ✅ CORRECCIÓN: Ya no buscamos 'emptyMsg' en esta comprobación
+    if (!container || !totalElement || !checkoutBtn) {
+        console.error("Error: Faltan elementos clave del modal (container, totalElement o checkoutBtn).");
         return;
     }
 
-    // ✅ CORREGIDO: Preservar el mensaje de carrito vacío
-    container.innerHTML = ''; // Limpiar todo
-    
-    // Recrear el mensaje de carrito vacío
-    const emptyMessage = document.createElement('p');
-    emptyMessage.id = 'emptyCartMessage';
-    emptyMessage.className = 'text-center text-muted';
-    emptyMessage.textContent = 'Tu carrito está vacío.';
-    container.appendChild(emptyMessage);
-
+    container.innerHTML = ''; // Limpiar items anteriores (esto ahora es seguro)
     let total = 0;
 
     if (cart.length === 0) {
-        emptyMessage.style.display = 'block'; 
+        // ✅ CORRECCIÓN: En lugar de 'appendChild', re-insertamos el HTML del mensaje
+        container.innerHTML = '<p id="emptyCartMessage" class="empty-cart-msg">Tu carrito está vacío.</p>';
         checkoutBtn.disabled = true;
     } else {
-        emptyMessage.style.display = 'none'; 
         checkoutBtn.disabled = false;
-        
+
         cart.forEach(item => {
             const lineTotal = item.precio * item.quantity;
             total += lineTotal;
 
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'd-flex justify-content-between align-items-center py-2 border-bottom cart-item-row';
+            itemDiv.className = 'cart-item-row';
             itemDiv.innerHTML = `
-                <div class="d-flex align-items-center col-6">
-                    <img src="${item.imagen}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;" alt="${item.nombre}">
-                    <div>
-                        <p class="mb-0 fw-semibold">${item.nombre}</p>
-                        <small class="text-muted">$${item.precio.toFixed(2)} c/u</small>
-                    </div>
-                </div>
-                
-                <div class="col-3">
-                    <div class="input-group input-group-sm w-75">
-                        <button class="btn btn-outline-secondary btn-sm minus-cart-modal" type="button" data-id="${item.id}">-</button>
-                        <input type="number" class="form-control text-center cart-qty-modal" value="${item.quantity}" min="1" data-id="${item.id}" disabled style="width: 20px;">
-                        <button class="btn btn-outline-secondary btn-sm plus-cart-modal" type="button" data-id="${item.id}">+</button>
-                    </div>
-                </div>
-                
-                <div class="col-2 text-end">
-                    <span class="fw-bold">$${lineTotal.toFixed(2)}</span>
-                </div>
-                
-                <div class="col-1 text-end">
-                    <button 
-                        class="btn btn-sm btn-outline-danger remove-cart-item-btn" 
-                        data-id="${item.id}"
-                        title="Eliminar Producto">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
+                <div style="display: flex; align-items: center; flex: 2;">
+                    <img src="${item.imagen}" alt="${item.nombre}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 15px;">
+                    <div>
+                        <p style="margin: 0; font-weight: 600;">${item.nombre}</p>
+                        <small style="color: #666;">$${item.precio.toFixed(2)} c/u</small>
+                    </div>
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <button class="btn-custom-secondary minus-cart-modal" type="button" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.8rem;">-</button>
+                    <input type="number" value="${item.quantity}" min="1" data-id="${item.id}" style="width: 40px; text-align: center; border: 1px solid #ccc; border-radius: 4px;" disabled>
+                    <button class="btn-custom-secondary plus-cart-modal" type="button" data-id="${item.id}" style="padding: 5px 10px; font-size: 0.8rem;">+</button>
+                </div>
+                <div style="flex: 1; text-align: right; font-weight: 700;">
+                    $${lineTotal.toFixed(2)}
+                </div>
+                <div style="flex: 0 0 40px; text-align: right;">
+                    <button class="remove-cart-item-btn" data-id="${item.id}" title="Eliminar" style="background: none; border: none; color: #dc3545; font-size: 1.2rem; cursor: pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
             container.appendChild(itemDiv);
         });
     }
 
     totalElement.textContent = `$${total.toFixed(2)}`;
-    updateCartUI(cart);
-
+    updateCartUI(cart); // Sincroniza el contador del header
 }
-
-// ** FUNCIÓN ELIMINADA: setupCartItemListeners() **
 
 
 // #################################################
@@ -255,19 +232,16 @@ async function fetchProductDetails(productId) {
         const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}`);
 
         if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error('Producto no encontrado. Usando datos mockeados.');
-            }
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Error al cargar el producto.');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Producto no encontrado (status: ${response.status})`);
         }
 
         const product = await response.json();
-        const stock = product.stockQty || 20; 
+        const stock = product.stockQty || 20; // Default stock si no viene
 
-        currentProduct = { 
-            _id: product._id, 
-            name: product.name, 
+        currentProduct = {
+            _id: product._id,
+            name: product.name,
             price: product.price,
             stockQty: stock,
             oldPrice: product.oldPrice,
@@ -276,17 +250,17 @@ async function fetchProductDetails(productId) {
             brand: product.brand,
             description: product.description,
         };
-        currentStockQty = stock; 
+        currentStockQty = stock;
 
         displayProductDetails(currentProduct);
 
     } catch (error) {
         console.error('Error al obtener los detalles del producto:', error);
-        showToast(`Error al cargar el producto: ${error.message}. Usando datos de ejemplo.`, 'err');
-        
+        showToast(`Error al cargar: ${error.message}. Usando datos de ejemplo.`, 'err');
+
         // FALLBACK a datos mockeados 
         const mockProduct = {
-            _id: productId, 
+            _id: productId,
             name: "Consola de Juegos (FALLBACK)",
             price: 13999.00,
             oldPrice: 15000.00,
@@ -312,7 +286,7 @@ function displayProductDetails(product) {
 
     $('productPrice').textContent = `$${product.price.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    // Manejo de Descuentos (Bootstrap)
+    // Manejo de Descuentos
     const discountPriceEl = $('productOldPrice');
     const discountBadgeEl = $('productDiscount');
     if (product.oldPrice && product.oldPrice > product.price) {
@@ -333,12 +307,12 @@ function displayProductDetails(product) {
 
     if (product.stockQty > 0) {
         productStock.textContent = `${product.stockQty} unidades en stock`;
-        productStock.parentElement.classList.replace('text-danger', 'text-success');
+        productStock.style.color = '#198754'; // Verde (basado en tu CSS)
         if (addToCartBtn) addToCartBtn.disabled = false;
         if (buyNowBtn) buyNowBtn.disabled = false;
     } else {
         productStock.textContent = 'Agotado';
-        productStock.parentElement.classList.replace('text-success', 'text-danger');
+        productStock.style.color = '#dc3545'; // Rojo (un rojo estándar)
         if (addToCartBtn) addToCartBtn.disabled = true;
         if (buyNowBtn) buyNowBtn.disabled = true;
     }
@@ -353,42 +327,41 @@ function displayProductDetails(product) {
             mainImage.alt = product.name;
         }
 
-        if(thumbnailsContainer) {
+        if (thumbnailsContainer) {
             thumbnailsContainer.innerHTML = '';
             product.images.forEach((imgUrl, index) => {
                 const thumbImg = document.createElement('img');
                 thumbImg.src = imgUrl;
                 thumbImg.alt = `${product.name} miniatura ${index + 1}`;
-                // Clases de Bootstrap
-                thumbImg.className = 'img-thumbnail rounded mx-1 cursor-pointer';
-                thumbImg.style.width = '75px'; // Añadir estilo para miniatura
+                // Usamos la clase 'active' de tu CSS
                 if (index === 0) {
-                    thumbImg.classList.add('border', 'border-primary');
+                    thumbImg.classList.add('active');
                 }
                 thumbImg.addEventListener('click', () => {
                     if ($('productImage')) $('productImage').src = imgUrl;
-                    Array.from(thumbnailsContainer.children).forEach(t => t.classList.remove('border', 'border-primary'));
-                    thumbImg.classList.add('border', 'border-primary');
+                    // Quitar 'active' de todos
+                    Array.from(thumbnailsContainer.children).forEach(t => t.classList.remove('active'));
+                    // Añadir 'active' a la clickeada
+                    thumbImg.classList.add('active');
                 });
                 thumbnailsContainer.appendChild(thumbImg);
             });
         }
     } else {
         if (mainImage) mainImage.src = 'https://via.placeholder.com/400';
-        if(thumbnailsContainer) thumbnailsContainer.innerHTML = '';
+        if (thumbnailsContainer) thumbnailsContainer.innerHTML = '';
     }
-    
-    // Detalles adicionales
+
+    // Detalles adicionales (Mockeados como en tu JS original)
     const detailsList = $('productDetailsList');
     if (detailsList) {
-        detailsList.innerHTML = ''; 
+        detailsList.innerHTML = '';
         const mockDetails = {
             "Material": "Plástico ABS reforzado",
             "Peso": "2.5 kg",
             "Conectividad": "Wi-Fi 6, Bluetooth 5.0"
         };
-        
-        // Cargar detalles mockeados
+
         for (const [key, value] of Object.entries(mockDetails)) {
             const li = document.createElement('li');
             li.innerHTML = `<strong>${key}:</strong> ${value}`;
@@ -399,57 +372,50 @@ function displayProductDetails(product) {
 
 
 // #################################################
-// 💥 NUEVA FUNCIÓN: DELEGACIÓN DE EVENTOS DEL MODAL
-// Esta función se ejecuta UNA SOLA VEZ para gestionar todos los clics en el modal.
+// 💥 DELEGACIÓN DE EVENTOS DEL MODAL
 // #################################################
 function setupModalDelegation() {
-    const container = $('cartItemsContainer');
-    
-    if (!container) {
-        console.error('❌ No se encontró el contenedor del carrito');
+    const modalElement = $('cartModal'); // Escucha en el overlay
+
+    if (!modalElement) {
+        console.error('❌ No se encontró el elemento del modal');
         return;
     }
 
     console.log('✅ Configurando delegación de eventos del modal');
 
-    // Usar event delegation en el modal completo
-    const modalElement = document.getElementById('cartModal');
-    if (modalElement) {
-        modalElement.addEventListener('click', function(e) {
-            const target = e.target;
-            
-            // Buscar el botón clickeado (incluye íconos Font Awesome)
-            const button = target.closest('.remove-cart-item-btn') || 
-                          target.closest('.plus-cart-modal') || 
-                          target.closest('.minus-cart-modal');
-            
-            if (!button) return;
+    modalElement.addEventListener('click', function (e) {
+        const target = e.target;
 
-            const productId = button.getAttribute('data-id');
-            console.log('🔄 Botón clickeado:', button.className, 'Product ID:', productId);
+        // Buscar el botón clickeado (incluye íconos Font Awesome)
+        const button = target.closest('.remove-cart-item-btn') ||
+            target.closest('.plus-cart-modal') ||
+            target.closest('.minus-cart-modal');
 
-            if (button.classList.contains('remove-cart-item-btn')) {
-                console.log('🗑️ Eliminando producto:', productId);
-                removeFromCart(productId);
-            } 
-            else if (button.classList.contains('plus-cart-modal')) {
-                const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
-                if (input) {
-                    const newQuantity = parseInt(input.value) + 1;
-                    console.log('➕ Aumentando cantidad:', productId, 'a', newQuantity);
-                    updateCartItemQuantity(productId, newQuantity);
-                }
-            } 
-            else if (button.classList.contains('minus-cart-modal')) {
-                const input = document.querySelector(`.cart-qty-modal[data-id="${productId}"]`);
-                if (input) {
-                    const newQuantity = parseInt(input.value) - 1;
-                    console.log('➖ Disminuyendo cantidad:', productId, 'a', newQuantity);
-                    updateCartItemQuantity(productId, newQuantity);
-                }
+        if (!button) return;
+
+        const productId = button.getAttribute('data-id');
+        if (!productId) return;
+
+        if (button.classList.contains('remove-cart-item-btn')) {
+            removeFromCart(productId);
+        }
+        else if (button.classList.contains('plus-cart-modal')) {
+            // Busca el input de cantidad *dentro* del modal
+            const qtyInput = modalElement.querySelector(`input[data-id="${productId}"][disabled]`);
+            if (qtyInput) {
+                const newQuantity = parseInt(qtyInput.value) + 1;
+                updateCartItemQuantity(productId, newQuantity);
             }
-        });
-    }
+        }
+        else if (button.classList.contains('minus-cart-modal')) {
+            const qtyInput = modalElement.querySelector(`input[data-id="${productId}"][disabled]`);
+            if (qtyInput) {
+                const newQuantity = parseInt(qtyInput.value) - 1;
+                updateCartItemQuantity(productId, newQuantity);
+            }
+        }
+    });
 }
 
 
@@ -466,10 +432,10 @@ function setupQuantityControls() {
     if (plusBtn) {
         plusBtn.addEventListener('click', () => {
             let current = parseInt(quantityInput.value);
-            if (!isNaN(current) && current < currentStockQty) { 
+            if (!isNaN(current) && current < currentStockQty) {
                 quantityInput.value = current + 1;
             } else if (!isNaN(current) && current >= currentStockQty) {
-                   showToast(`Stock máximo alcanzado (${currentStockQty} unidades).`, 'info');
+                showToast(`Stock máximo alcanzado (${currentStockQty} unidades).`, 'info');
             }
         });
     }
@@ -484,98 +450,116 @@ function setupQuantityControls() {
     // Listener para validación manual
     if (quantityInput) {
         quantityInput.addEventListener('change', (e) => {
-             let value = parseInt(e.target.value);
-             if (isNaN(value) || value < 1) {
-                 e.target.value = 1;
-             } else if (value > currentStockQty) {
-                 e.target.value = currentStockQty;
-                 showToast(`Se ajustó la cantidad al stock máximo (${currentStockQty}).`, 'info');
-             }
+            let value = parseInt(e.target.value);
+            if (isNaN(value) || value < 1) {
+                e.target.value = 1;
+            } else if (value > currentStockQty) {
+                e.target.value = currentStockQty;
+                showToast(`Se ajustó la cantidad al stock máximo (${currentStockQty}).`, 'info');
+            }
         });
     }
 }
 
 function setupActionButtons() {
     const quantityInput = $('productQuantity');
-    
+
     // 1. Agregar al Carrito
     $('addToCartBtn').addEventListener('click', () => {
         if (!currentProduct) {
-             showToast('Esperando la carga del producto. Inténtalo de nuevo.', 'err');
-             return;
+            showToast('Esperando la carga del producto. Inténtalo de nuevo.', 'err');
+            return;
         }
         const quantity = parseInt(quantityInput.value);
         addToCart(currentProduct._id, quantity);
     });
-    
+
     // 2. Comprar Ahora (Agrega al carrito y redirige)
     $('buyNowBtn').addEventListener('click', () => {
-          if (!currentProduct) return;
-          const quantity = parseInt(quantityInput.value);
-          addToCart(currentProduct._id, quantity);
-          
-          // Redirección al checkout
-          window.location.href = '../../detalle_pedido.html'; 
+        if (!currentProduct) return;
+        const quantity = parseInt(quantityInput.value);
+        addToCart(currentProduct._id, quantity);
+
+        // Redirección al checkout
+        window.location.href = '../../detalle_pedido.html';
     });
-    
+
     // 3. Botón de Checkout dentro del Modal
     $('checkoutBtnModal').addEventListener('click', () => {
         const cart = loadCart();
         if (cart.length > 0) {
-            cartModalInstance.hide(); // Oculta el modal de Bootstrap
-            window.location.href = '../../detalle_pedido.html'; 
+            // ⭐️ MODIFICADO: Llama a la función de cierre personalizada
+            closeCartModal();
+            window.location.href = '../../detalle_pedido.html';
         } else {
             showToast('El carrito está vacío. Agrega productos antes de pagar.', 'err');
         }
     });
 }
 
+// ⭐️ AÑADIDO: Funciones para controlar el modal (CSS Puro)
+function openCartModal() {
+    console.log('🎯 Abriendo modal - renderizando carrito');
+    renderCartModal(); // Renderiza el contenido primero
+    const modal = $('cartModal');
+    if (modal) modal.style.display = 'flex'; // Muestra el overlay
+}
+
+function closeCartModal() {
+    console.log('📦 Cerrando modal');
+    const modal = $('cartModal');
+    if (modal) modal.style.display = 'none'; // Oculta el overlay
+
+    // Actualizar contador en header por si hubo cambios
+    updateCartUI(loadCart());
+}
+
+
+// ⭐️ MODIFICADA: Configuración del Modal (CSS Puro)
 function setupCartModal() {
     const cartModalElement = $('cartModal');
-    
-    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        cartModalInstance = new bootstrap.Modal(cartModalElement);
-    }
-    
-    // ✅ SOLO renderizar cuando el modal se vaya a mostrar
-    cartModalElement.addEventListener('show.bs.modal', function() {
-        console.log('🎯 Modal abierto - renderizando carrito');
-        renderCartModal();
-    });
+    if (!cartModalElement) return;
 
-    // ✅ También actualizar cuando se cierre y vuelva a abrir
-    cartModalElement.addEventListener('hidden.bs.modal', function() {
-        console.log('📦 Modal cerrado');
-        // Actualizar contador en header por si hubo cambios
-        updateCartUI(loadCart());
+    // 1. Botón del Header para ABRIR
+    $('cartBtn').addEventListener('click', openCartModal);
+
+    // 2. Botón 'X' en el modal para CERRAR
+    $('closeCartModal').addEventListener('click', closeCartModal);
+
+    // 3. Clic en el overlay (fondo) para CERRAR
+    cartModalElement.addEventListener('click', (e) => {
+        // Si se hizo clic directamente en el overlay (y no en un hijo)
+        if (e.target.id === 'cartModal') {
+            closeCartModal();
+        }
     });
 }
 
 
 // Ejecutar inmediatamente al cargar el script para inicializar el contador del header
-updateCartUI(loadCart()); 
+updateCartUI(loadCart());
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔄 Inicializando página de detalle...');
-    
+    console.log('🔄 Inicializando página de detalle (CSS Puro)...');
+
     // 1. Cargar producto
     fetchProductDetails(getProductIdFromUrl());
-    
+
     // 2. Configurar controles básicos
     setupQuantityControls();
     setupActionButtons();
-    
-    // 3. Configurar modal (UNA VEZ)
+
+    // 3. Configura los listeners para ABRIR/CERRAR el modal
     setupCartModal();
-    
-    // 4. Configurar delegación de eventos (UNA VEZ)
+
+    // 4. Configura los listeners para botones DENTRO del modal
     setupModalDelegation();
-    
-    // 5. Inicializar UI del carrito
+
+    // 5. Inicializar UI del carrito (redundante, pero asegura)
     updateCartUI(loadCart());
-    
+
     console.log('✅ Página inicializada correctamente');
-    
+
     // Debug: ver estado inicial
     console.log('🛒 Carrito inicial:', loadCart());
 });
