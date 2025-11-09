@@ -1,15 +1,26 @@
-// frontend/cajero/apertura_caja.js
+// frontend/cajero/apertura_caja.js - VERSIÓN CORREGIDA PARA USAR LOCALSTORAGE
 
 // Define la API base URL (¡Ajusta tu URL de Render!)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv-hm20.onrender.com';
+    : 'https://tiendaonlinepdv.onrender.com';
 
 
 // 2. Inicialización y manejo de formulario
 document.addEventListener('DOMContentLoaded', () => {
-    // ⭐️ CORRECCIÓN CLAVE: Eliminamos el try/catch y la llamada a checkAuthentication() ⭐️
-    // La función ya no existe, y si el token es inválido, el fetch lo manejará.
+    // ⭐️ Agregamos una comprobación de redirección si ya está abierto ⭐️
+    const token = localStorage.getItem('supabase-token');
+    const corteId = localStorage.getItem('currentCorteId');
+    const role = localStorage.getItem('user-role');
+    
+    // Si ya tienes token, rol y corteId, redirige directamente al PDV.
+    if (token && role === 'Cajero' && corteId) {
+        document.getElementById('apertura-error').textContent = 'Tienes un turno activo. Redirigiendo...';
+        setTimeout(() => {
+            window.location.href = './pdv.html'; 
+        }, 100); // Redirección rápida
+        return;
+    }
 
     const aperturaForm = document.getElementById('aperturaForm');
     // Verificamos que el formulario exista antes de añadir el listener
@@ -27,8 +38,8 @@ async function handleAperturaSubmit(e) {
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
 
-    // Leemos el token de sessionStorage
-    const token = sessionStorage.getItem('supabase-token');
+    // ⭐️ CORRECCIÓN: Leemos el token de localStorage para consistencia con pdv.js ⭐️
+    const token = localStorage.getItem('supabase-token');
 
     // Validación de entrada
     if (isNaN(montoInicial) || montoInicial < 0) {
@@ -52,7 +63,7 @@ async function handleAperturaSubmit(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // ⭐️ CRUCIAL: Usamos el token correcto de sessionStorage ⭐️
+                // ⭐️ CRUCIAL: Usamos el token correcto de localStorage ⭐️
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ monto_inicial: montoInicial })
@@ -62,13 +73,16 @@ async function handleAperturaSubmit(e) {
 
         // 3. Manejo de Éxito (200) y Conflicto (409)
         if (response.ok || response.status === 409) {
-
+            
+            // Si el backend te devuelve un 409, es el error CAJA_ACTIVA_EXISTENTE.
+            // El backend DEBE devolver el ID del corte activo en la propiedad 'corteId'.
             if (data.corteId) {
                 // ✅ CORRECTO: El corteId SÍ va en localStorage para persistencia
                 localStorage.setItem('currentCorteId', data.corteId);
             }
 
-            const redirectPath = './cajero.html';
+            // Nota: Cambié './cajero.html' a './pdv.html' para ser consistente con el archivo
+            const redirectPath = './pdv.html'; 
 
             const message = response.status === 409
                 ? data.message + ' Redirigiendo a tu turno activo.'
@@ -84,11 +98,10 @@ async function handleAperturaSubmit(e) {
             // 4. Fallo de Seguridad/Autorización (Rechazado por el BACKEND)
             errorMessage.textContent = data.message || 'Sesión inválida o expirada. Redirigiendo al login.';
 
-            // ⭐️⭐️ CAMBIO AQUÍ ⭐️⭐️
-            // Limpia la sesión de sessionStorage
-            sessionStorage.removeItem('supabase-token');
-            sessionStorage.removeItem('user-role');
-            sessionStorage.removeItem('user-email');
+            // ⭐️⭐️ CORRECCIÓN: Limpia la sesión de localStorage, no sessionStorage ⭐️⭐️
+            localStorage.removeItem('supabase-token');
+            localStorage.removeItem('user-role');
+            localStorage.removeItem('currentCorteId'); // Limpiar cualquier corte residual
 
             setTimeout(() => {
                 window.location.href = '../../login/login.html';
