@@ -1,4 +1,4 @@
-// frontend/cajero/apertura_caja.js - VERSIÓN CORREGIDA PARA USAR LOCALSTORAGE
+// frontend/cajero/apertura_caja.js - VERSIÓN CORREGIDA PARA USAR SESSIONSTORAGE
 
 // Define la API base URL (¡Ajusta tu URL de Render!)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -9,9 +9,10 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 // 2. Inicialización y manejo de formulario
 document.addEventListener('DOMContentLoaded', () => {
     // ⭐️ Agregamos una comprobación de redirección si ya está abierto ⭐️
-    const token = localStorage.getItem('supabase-token');
-    const corteId = localStorage.getItem('currentCorteId');
-    const role = localStorage.getItem('user-role');
+    // ✅ CAMBIO A SESSIONSTORAGE para leer el estado actual de la sesión
+    const token = sessionStorage.getItem('supabase-token');
+    const corteId = sessionStorage.getItem('currentCorteId'); 
+    const role = sessionStorage.getItem('user-role');
     
     // Si ya tienes token, rol y corteId, redirige directamente al PDV.
     if (token && role === 'Cajero' && corteId) {
@@ -38,8 +39,8 @@ async function handleAperturaSubmit(e) {
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
 
-    // ⭐️ CORRECCIÓN: Leemos el token de localStorage para consistencia con pdv.js ⭐️
-    const token = localStorage.getItem('supabase-token');
+    // ⭐️ CORRECCIÓN: Leemos el token de sessionStorage para consistencia con login.js ⭐️
+    const token = sessionStorage.getItem('supabase-token'); // ✅ CAMBIO A SESSIONSTORAGE
 
     // Validación de entrada
     if (isNaN(montoInicial) || montoInicial < 0) {
@@ -63,7 +64,7 @@ async function handleAperturaSubmit(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // ⭐️ CRUCIAL: Usamos el token correcto de localStorage ⭐️
+                // ⭐️ CRUCIAL: Usamos el token correcto de sessionStorage ⭐️
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ monto_inicial: montoInicial })
@@ -77,8 +78,8 @@ async function handleAperturaSubmit(e) {
             // Si el backend te devuelve un 409, es el error CAJA_ACTIVA_EXISTENTE.
             // El backend DEBE devolver el ID del corte activo en la propiedad 'corteId'.
             if (data.corteId) {
-                // ✅ CORRECTO: El corteId SÍ va en localStorage para persistencia
-                localStorage.setItem('currentCorteId', data.corteId);
+                // ✅ CORRECTO: El corteId SÍ va en sessionStorage para consistencia
+                sessionStorage.setItem('currentCorteId', data.corteId); // ✅ CAMBIO A SESSIONSTORAGE
             }
 
             // Nota: Cambié './cajero.html' a './pdv.html' para ser consistente con el archivo
@@ -98,10 +99,10 @@ async function handleAperturaSubmit(e) {
             // 4. Fallo de Seguridad/Autorización (Rechazado por el BACKEND)
             errorMessage.textContent = data.message || 'Sesión inválida o expirada. Redirigiendo al login.';
 
-            // ⭐️⭐️ CORRECCIÓN: Limpia la sesión de localStorage, no sessionStorage ⭐️⭐️
-            localStorage.removeItem('supabase-token');
-            localStorage.removeItem('user-role');
-            localStorage.removeItem('currentCorteId'); // Limpiar cualquier corte residual
+            // ⭐️⭐️ CORRECCIÓN: Limpia la sesión de sessionStorage ⭐️⭐️
+            sessionStorage.removeItem('supabase-token'); // ✅ CAMBIO A SESSIONSTORAGE
+            sessionStorage.removeItem('user-role'); // ✅ CAMBIO A SESSIONSTORAGE
+            sessionStorage.removeItem('currentCorteId'); // ✅ CAMBIO A SESSIONSTORAGE
 
             setTimeout(() => {
                 window.location.href = '../../login/login.html';

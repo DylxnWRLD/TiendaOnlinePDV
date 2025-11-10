@@ -5,10 +5,10 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv.onrender.com'; // ⭐️ Revisa esta URL para Render ⭐️
 
-// Obtención de datos de sesión del localStorage
-const token = localStorage.getItem('supabase-token'); 
-const corteId = localStorage.getItem('currentCorteId');
-const role = localStorage.getItem('user-role'); 
+// Obtención de datos de sesión del sessionStorage (consistente con login.js)
+const token = sessionStorage.getItem('supabase-token'); // ✅ CAMBIO A SESSIONSTORAGE
+const corteId = sessionStorage.getItem('currentCorteId'); // ✅ CAMBIO A SESSIONSTORAGE
+const role = sessionStorage.getItem('user-role'); // ✅ CAMBIO A SESSIONSTORAGE
 
 // Estado local de la venta (el "carrito")
 let ventaActual = {
@@ -19,7 +19,7 @@ let ventaActual = {
 };
 
 // ⭐️ VARIABLE ELIMINADA: Ya no se usa montoDeclaradoTemporal. 
-// Usaremos localStorage.corteReporteTemporal en su lugar.
+// Usaremos sessionStorage.corteReporteTemporal en su lugar. // ⭐️ Nota: Esto se ajusta abajo.
 
 // ⭐️ ID ÚNICO DE ESTA INSTANCIA/PESTAÑA ⭐️
 const INSTANCE_ID = Date.now() + Math.random().toString(36).substring(2);
@@ -29,7 +29,7 @@ const INSTANCE_ID = Date.now() + Math.random().toString(36).substring(2);
 // 0. LÓGICA DE RESTRICCIÓN DE SESIÓN ÚNICA (CANDADO)
 // =========================================================================
 
-const SESSION_LOCK_KEY = 'pdv_lock_active';
+const SESSION_LOCK_KEY = 'pdv_lock_active'; // Se mantiene en localStorage para comunicación entre pestañas
 // El candado expira si no se refresca en 10 segundos
 const LOCK_TIMEOUT = 10000; 
 let lockHeartbeat = null; 
@@ -63,7 +63,7 @@ function acquireLock() {
     // 2. Adquirir/Refrescar el candado con nuestra INSTANCE_ID
     const newLockData = JSON.stringify({
         instanceId: INSTANCE_ID,
-        corteId: corteId, // Se mantiene por contexto
+        corteId: corteId, // Se mantiene por contexto (lee de la variable global, que ahora es sessionStorage)
         timestamp: Date.now()
     });
     localStorage.setItem(SESSION_LOCK_KEY, newLockData);
@@ -124,7 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // 1.2. Verificar Sesión y Corte Abierto (Guardrail de seguridad)
-    if (!token || role !== 'Cajero' || !corteId) {
+    // Las variables token, role y corteId leen de sessionStorage al inicio
+    if (!token || role !== 'Cajero' || !corteId) { 
         alert('Caja no abierta o sesión inválida. Redirigiendo a Apertura.');
         window.location.href = './apertura_caja.html'; 
         return;
@@ -378,8 +379,8 @@ async function realizarCorteDeCaja(montoContado) {
         // Agregamos el monto_declarado al objeto reporte para el cierre final y la corrección
         reporte.monto_declarado = montoContadoFloat; 
         
-        // ⭐️ GUARDAR EL REPORTE COMPLETO EN LOCALSTORAGE ⭐️
-        localStorage.setItem('corteReporteTemporal', JSON.stringify(reporte));
+        // ⭐️ GUARDAR EL REPORTE COMPLETO EN SESSIONSTORAGE ⭐️
+        sessionStorage.setItem('corteReporteTemporal', JSON.stringify(reporte)); // ✅ CAMBIO A SESSIONSTORAGE
 
         // 3. Lógica de visualización del reporte
         const diferencia = reporte.diferencia;
@@ -408,7 +409,7 @@ async function realizarCorteDeCaja(montoContado) {
  * ⚠️ Llama al nuevo endpoint /api/caja/cerrar_definitivo
  */
 async function aceptarYFinalizarCorte() {
-    const reporteString = localStorage.getItem('corteReporteTemporal');
+    const reporteString = sessionStorage.getItem('corteReporteTemporal'); // ✅ CAMBIO A SESSIONSTORAGE
     if (!reporteString) {
         alert('No hay un reporte de corte para finalizar. Intente el cálculo de nuevo.');
         return;
@@ -434,9 +435,9 @@ async function aceptarYFinalizarCorte() {
 
         // Éxito: Limpiar sesión y redirigir
         document.getElementById('modal-reporte-corte').style.display = 'none';
-        localStorage.removeItem('currentCorteId');
-        localStorage.removeItem('corteReporteTemporal'); // Limpiar el reporte temporal
-        localStorage.removeItem('supabase-token');
+        sessionStorage.removeItem('currentCorteId'); // ✅ CAMBIO A SESSIONSTORAGE
+        sessionStorage.removeItem('corteReporteTemporal'); // ✅ CAMBIO A SESSIONSTORAGE
+        sessionStorage.removeItem('supabase-token'); // ✅ CAMBIO A SESSIONSTORAGE
         if (lockHeartbeat) clearInterval(lockHeartbeat);
         releaseLock(); 
         window.location.href = '../login/login.html';
@@ -555,7 +556,7 @@ function setupEventListeners() {
              return;
         }
         // Limpiar el campo o cargar el último valor si existe un reporte temporal
-        const reporteString = localStorage.getItem('corteReporteTemporal');
+        const reporteString = sessionStorage.getItem('corteReporteTemporal'); // ✅ CAMBIO A SESSIONSTORAGE
         if (reporteString) {
              try {
                 const reporte = JSON.parse(reporteString);
@@ -592,7 +593,7 @@ function setupEventListeners() {
         document.getElementById('modal-corte-caja').style.display = 'block';
         
         // 3. Precargar el último monto declarado del reporte temporal (para corrección)
-        const reporteString = localStorage.getItem('corteReporteTemporal');
+        const reporteString = sessionStorage.getItem('corteReporteTemporal'); // ✅ CAMBIO A SESSIONSTORAGE
         if (reporteString) {
             try {
                 const reporte = JSON.parse(reporteString);
@@ -617,7 +618,7 @@ function setupEventListeners() {
             // Cierre de sesión normal si no hay corte activo
             if (lockHeartbeat) clearInterval(lockHeartbeat);
             releaseLock(); 
-            localStorage.clear();
+            sessionStorage.clear(); // ✅ CAMBIO A SESSIONSTORAGE para limpiar sesión
             window.location.href = '../login/login.html'; 
             return;
         }
@@ -646,8 +647,8 @@ function setupEventListeners() {
                         if (lockHeartbeat) clearInterval(lockHeartbeat);
                         alert('🚫 Control de sesión perdido. Otra pestaña ha tomado el mando.');
                         // Limpiamos la sesión actual del navegador para evitar conflictos futuros.
-                        localStorage.removeItem('currentCorteId');
-                        localStorage.removeItem('supabase-token');
+                        sessionStorage.removeItem('currentCorteId'); // ✅ CAMBIO A SESSIONSTORAGE
+                        sessionStorage.removeItem('supabase-token'); // ✅ CAMBIO A SESSIONSTORAGE
                         window.location.href = '../login/login.html';
                     }
                 } catch (e) {
