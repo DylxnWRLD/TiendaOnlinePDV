@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (token && role === 'Cajero' && corteId) {
         document.getElementById('apertura-error').textContent = 'Tienes un turno activo. Redirigiendo...';
         setTimeout(() => {
-            window.location.href = './pdv.html'; 
+            window.location.href = './cajero.html'; 
         }, 100); // Redirección rápida
         return;
     }
@@ -83,7 +83,7 @@ async function handleAperturaSubmit(e) {
             }
 
             // Nota: Cambié './cajero.html' a './pdv.html' para ser consistente con el archivo
-            const redirectPath = './pdv.html'; 
+            const redirectPath = './cajero.html'; 
 
             const message = response.status === 409
                 ? data.message + ' Redirigiendo a tu turno activo.'
