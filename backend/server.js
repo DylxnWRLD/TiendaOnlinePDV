@@ -1213,6 +1213,93 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
     }
 });
 
+/**
+ * RUTA: POST /api/caja/calcular_reporte (1er Paso: Solo calcula, no cierra)
+ * Objetivo: Llama a la RPC calcular_corte_caja.
+ */
+app.post('/api/caja/calcular_reporte', getUserIdFromToken, async (req, res) => {
+    const userId = req.userId;
+    const { id_corte, monto_declarado } = req.body;
+
+    if (!id_corte || monto_declarado === undefined || typeof monto_declarado !== 'number') {
+        return res.status(400).json({ message: 'Faltan o son inválidos los parámetros de corte.' });
+    }
+    
+    // NOTA: Se asume que el rol Cajero ya fue verificado antes de llegar al PDV.
+
+    try {
+        // Llama a la nueva función PL/pgSQL para SOLO CALCULAR (no actualiza estado)
+        const { data, error } = await supabase
+            .rpc('calcular_corte_caja', { // ⚠️ Asume que ya creaste esta RPC en Supabase
+                p_id_corte: id_corte,
+                p_monto_declarado: monto_declarado
+            })
+            .single();
+
+        if (error) {
+            console.error('[RPC ERROR]: Error en calcular_corte_caja:', error.message);
+            // Manejamos el caso de que el corte no esté abierto
+            if (error.message.includes('CORTE_NO_ACTIVO')) {
+                return res.status(409).json({ message: 'El corte no está activo o ya fue cerrado.' });
+            }
+            return res.status(500).json({ message: 'Error en DB al calcular reporte.', details: error.message });
+        }
+
+        // Devuelve los resultados del cálculo (monto_calculado, diferencia, etc.)
+        return res.status(200).json({
+            message: 'Cálculo de reporte exitoso.',
+            reporte: data
+        });
+
+    } catch (error) {
+        console.error('[FATAL ERROR]: Cálculo de reporte falló:', error);
+        res.status(500).json({ message: 'Error interno del servidor al calcular el reporte.' });
+    }
+});
+
+
+/**
+ * RUTA: POST /api/caja/cerrar_definitivo (2do Paso: Cierre final)
+ * Objetivo: Llama a la RPC cerrar_corte_definitivo y cambia el estado a CERRADA.
+ */
+app.post('/api/caja/cerrar_definitivo', getUserIdFromToken, async (req, res) => {
+    const userId = req.userId;
+    const { id_corte, monto_declarado, monto_calculado } = req.body;
+
+    if (!id_corte || monto_declarado === undefined || monto_calculado === undefined) {
+        return res.status(400).json({ message: 'Faltan parámetros de cierre definitivo.' });
+    }
+    
+    try {
+        // Llama a la función PL/pgSQL para el CIERRE FINAL
+        const { data, error } = await supabase
+            .rpc('cerrar_corte_definitivo', { // ⚠️ Asume que ya creaste esta RPC en Supabase
+                p_id_corte: id_corte,
+                p_monto_declarado: monto_declarado,
+                p_monto_calculado: monto_calculado // Se utiliza el valor ya calculado/validado
+            })
+            .single(); // Devuelve el estado 'CERRADA'
+
+        if (error) {
+            console.error('[RPC ERROR]: Error en cerrar_corte_definitivo:', error.message);
+            if (error.message.includes('CORTE_NO_ACTIVO')) {
+                // Si ya está cerrado, no hay problema, devolvemos un 200 para limpiar el frontend
+                return res.status(200).json({ message: 'Corte ya cerrado o no activo, pero flujo completado.' });
+            }
+            return res.status(500).json({ message: 'Error en DB al cerrar definitivamente.', details: error.message });
+        }
+
+        // Respuesta Exitosa
+        return res.status(200).json({
+            message: 'Corte de caja cerrado con éxito.',
+            estado: data
+        });
+
+    } catch (error) {
+        console.error('[FATAL ERROR]: Cierre definitivo falló:', error);
+        res.status(500).json({ message: 'Error interno del servidor en cierre crítico.' });
+    }
+});
 
 app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     // Nota: Asume que el middleware de autenticación ya extrajo el id_cajero
