@@ -232,6 +232,41 @@ async function agregarProducto(productoMongo) {
 
 
 
+
+function mostrarNotificacionDescuento(nombreProducto, descuento, promocionInfo) {
+    const mensaje = promocionInfo.tipo_descuento === 'PORCENTAJE' 
+        ? `🎉 ¡${promocionInfo.nombre_promo || 'Promoción'}! ${nombreProducto} tiene ${promocionInfo.valor}% off`
+        : `🎉 ¡${promocionInfo.nombre_promo || 'Promoción'}! ${nombreProducto} tiene $${descuento.toFixed(2)} off`;
+    
+    const notificacion = document.createElement('div');
+    notificacion.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    notificacion.textContent = mensaje;
+    document.body.appendChild(notificacion);
+    
+    setTimeout(() => {
+        if (document.body.contains(notificacion)) {
+            document.body.removeChild(notificacion);
+        }
+    }, 3000);
+}
+
+
+
+
+
+
+
+
 async function verificarPromocionProducto(id_producto_mongo) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/promociones/producto/${id_producto_mongo}`, {
