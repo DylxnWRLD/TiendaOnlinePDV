@@ -1,114 +1,83 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tienda LEVEL_ONE - Inicio</title>
-  <link rel="stylesheet" href="index.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-
-<body>
-
-  <div id="sidebarMenu" class="sidebar">
-        <span class="close-btn" id="closeMenu">&times;</span>
-        <h3 class="menu-title">Navegación</h3>
-
-        <a href="frontend/cliente/buscador.html" class="menu-item" id="menuRastreo">
-            <i class="fas fa-search"></i> Rastrea tu Pedido
-          </a>
-
-        <a href="frontend/cliente/favoritos.html" class="menu-item user-specific" id="menuFavoritos">
-            <i class="fas fa-heart"></i> Favoritos
-          </a>
-
-        <a href="frontend/cliente/historial.html" class="menu-item user-specific" id="menuHistorial">
-            <i class="fas fa-history"></i> Historial de compra
-          </a>
-
-        <a href="frontend/productos/prod1.html" class="menu-item category-to-remove">Consolas</a>
-        <a href="frontend/productos/prod2.html" class="menu-item category-to-remove">Videojuegos</a>
-
-        <a href="#" class="menu-item user-specific menu-bottom" id="menuCerrarSesion">
-            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-          </a>
-
-        <div class="menu-footer">
-            <p>LEVEL_ONE © 2025</p>
-          </div>
-  </div>
-  </div>
-  <header class="header">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LevelOne - Inicio</title>
+    <link rel="stylesheet" href="index.css">
+    <!--<meta http-equiv="refresh" content="0; url=frontend/login/login.html">-->
+  </head>
+  <body>
+  <!-- Encabezado principal -->
+    <header class="header">
     <!-- Menú hamburguesa -->
-    <div class="menu-icon" id="menuToggle">
-      ☰
-    </div>
+      <div class="menu-icon" id="menuToggle">
+        ☰
+      </div>
 
     <!-- Nombre de la tienda -->
-    <h1 class="logo">LEVEL_ONE</h1>
+      <h1 class="logo">LEVEL_ONE</h1>
 
     <!-- Barra de búsqueda -->
-    <div class="search-bar">
-      <input type="text" id="search" placeholder="Buscar productos...">
-      <button id="searchBtn">Buscar</button>
-    </div>
+      <div class="search-bar">
+        <input type="text" id="search" placeholder="Buscar productos...">
+        <button id="searchBtn">Buscar</button>
+      </div>
 
     <!-- Botones de usuario -->
-    <div class="user-actions">
-      <button id="loginBtn" class="login-btn">Iniciar sesión</button>
-      <button id="cartBtn" class="cart-btn">Comprar</button>
-    </div>
-  </header>
-
-  <!--Creacion del carrusel-->
-  <main>
-    <!-- Sección 1 -->
-    <section class="carousel-section">
-      <h2>Los más vendidos en Videojuegos</h2>
-      <div class="carousel-wrapper">
-        <!-- ⭐️ MODIFICACIÓN: Contenedor vacío para que JS lo rellene ⭐️ -->
-        <div class="carousel-container" id="carousel1">
-          <p style="color: #333; padding: 20px;">Cargando productos...</p>
-        </div>
-
-        <button class="arrow right" data-target="carousel1">&#10095;</button>
-        <button class="arrow left" data-target="carousel1">&#10094;</button>
+      <div class="user-actions">
+        <button id="loginBtn" class="login-btn">Iniciar sesión</button>
+        <button id="cartBtn" class="cart-btn">Comprar</button>
       </div>
+    </header>
+
+    <!--Creacion del carrusel-->
+    <main>
+      <!-- Sección 1 -->
+      <section class="carousel-section">
+        <h2>Los más vendidos en Videojuegos</h2>
+        <div class="carousel-wrapper">
+                    <!-- ⭐️ MODIFICACIÓN: Contenedor vacío para que JS lo rellene ⭐️ -->
+          <div class="carousel-container" id="carousel1">
+            <p style="color: #333; padding: 20px;">Cargando productos...</p>
+          </div>
+
+          <button class="arrow right" data-target="carousel1">&#10095;</button>
+          <button class="arrow left" data-target="carousel1">&#10094;</button>
+        </div>
+        </div>
+      </section>
+
+      <!-- Sección 2 -->
+      <section class="carousel-section">
+        <h2></h2>
+        <div class="carousel-wrapper">
+          <button class="arrow left" data-target="carousel2">&#10094;</button>
+
+          <!-- ⭐️ MODIFICACIÓN: Contenedor vacío ⭐️ -->
+          <div class="carousel-container" id="carousel2">
+            <!-- Los productos se cargarán aquí dinámicamente -->
+          </div>
+
+          <button class="arrow right" data-target="carousel2">&#10095;</button>
+        </div>
+      </section>
+    </main>
+
+    <section class="Promocion">
+      <div class="promo-box">
+        <h2>Promociones para el "Buen Fin 2025"</h2>
+        <div class="promo-content">
+          <h2>Proximamente</h2>
+        </div>
       </div>
     </section>
 
-    <!-- Sección 2 -->
-    <section class="carousel-section">
-      <h2></h2>
-      <div class="carousel-wrapper">
-        <button class="arrow left" data-target="carousel2">&#10094;</button>
-
-        <!-- ⭐️ MODIFICACIÓN: Contenedor vacío ⭐️ -->
-        <div class="carousel-container" id="carousel2">
-          <!-- Los productos se cargarán aquí dinámicamente -->
-        </div>
-
-        <button class="arrow right" data-target="carousel2">&#10095;</button>
-      </div>
+    <!-- ⭐️ MODIFICACIÓN: Contenedor vacío y con ID nuevo ⭐️ -->
+    <section class="product-grid-container" id="product-grid">
+      <!-- Los productos sueltos (de la sección "card") se cargarán aquí -->
     </section>
-  </main>
 
-  <section class="Promocion">
-    <div class="promo-box">
-      <h2>Promociones para el "Buen Fin 2025"</h2>
-      <div class="promo-content">
-        <h2>Proximamente</h2>
-      </div>
-    </div>
-  </section>
-
-  <!-- ⭐️ MODIFICACIÓN: Contenedor vacío y con ID nuevo ⭐️ -->
-  <section class="product-grid-container" id="product-grid">
-    <!-- Los productos sueltos (de la sección "card") se cargarán aquí -->
-  </section>
-
-  <script src="index.js"></script>
-</body>
-
+    <script src="index.js"></script>
+  </body>
 </html>
