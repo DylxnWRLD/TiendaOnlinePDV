@@ -409,3 +409,81 @@ body {
     font-size: 1.4rem;
   }
 }
+
+/* ======================================= */
+/* FIX: SIDEBAR HAMBURGUESA (CON TRANSFORM) */
+/* ======================================= */
+
+.sidebar {
+    height: 100%;
+    width: 250px; /* Ancho fijo para el menú */
+    /* ⭐️ CORRECCIÓN CLAVE: Empujar el menú completamente fuera de la pantalla ⭐️ */
+    transform: translateX(-100%);
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    background-color: #2c3e50;
+    overflow-x: hidden;
+    /* Aplicar transición a 'transform' para un deslizamiento suave y fiable */
+    transition: transform 0.4s ease-in-out; 
+    padding-top: 60px;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.open {
+    /* ⭐️ ACTIVACIÓN: Traer el menú a la vista ⭐️ */
+    transform: translateX(0); 
+}
+
+.close-btn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+    color: #f1f1f1;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.menu-title {
+    padding: 8px 8px 8px 24px;
+    font-size: 1.5rem;
+    color: #ffdfde;
+    margin-bottom: 10px;
+}
+
+.menu-item {
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    color: #e0e0e0;
+    display: block;
+    transition: 0.3s;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.menu-item i {
+    margin-right: 10px;
+}
+
+.menu-item:hover {
+    color: white;
+    background-color: #3e5368;
+}
+
+.menu-footer {
+    margin-top: auto;
+    padding: 20px 15px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+/* Clases de control JS */
+.menu-item.hidden {
+    display: none !important;
+}
