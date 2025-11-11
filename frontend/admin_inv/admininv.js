@@ -303,25 +303,36 @@ $("#btnLogout").addEventListener("click", () => {
 $$("[data-close]").forEach(b => b.addEventListener("click", closeModals));
 [el.modalForm, el.modalStock].forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
 
-el.save.addEventListener("click", async () => {
-  // Leer el ID del campo oculto ANTES de crear el payload 
-  const productId = $("#id").value.trim();
-  const payload = collectForm(); // Contiene solo los campos del producto (sin ID)
+el.form.addEventListener("submit", async (e) => {
+    e.preventDefault(); // <-- ¡LA CLAVE! Evita que la página se recargue
 
-  try {
-    if (productId) { // Si tenemos un ID, estamos EDITANDO
-      await api.update(productId, payload); // Pasamos el ID del producto y los datos
-      toast("Producto actualizado", "ok");
+    // Leer el ID del campo oculto ANTES de crear el payload 
+    const productId = $("#id").value.trim();
+    
+    // ⭐️ Agregamos un try/catch aquí para que la validación de collectForm() no rompa el flujo
+    let payload;
+    try {
+        payload = collectForm(); // Contiene solo los campos del producto (sin ID)
+    } catch (err) {
+        toast(err.message || "Error en el formulario", "err");
+        return; // Detener si el formulario es inválido
     }
-    else { // Si no hay ID, estamos CREANDO
-      await api.create(payload);
-      toast("Producto creado", "ok");
+
+    try {
+        if (productId) { // Si tenemos un ID, estamos EDITANDO
+            await api.update(productId, payload); // Pasamos el ID del producto y los datos
+            toast("Producto actualizado", "ok");
+        }
+        else { // Si no hay ID, estamos CREANDO
+            await api.create(payload);
+            toast("Producto creado", "ok");
+        }
+        closeModals(); 
+        refresh(); // <-- Esto ahora se ejecutará siempre
+    } catch (err) {
+        // Si el backend devuelve un error de SKU duplicado, este lo mostrará correctamente.
+        toast(err.message || "Error al guardar", "err");
     }
-    closeModals(); refresh();
-  } catch (err) {
-    // Si el backend devuelve un error de SKU duplicado, este lo mostrará correctamente.
-    toast(err.message || "Error", "err");
-  }
 });
 
 /********** CRUD UI **********/
