@@ -1661,6 +1661,83 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 });
 
 
+// ===============================================
+// PROCESAMIENTO DE LA COMPRA ONLINE
+// ===============================================
+
+// --- ENDPOINT RPC PARA PROCESAR LA COMPRA ---
+app.post('/api/rpc/procesar_compra_online', async (req, res) => {
+    // 1. Extracción y Verificación de Token (Identidad del Cliente)
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
+
+    if (!token) {
+        return res.status(401).json({ error: 'TOKEN_REQUIRED', message: 'Se requiere un token de autenticación para esta operación.' });
+    }
+    
+    // 2. Extracción de Parámetros
+    const { 
+        p_correo, 
+        p_direccion, 
+        p_telefono, 
+        p_total_final, 
+        p_metodo_pago, 
+        p_detalles // Array con id_producto_mongo, cantidad, etc.
+    } = req.body; 
+    
+    // 3. Crear un cliente Supabase con el token del usuario
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    
+    try {
+        console.log(`[RPC] Llamando a procesar_compra_online para usuario...`);
+        
+        // 4. EJECUCIÓN 1: PostgreSQL (Registro de Cliente, Venta, Detalle)
+        const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
+            p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles 
+        });
+
+        if (error) {
+            console.error('[DB ERROR - PG]:', error.message);
+            // Si PG falla, devolvemos el error (la transacción de PG se revierte automáticamente)
+            return res.status(400).json({ error: 'DB_TRANSACTION_FAILED', message: error.message });
+        }
+        
+        // 5. EJECUCIÓN 2: MongoDB (Disminución de Stock) ⭐️ NUEVO ⭐️
+        
+        if (p_detalles && p_detalles.length > 0) {
+            const bulkOps = p_detalles.map(d => ({
+                updateOne: {
+                    // Utilizamos el _id de Mongo y el operador $inc
+                    filter: { _id: d.id_producto_mongo }, 
+                    update: { $inc: { stockQty: -d.cantidad } }
+                }
+            }));
+
+            console.log('🧩 Ejecutando bulkWrite para disminución de stock...');
+            
+            try {
+                // La variable 'Product' es el modelo de Mongoose
+                const resultMongo = await Product.bulkWrite(bulkOps);
+                console.log('✅ Stock actualizado en Mongo. Productos modificados:', resultMongo.modifiedCount);
+            } catch (mongoError) {
+                console.error('[MONGO STOCK ERROR]: Falló la actualización de stock.', mongoError.message);
+                
+                // Decisión: La venta está registrada, pero el inventario está inconsistente.
+                // Devolvemos 500 para notificar un error crítico, pero la venta existe.
+                return res.status(500).json({ error: 'STOCK_UPDATE_FAILED', message: 'Venta registrada, pero falló la actualización de stock en el inventario. Se requiere revisión manual.' });
+            }
+        }
+        
+        // 6. Respuesta Final (Si PG y Mongo fueron exitosos)
+        res.status(200).json(data);
+
+    } catch (e) {
+        console.error('[SERVER ERROR]:', e);
+        res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: 'Ocurrió un error inesperado en el servidor.' });
+    }
+});
 
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
