@@ -36,9 +36,10 @@ body {
   justify-content: space-between;
   background-color: var(--color-primario-oscuro);
   color: white;
-  padding: 12px 30px; /* Más padding */
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  
+  padding: 12px 30px;
+  /* Más padding */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
   /* --- ¡MEJORA! Header fijo --- */
   position: sticky;
   top: 0;
@@ -55,7 +56,8 @@ body {
 /*NOMBRE DE LA TIENDA */
 .logo {
   font-size: 1.8rem;
-  font-weight: 700; /* Más grueso */
+  font-weight: 700;
+  /* Más grueso */
   margin-left: 10px;
   flex-shrink: 0;
 }
@@ -104,7 +106,8 @@ body {
 .user-actions button {
   border: none;
   padding: 9px 16px;
-  border-radius: 20px; /* Redondeado */
+  border-radius: 20px;
+  /* Redondeado */
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -115,6 +118,7 @@ body {
   background-color: var(--color-acento-vibrante);
   color: white;
 }
+
 .login-btn:hover {
   background-color: var(--color-acento-hover);
   transform: translateY(-2px);
@@ -127,6 +131,7 @@ body {
   color: white;
   border: 2px solid var(--color-acento-vibrante);
 }
+
 .cart-btn:hover {
   background-color: var(--color-acento-vibrante);
   color: white;
@@ -140,10 +145,12 @@ body {
 .carousel-section {
   margin: 30px auto;
   width: 90%;
-  max-width: 1400px; /* Límite para pantallas anchas */
+  max-width: 1400px;
+  /* Límite para pantallas anchas */
   background-color: var(--color-superficie);
   padding: 25px;
-  border-radius: 16px; /* Más redondeado */
+  border-radius: 16px;
+  /* Más redondeado */
   box-shadow: var(--sombra-suave);
 }
 
@@ -153,7 +160,8 @@ body {
   font-weight: 700;
   margin-bottom: 15px;
   padding-bottom: 10px;
-  border-bottom: 2px solid var(--color-fondo); /* Separador sutil */
+  border-bottom: 2px solid var(--color-fondo);
+  /* Separador sutil */
 }
 
 .carousel-wrapper {
@@ -167,7 +175,8 @@ body {
   overflow-x: auto;
   scroll-behavior: smooth;
   white-space: nowrap;
-  padding-bottom: 10px; /* Espacio para el scrollbar sin tapar contenido */
+  padding-bottom: 10px;
+  /* Espacio para el scrollbar sin tapar contenido */
 }
 
 /* FLECHAS */
@@ -186,12 +195,19 @@ body {
   z-index: 5;
   opacity: 0.8;
 }
+
 .arrow:hover {
   background-color: var(--color-acento-vibrante);
   opacity: 1;
 }
-.arrow.left { left: -15px; }
-.arrow.right { right: -15px; }
+
+.arrow.left {
+  left: -15px;
+}
+
+.arrow.right {
+  right: -15px;
+}
 
 
 /* ======================================= */
@@ -199,37 +215,45 @@ body {
 /* ======================================= */
 .product-card {
   flex: 0 0 auto;
-  width: 210px; /* Un poco más ancho */
-  min-height: 280px; /* Un poco más alto */
+  width: 210px;
+  /* Un poco más ancho */
+  min-height: 280px;
+  /* Un poco más alto */
   margin: 10px;
   background-color: var(--color-superficie);
-  border-radius: 12px; /* Más suave */
+  border-radius: 12px;
+  /* Más suave */
   box-shadow: var(--sombra-suave);
   transition: transform 0.3s, box-shadow 0.3s;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Clave para el zoom de la imagen */
+  overflow: hidden;
+  /* Clave para el zoom de la imagen */
 }
 
 .product-link {
   text-decoration: none;
   color: inherit;
-  display: flex; /* Asegura que ocupe todo */
+  display: flex;
+  /* Asegura que ocupe todo */
   flex-direction: column;
   height: 100%;
 }
 
 .product-link:hover .product-card {
-  transform: translateY(-8px); /* Eleva más la tarjeta */
+  transform: translateY(-8px);
+  /* Eleva más la tarjeta */
   box-shadow: var(--sombra-elevada);
 }
 
 .product-card img {
   width: 100%;
-  height: 180px; /* Más espacio para la imagen */
+  height: 180px;
+  /* Más espacio para la imagen */
   object-fit: cover;
   border-radius: 0;
-  transition: transform 0.3s; /* Para el zoom */
+  transition: transform 0.3s;
+  /* Para el zoom */
 }
 
 /* --- ¡MEJORA! Zoom en la imagen --- */
@@ -244,8 +268,10 @@ body {
   font-size: 1rem;
   word-wrap: break-word;
   white-space: normal;
-  text-align: left; /* Más profesional que centrado */
-  flex-grow: 1; /* Empuja el texto hacia abajo si la tarjeta es alta */
+  text-align: left;
+  /* Más profesional que centrado */
+  flex-grow: 1;
+  /* Empuja el texto hacia abajo si la tarjeta es alta */
   display: flex;
   align-items: center;
 }
@@ -312,7 +338,8 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 20px; /* Más espacio entre tarjetas */
+  gap: 20px;
+  /* Más espacio entre tarjetas */
 }
 
 
@@ -326,19 +353,19 @@ body {
     padding: 15px;
     gap: 10px;
   }
-  
+
   .logo {
-     width: 100%;
-     text-align: center;
-     margin-left: 0;
-     margin-bottom: 10px;
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+    margin-bottom: 10px;
   }
 
   .search-bar {
     width: 100%;
     margin: 10px 0;
   }
-  
+
   .search-bar input {
     width: 70%;
   }
@@ -354,30 +381,119 @@ body {
     width: 95%;
     padding: 15px;
   }
-  
+
   .carousel-section h2 {
     font-size: 1.3rem;
   }
 
   .product-card {
-    width: 160px; /* Tarjetas más pequeñas en móvil */
+    width: 160px;
+    /* Tarjetas más pequeñas en móvil */
     min-height: 240px;
   }
-  
+
   .product-card img {
     height: 140px;
   }
-  
+
   .product-card p {
     font-size: 0.9rem;
   }
 
-  .arrow { 
-    font-size: 1.4rem; 
-    padding: 8px; 
+  .arrow {
+    font-size: 1.4rem;
+    padding: 8px;
   }
-  
+
   .promo-box h2 {
     font-size: 1.4rem;
   }
+}
+
+/* ======================================= */
+/* NUEVOS ESTILOS: SIDEBAR HAMBURGUESA */
+/* ======================================= */
+
+.sidebar {
+  height: 100%;
+  width: 0;
+  /* Inicialmente oculto */
+  position: fixed;
+  z-index: 1000;
+  /* Asegura que esté por encima de todo */
+  top: 0;
+  left: 0;
+  background-color: #2c3e50;
+  /* Color oscuro para el menú */
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.open {
+  width: 250px;
+  /* Ancho cuando está abierto */
+}
+
+.close-btn {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
+  color: #f1f1f1;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.menu-title {
+  padding: 8px 8px 8px 24px;
+  font-size: 1.5rem;
+  color: #ffdfde;
+  /* Color de acento */
+  margin-bottom: 10px;
+}
+
+.menu-item {
+  padding: 10px 15px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  display: block;
+  transition: 0.3s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-item i {
+  margin-right: 10px;
+}
+
+.menu-item:hover {
+  color: white;
+  background-color: #3e5368;
+}
+
+.menu-footer {
+  margin-top: auto;
+  /* Empuja el footer hacia abajo */
+  padding: 20px 15px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Clases de control JS */
+
+/* Oculta los enlaces específicos para usuarios no logeados */
+.menu-item.hidden {
+  display: none !important;
+}
+
+/* Asegura que los ítems a eliminar se oculten con JS */
+.menu-item.category-to-remove {
+  /* El JS lo ocultará usando .style.display = 'none', no se requiere CSS aquí, 
+       pero mantenemos la clase para referencia. */
 }
