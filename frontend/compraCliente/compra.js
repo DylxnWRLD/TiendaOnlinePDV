@@ -1,70 +1,66 @@
 const $ = (id) => document.getElementById(id); // Utilidad para simplificar
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv.onrender.com';
+    ? 'http://127.0.0.1:3000'
+    : 'https://tiendaonlinepdv.onrender.com';
 
 // Endpoint RPC a tu servidor que llamará a PostgreSQL
-const RPC_ENDPOINT_URL = `${API_BASE_URL}/api/rpc/procesar_compra_online`; 
+const RPC_ENDPOINT_URL = `${API_BASE_URL}/api/rpc/procesar_compra_online`;
 
 // -------------------------------------------------------------------------
-// ⭐️ LÓGICA DE SESIÓN INTEGRADA ⭐️
+// ⭐️ LÓGICA DE SESIÓN Y DATOS ⭐️
 // -------------------------------------------------------------------------
 
 function getCurrentUserId() {
-    const token = sessionStorage.getItem('supabase-token');
-    if (!token) return null;
-    
-    try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => 
-            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        ).join(''));
-        
-        return JSON.parse(jsonPayload).sub;
-    } catch (e) {
-        console.error("Token inválido:", e);
-        return null;
-    }
+    const token = sessionStorage.getItem('supabase-token');
+    if (!token) return null;
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        ).join(''));
+        return JSON.parse(jsonPayload).sub;
+    } catch (e) {
+        console.error("Token inválido:", e);
+        return null;
+    }
 }
 
 function setupHeader() {
-    const loginBtn = $("loginBtn"); 
-    const token = sessionStorage.getItem('supabase-token'); 
-    const role = sessionStorage.getItem('user-role');
+    const loginBtn = $("loginBtn");
+    const token = sessionStorage.getItem('supabase-token');
+    const role = sessionStorage.getItem('user-role');
 
-    if (token && role) {
-        if (loginBtn) {
-            loginBtn.textContent = "Mi Cuenta";
-            loginBtn.addEventListener("click", () => {
-                window.location.href = "../cliente/cliente.html"; 
-            });
-        }
-    } else {
-        if (loginBtn) {
-            loginBtn.textContent = "Iniciar sesión"; 
-            loginBtn.addEventListener("click", () => {
-                window.location.href = "../login/login.html";
-            });
-        }
-    }
+    if (token && role) {
+        if (loginBtn) {
+            loginBtn.textContent = "Mi Cuenta";
+            loginBtn.addEventListener("click", () => {
+                window.location.href = "../cliente/cliente.html";
+            });
+        }
+    } else {
+        if (loginBtn) {
+            loginBtn.textContent = "Iniciar sesión";
+            loginBtn.addEventListener("click", () => {
+                window.location.href = "../login/login.html";
+            });
+        }
+    }
 }
 
 function getCartKey() {
-    const userId = getCurrentUserId();
-    if (!userId) {
-        alert("Debes iniciar sesión para completar tu compra.");
-        window.location.href = "../login/login.html";
-        return null;
-    }
-    return `cart_${userId}`;
+    const userId = getCurrentUserId();
+    if (!userId) {
+        return null;
+    }
+    return `cart_${userId}`;
 }
 
 function loadCart() {
-    const key = getCartKey();
-    if (!key) return [];
-    const cartJson = localStorage.getItem(key);
-    return cartJson ? JSON.parse(cartJson) : [];
+    const key = getCartKey();
+    if (!key) return [];
+    const cartJson = localStorage.getItem(key);
+    return cartJson ? JSON.parse(cartJson) : [];
 }
 
 function clearCart() {
@@ -74,9 +70,8 @@ function clearCart() {
     }
 }
 
-
 // -------------------------------------------------------------------------
-// INICIO DEL CÓDIGO CORE
+// ESTADO Y DOM
 // -------------------------------------------------------------------------
 
 const carrito = loadCart();
@@ -99,7 +94,6 @@ const inputTelefono = document.getElementById("number");
 // Botones y Elementos de Confirmación
 const confirmDatos = document.getElementById("confirmDatos");
 const yesNotes = document.getElementById("yesNotes");
-const noNotes = document.getElementById("noNotes");
 const confirmPayment = document.getElementById("confirmPayment");
 const yesCard = document.getElementById("yesCard");
 const noCard = document.getElementById("noCard");
@@ -107,164 +101,79 @@ const showDireccion = document.getElementById("showDireccion");
 const showCorreo = document.getElementById("showCorreo");
 const showTelefono = document.getElementById("showTelefono");
 
+// ⭐️ Botones de Navegación (IDs de tu HTML) ⭐️
+const backBtnConfirm = document.getElementById("noNotes"); // "No" en el modal de confirmación
+const backBtnPayment = document.getElementById("backBtnPayment"); // Asumiendo que agregaste este ID al botón 'Atrás' en paymentModal
+
 // Estado para almacenar temporalmente los datos del cliente y pago
 let datosCliente = {};
 
+// -------------------------------------------------------------------------
+// ⭐️ FUNCIÓN: RENDERIZAR CARRITO (CORREGIDA) ⭐️
+// -------------------------------------------------------------------------
+
 function renderCarrito() {
-    const cartItems = document.getElementById("cartItems");
-    cartItems.innerHTML = "";
+    const cartItems = document.getElementById("cartItems");
+    cartItems.innerHTML = "";
 
-    let subtotal = 0;
-    let descuento = 0;
-    const payBtn = document.getElementById("payBtn");
+    let subtotal = 0;
+    let descuento = 0;
+    const payBtn = document.getElementById("payBtn");
 
-    if (carrito.length === 0) {
-        cartItems.innerHTML = '<p>Tu carrito está vacío. <a href="../../index.html">Volver a la tienda</a></p>';
-        payBtn.disabled = true;
-    } else {
-        payBtn.disabled = false;
-        carrito.forEach(item => {
-            const itemQuantity = item.quantity || item.cantidad || 1; 
-            const itemPrice = item.precio || 0;
-            const itemDiscountPercent = item.descuento || 0;
+    if (carrito.length === 0) {
+        cartItems.innerHTML = '<p>Tu carrito está vacío. <a href="../../index.html">Volver a la tienda</a></p>';
+        if (payBtn) payBtn.disabled = true;
+    } else {
+        if (payBtn) payBtn.disabled = false;
+        carrito.forEach(item => {
+            // Aseguramos usar las propiedades correctas del producto
+            const itemQuantity = item.quantity || item.cantidad || 1;
+            const itemPrice = item.price || item.precio || 0;
+            const itemDiscountPercent = item.descuento?.valor || item.descuento || 0;
 
-            let totalProducto = itemPrice * itemQuantity;
-            let descuentoProducto = totalProducto * (itemDiscountPercent / 100); 
+            let totalProducto = itemPrice * itemQuantity;
+            let descuentoProducto = totalProducto * (itemDiscountPercent / 100);
 
-            subtotal += totalProducto;
-            descuento += descuentoProducto;
+            subtotal += totalProducto;
+            descuento += descuentoProducto;
 
-            cartItems.innerHTML += `
-                <div class="cart-item">
-                                    </div>
+            // ⭐️ CÓDIGO HTML CORREGIDO PARA MOSTRAR EL PRODUCTO ⭐️
+            cartItems.innerHTML += `
+                <div class="cart-item flex justify-between items-center p-3 border-b border-gray-200">
+                    <img src="${item.images?.[0] || 'https://placehold.co/50x50/3498db/ffffff?text=IMG'}" class="w-12 h-12 object-cover rounded-md mr-3">
+                    <div class="flex-grow">
+                        <p class="font-semibold">${item.name || 'Producto sin nombre'}</p>
+                        <p class="text-sm text-gray-500">Cant: ${itemQuantity} x $${itemPrice.toFixed(2)}</p>
+                    </div>
+                    <p class="font-bold text-lg">$${(totalProducto - descuentoProducto).toFixed(2)}</p>
+                </div>
             `;
-        });
-    }
+        });
+    }
 
-    let total = subtotal - descuento;
+    let total = subtotal - descuento;
 
-    subtotalEl.textContent = subtotal.toFixed(2);
-    discountEl.textContent = descuento.toFixed(2);
-    totalEl.textContent = total.toFixed(2);
-    return total;
+    subtotalEl.textContent = subtotal.toFixed(2);
+    discountEl.textContent = descuento.toFixed(2);
+    totalEl.textContent = total.toFixed(2);
+    return total;
 }
 
 // -------------------------------------------------------------------------
-// ⭐️ LÓGICA DE EVENTOS (AJUSTADA PARA GUARDAR DATOS) ⭐️
-// -------------------------------------------------------------------------
-
-// Listener: Botón "Realizar compra"
-document.getElementById("payBtn").addEventListener("click", () => {
-    if (carrito.length === 0) {
-        alert("Tu carrito está vacío.");
-        return;
-    }
-    directionModal.classList.remove("hidden");
-});
-
-// Listener: Botón "Confirmar datos" (Modal 1)
-confirmDatos.addEventListener("click", () => {
-    const direccion = inputDireccion.value.trim();
-    const correo = inputCorreo.value.trim();
-    const telefono = inputTelefono.value.trim();
-
-    if (!direccion || !correo || !telefono || !correo.includes("@") || !correo.includes(".") || telefono.length !== 10 || isNaN(telefono)) {
-        alert("Por favor completa los campos correctamente (Correo válido, Teléfono de 10 dígitos).");
-        return;
-    }
-
-    // ⭐️ Guardar datos del cliente temporalmente
-    datosCliente = { direccion, correo, telefono };
-
-    // Mostrar datos y cambiar modales
-    showDireccion.textContent = direccion;
-    showCorreo.textContent = correo;
-    showTelefono.textContent = telefono;
-    directionModal.classList.add("hidden");
-    confirmModal.classList.remove("hidden");
-});
-
-// Listener: Botón "Confirmar pago" (Modal 3)
-confirmPayment.addEventListener("click", () => {
-    let metodo = document.querySelector('input[name="payMethod"]:checked');
-    const cardNumberInput = document.getElementById("cardNumber");
-    const cvvInput = document.getElementById("cvv");
-    
-    let tarjeta = cardNumberInput.value.trim();
-    let cvv = cvvInput.value.trim();
-
-    if (!metodo || tarjeta.length !== 16 || isNaN(tarjeta) || cvv.length !== 3 || isNaN(cvv)) {
-        alert("Por favor selecciona un método y verifica Tarjeta (16 dígitos) y CVV (3 dígitos).");
-        return;
-    }
-
-    // ⭐️ Guardar método de pago para el RPC
-    datosCliente.metodoPago = metodo.value === 'Debito' ? 'TARJETA DEBITO' : 'TARJETA CREDITO';
-
-    // Mostrar confirmación
-    paymentModal.classList.add("hidden");
-    confirmCardModal.classList.remove("hidden");
-    document.getElementById("showCard").textContent = tarjeta;
-    document.getElementById("showCVV").textContent = cvv;
-});
-
-
-// ⭐️ Listener CRÍTICO: Botón "Sí" - Inicia la Transacción (Modal 5) ⭐️
-yesCard.addEventListener("click", async () => {
-    // Deshabilitar botones
-    yesCard.disabled = true;
-    noCard.disabled = true;
-
-    confirmCardModal.classList.add("hidden");
-    alert("Procesando pago... por favor espera."); 
-
-    try {
-        // Ejecutar la función RPC en el servidor
-        const resultado = await procesarCompraFinal();
-
-        if (resultado && resultado.codigo_ped) {
-            // Éxito: limpiar carrito y mostrar modal de código
-            clearCart();
-            
-            codeModal.classList.remove("hidden"); 
-            document.getElementById("codigoGenerado").textContent = resultado.codigo_ped;
-
-            // Redirección al seguimiento
-            document.getElementById("finalRedirectBtn").onclick = function () {
-                window.location.href = `../cliente/seguimiento-detalle.html?id=${resultado.codigo_ped}`;
-            };
-        } else {
-            alert("Error al recibir el código de pedido. Intenta de nuevo.");
-            paymentModal.classList.remove("hidden"); 
-        }
-    } catch (error) {
-        console.error("Error en la transacción final:", error);
-        alert(`Fallo en la compra: ${error.message || 'Error desconocido del servidor.'}`);
-        paymentModal.classList.remove("hidden"); 
-    } finally {
-        yesCard.disabled = false;
-        noCard.disabled = false;
-    }
-});
-
-
-// -------------------------------------------------------------------------
-// ⭐️ FUNCIÓN RPC DE COMUNICACIÓN CON EL BACKEND ⭐️
+// FUNCIÓN RPC DE COMUNICACIÓN CON EL BACKEND
 // -------------------------------------------------------------------------
 
 async function procesarCompraFinal() {
     const totalFinal = parseFloat(totalEl.textContent) || 0;
 
-    // 1. Mapear el carrito al formato JSONB que espera PostgreSQL
     const detallesVenta = carrito.map(item => ({
-        id_producto_mongo: item.id || 'N/A', 
-        nombre_producto: item.nombre || 'Producto Desconocido',
+        id_producto_mongo: item._id || item.id || 'N/A',
+        nombre_producto: item.name || item.nombre || 'Producto Desconocido',
         cantidad: item.quantity || item.cantidad || 1,
-        precio_unitario_venta: item.precio || 0,
-        total_linea: (item.precio * (item.quantity || 1)) - ((item.precio * (item.quantity || 1)) * (item.descuento || 0) / 100)
+        precio_unitario_venta: item.price || item.precio || 0,
+        total_linea: (item.price || item.precio) * (item.quantity || 1) * (1 - (item.descuento?.valor || 0) / 100)
     }));
 
-    // 2. Construir el payload con todos los datos necesarios
     const payload = {
         p_correo: datosCliente.correo,
         p_direccion: datosCliente.direccion,
@@ -284,13 +193,13 @@ async function procesarCompraFinal() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // CRÍTICO: Envía el token al servidor
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-            const errorText = await response.text(); 
+            const errorText = await response.text();
             let dbError = 'Error al comunicarse con la base de datos.';
             try {
                 const errorData = JSON.parse(errorText);
@@ -301,11 +210,10 @@ async function procesarCompraFinal() {
             throw new Error(dbError);
         }
 
-        // PostgREST/Supabase devuelve un array de un solo elemento para el RPC
         const result = await response.json();
-        
+
         if (result && result.length > 0) {
-            return result[0]; // Retorna {id_v_online, codigo_ped}
+            return result[0];
         } else {
             throw new Error('Respuesta vacía o inesperada del servidor.');
         }
@@ -316,45 +224,153 @@ async function procesarCompraFinal() {
 }
 
 // -------------------------------------------------------------------------
-// 🚀 INICIALIZACIÓN Y OTROS LISTENERS (SIN CAMBIOS DE LÓGICA) ⭐️
+// LISTENERS Y NAVEGACIÓN (Corregido y con Atrás)
 // -------------------------------------------------------------------------
 
-// Mapeos adicionales (para que no fallen los listeners originales)
+// Listener: Botón "Realizar compra"
 document.getElementById("payBtn").addEventListener("click", () => {
+    if (!getCurrentUserId()) {
+        alert("Debes iniciar sesión para completar tu compra.");
+        window.location.href = "../login/login.html";
+        return;
+    }
     if (carrito.length === 0) { alert("Tu carrito está vacío."); return; }
     document.getElementById("directionModal").classList.remove("hidden");
 });
-document.getElementById("yesNotes").addEventListener("click", () => {
-    document.getElementById("confirDatosModal").classList.add("hidden");
-    document.getElementById("paymentModal").classList.remove("hidden");
+
+// Listener: Botón "Confirmar datos" (Modal 1 -> Modal 2)
+confirmDatos.addEventListener("click", () => {
+    const direccion = inputDireccion.value.trim();
+    const correo = inputCorreo.value.trim();
+    const telefono = inputTelefono.value.trim();
+
+    if (!direccion || !correo || !telefono || !correo.includes("@") || !correo.includes(".") || telefono.length !== 10 || isNaN(telefono)) {
+        alert("Por favor completa los campos correctamente (Correo válido, Teléfono de 10 dígitos).");
+        return;
+    }
+
+    datosCliente = { direccion, correo, telefono };
+
+    showDireccion.textContent = direccion;
+    showCorreo.textContent = correo;
+    showTelefono.textContent = telefono;
+    directionModal.classList.add("hidden");
+    confirmModal.classList.remove("hidden");
 });
+
+
+// ⭐️ Listener: Botón "Atrás"/"No" en Modal 2 (Confirmar Datos -> Dirección) ⭐️
+// Usa el ID 'noNotes' de tu HTML
 document.getElementById("noNotes").addEventListener("click", () => {
-    document.getElementById("confirDatosModal").classList.add("hidden");
-    document.getElementById("directionModal").classList.remove("hidden");
+    confirmModal.classList.add("hidden");
+    directionModal.classList.remove("hidden");
 });
-document.getElementById("cancelPayment").addEventListener("click", () => {
-    document.getElementById("paymentModal").classList.add("hidden");
-    document.getElementById("cancelModal").classList.remove("hidden");
+
+
+// Listener: Botón "Sí" - Datos Correctos (Modal 2 -> Modal 3: Pago)
+yesNotes.addEventListener("click", () => {
+    confirmModal.classList.add("hidden");
+    paymentModal.classList.remove("hidden");
 });
-document.getElementById("yesCancel").addEventListener("click", () => {
-    document.getElementById("cancelModal").classList.add("hidden");
-    alert("Compra cancelada.");
-    location.href = "../../index.html";
+
+
+// Listener: Botón "Confirmar pago" (Modal 3 -> Modal 5)
+confirmPayment.addEventListener("click", () => {
+    let metodo = document.querySelector('input[name="payMethod"]:checked');
+    const cardNumberInput = document.getElementById("cardNumber");
+    const cvvInput = document.getElementById("cvv");
+
+    let tarjeta = cardNumberInput.value.trim();
+    let cvv = cvvInput.value.trim();
+
+    if (!metodo || tarjeta.length !== 16 || isNaN(tarjeta) || cvv.length !== 3 || isNaN(cvv)) {
+        alert("Por favor selecciona un método y verifica Tarjeta (16 dígitos) y CVV (3 dígitos).");
+        return;
+    }
+
+    datosCliente.metodoPago = metodo.value === 'Debito' ? 'TARJETA DEBITO' : 'TARJETA CREDITO';
+
+    paymentModal.classList.add("hidden");
+    confirmCardModal.classList.remove("hidden");
+    document.getElementById("showCard").textContent = tarjeta;
+    document.getElementById("showCVV").textContent = cvv;
 });
-document.getElementById("noCancel").addEventListener("click", () => {
-    document.getElementById("cancelModal").classList.add("hidden");
-    document.getElementById("paymentModal").classList.remove("hidden");
+
+
+// ⭐️ Listener: Botón "Atrás" en Modal 3 (Pago -> Confirmar Datos) ⭐️
+// NECESITAS AGREGAR ID="backBtnPayment" al botón de Atrás en el modal de pago
+if (document.getElementById("backBtnPayment")) {
+    document.getElementById("backBtnPayment").addEventListener("click", () => {
+        paymentModal.classList.add("hidden");
+        confirmModal.classList.remove("hidden"); // Regresa al modal de Confirmar Datos
+    });
+}
+
+
+// Listener CRÍTICO: Botón "Sí" - Procesa la Transacción (Modal 5)
+yesCard.addEventListener("click", async () => {
+    yesCard.disabled = true;
+    noCard.disabled = true;
+
+    confirmCardModal.classList.add("hidden");
+    alert("Procesando pago... por favor espera.");
+
+    try {
+        const resultado = await procesarCompraFinal();
+
+        if (resultado && resultado.codigo_ped) {
+            clearCart();
+            renderCarrito(); // Vuelve a renderizar el carrito vacío
+
+            codeModal.classList.remove("hidden");
+            document.getElementById("codigoGenerado").textContent = resultado.codigo_ped;
+
+            document.getElementById("finalRedirectBtn").onclick = function () {
+                window.location.href = `../cliente/seguimiento-detalle.html?id=${resultado.codigo_ped}`;
+            };
+        } else {
+            alert("Error al recibir el código de pedido. Intenta de nuevo.");
+            paymentModal.classList.remove("hidden");
+        }
+    } catch (error) {
+        console.error("Error en la transacción final:", error);
+        alert(`Fallo en la compra: ${error.message || 'Error desconocido del servidor.'}`);
+        paymentModal.classList.remove("hidden");
+    } finally {
+        yesCard.disabled = false;
+        noCard.disabled = false;
+    }
 });
+
+
+// Otros listeners (cancelar, etc.)
 document.getElementById("noCard").addEventListener("click", () => {
     document.getElementById("confirmCardModal").classList.add("hidden");
     document.getElementById("paymentModal").classList.remove("hidden");
 });
 
+document.getElementById("cancelPayment").addEventListener("click", () => {
+    document.getElementById("paymentModal").classList.add("hidden");
+    document.getElementById("cancelModal").classList.remove("hidden");
+});
+
+document.getElementById("yesCancel").addEventListener("click", () => {
+    document.getElementById("cancelModal").classList.add("hidden");
+    alert("Compra cancelada.");
+    location.href = "../../index.html";
+});
+
+document.getElementById("noCancel").addEventListener("click", () => {
+    document.getElementById("cancelModal").classList.add("hidden");
+    document.getElementById("paymentModal").classList.remove("hidden");
+});
+
+
+// -------------------------------------------------------------------------
+// 🚀 INICIALIZACIÓN
+// -------------------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (!getCurrentUserId()) {
-        return;
-    }
     setupHeader();
-    renderCarrito(); 
+    renderCarrito();
 });
