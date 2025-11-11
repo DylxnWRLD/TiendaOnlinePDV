@@ -2,7 +2,7 @@
 // 🔹 CONFIGURACIÓN Y UTILIDADES
 // #################################################
 const $ = (id) => document.getElementById(id);
-const RENDER_SERVER_URL = 'https://tiendaonlinepdv-hm20.onrender.com';
+const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
 
 let currentProduct = null;
 let currentStockQty = 0;
@@ -54,6 +54,40 @@ function showToast(message, type = 'info') {
         toastElement.addEventListener('transitionend', () => toastElement.remove());
     }, 3000);
 }
+
+// ⭐️ INICIO DEL CÓDIGO NUEVO ⭐️
+function setupHeader() {
+    const loginBtn = $("loginBtn");
+    const cartBtn = $("cartBtn"); // Botón del carrito del header
+
+    // Leemos la sesión
+    const token = sessionStorage.getItem('supabase-token');
+    const role = sessionStorage.getItem('user-role');
+
+    if (token && role) {
+        // --- Usuario LOGUEADO ---
+        if (loginBtn) {
+            loginBtn.textContent = "Mi Cuenta";
+            loginBtn.addEventListener("click", () => {
+                // Ajustamos la ruta porque estamos en /productos/
+                window.location.href = "../cliente/cliente.html"; 
+            });
+        }
+        // NOTA: No le damos acción al cartBtn aquí
+        // porque ya tiene una acción para ABRIR EL MODAL
+        // más abajo en el código.
+
+    } else {
+        // --- Usuario NO LOGUEADO ---
+        if (loginBtn) {
+            loginBtn.addEventListener("click", () => {
+                // Ajustamos la ruta
+                window.location.href = "../login/login.html";
+            });
+        }
+    }
+}
+// ⭐️ FIN DEL CÓDIGO NUEVO ⭐️
 
 // #################################################
 // 🔸 LÓGICA DEL CARRITO (PERSONALIZADO POR USUARIO)
@@ -239,6 +273,7 @@ async function fetchProductDetails(productId) {
 // #################################################
 
 document.addEventListener('DOMContentLoaded', () => {
+    setupHeader(); // Esto arreglará el botón "Iniciar sesión"
     const productId = getProductIdFromUrl();
     if (productId) {
         fetchProductDetails(productId);
