@@ -188,7 +188,7 @@ async function agregarProducto(productoMongo) {
         } else if (promocionInfo.tipo_descuento === 'FIJO') {
             descuentoAplicado = promocionInfo.valor;
         }
-        precioFinal = Math.max(0, productoMongo.price - descuentoAplicado);
+        precioFinal = productoMongo.price - descuentoAplicado;
     }
     if (index > -1) {
         if (ventaActual.productos[index].cantidad + 1 > stockDisponible) {
@@ -275,9 +275,9 @@ async function verificarPromocionProducto(id_producto_mongo) {
         
         if (response.ok){
             return await response.json();
-        } 
-        return { activa: false };
-
+        }else{
+           return { activa: false };
+        }
 
     }catch (error) {
         console.error('Error verificando promoción:', error);

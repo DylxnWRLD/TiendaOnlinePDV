@@ -673,7 +673,7 @@ app.get('/api/promociones/producto/:idProducto', async (req, res) => {
          if (producto.descuento && producto.descuento.activa) {
             return res.json({
                 activa: true,
-                tipo: producto.descuento.tipo_descuento,
+                tipo_descuento: producto.descuento.tipo_descuento,
                 valor: producto.descuento.valor,
                 nombre_promo: producto.descuento.nombre_promo
             });
