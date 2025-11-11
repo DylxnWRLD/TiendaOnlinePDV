@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Pedido</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Estilos base para el fondo oscuro */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #343a40; /* Gris oscuro */
+            color: #f8f9fa; /* Texto claro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Estilo del contenedor principal */
+        .container {
+            max-width: 600px;
+            padding: 40px;
+            background-color: #2D3748; /* Contenedor más oscuro */
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #A78BFA; /* Púrpura de énfasis */
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #E2E8F0;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #4A5568;
+            border-radius: 8px;
+            background-color: #4A5568;
+            color: #F8F9FA;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]::placeholder {
+            color: #A0AEC0;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #A78BFA;
+        }
+
+        /* ⭐️ CLASE BASE PARA AMBOS BOTONES: Garantiza el mismo tamaño ⭐️ */
+        .btn-base {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none; /* Asegura que los enlaces se vean como botones */
+            box-sizing: border-box; /* Vital para que el padding no cambie el ancho */
+        }
+
+        /* Contenedor para manejar el espaciado entre botones */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Espaciado uniforme entre los botones */
+            margin-top: 20px;
+        }
+
+        /* Estilo específico del botón de búsqueda */
+        .btn-rastrear {
+            background-color: #8B5CF6; /* Púrpura */
+            color: white;
+        }
+
+        .btn-rastrear:hover {
+            background-color: #7C3AED;
+        }
+        
+        /* Estilo específico del botón de inicio */
+        .btn-inicio {
+            background-color: #6c757d; /* Gris secundario */
+            color: white;
+        }
+
+        .btn-inicio:hover {
+            background-color: #5a6268;
+        }
+
+        #mensaje-error {
+            color: #F56565; /* Rojo de error */
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Rastrea tu Pedido</h2>
+        <form id="buscadorForm">
+            <div class="form-group">
+                <label for="pedidoId">Ingresa tu ID de Pedido:</label>
+                <input type="text" id="pedidoId" placeholder="Ej: ENT-123456" required>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn-base btn-rastrear">
+                    <i class="fas fa-search"></i> Buscar Seguimiento
+                </button>
+                
+                <a href="../../index.html" class="btn-base btn-inicio">
+                    <i class="fas fa-home"></i> Volver al Inicio
+                </a>
+            </div>
+            
+            <p id="mensaje-error"></p>
+        </form>
+    </div>
+
+    <script>
+        // La lógica del antiguo seguimiento.js, ahora solo maneja la redirección
+        document.getElementById('buscadorForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pedidoId = document.getElementById('pedidoId').value.trim();
+            if (pedidoId) {
+                // Redirige a la página de detalle, pasando el ID
+                window.location.href = `seguimiento-detalle.html?id=${pedidoId}`;
+            } else {
+                document.getElementById('mensaje-error').textContent = 'Por favor, ingresa un ID de pedido.';
+            }
+        });
+        
+        // Maneja la redirección directa si el ID viene de la pantalla de compra
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const idFromUrl = urlParams.get('id');
+            if (idFromUrl) {
+                // Si el ID ya viene de la pantalla de compra, redirige directamente al detalle
+                window.location.href = `seguimiento-detalle.html?id=${idFromUrl}`;
+            }
+        });
+    </script>
+</body>
+</html>

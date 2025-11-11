@@ -1,35 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Seguimiento - Mi Tienda</title>
-    <link rel="stylesheet" href="../styles/globals.css"> <link rel="stylesheet" href="seguimiento-detalle.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="../styles/globals.css">
+    <link rel="stylesheet" href="seguimiento-detalle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+
 <body class="bg-gray-800 text-gray-100 min-h-screen flex flex-col items-center py-8">
 
     <div class="container bg-gray-900 shadow-lg rounded-lg p-8 w-11/12 md:w-2/3 lg:w-1/2">
-        <h1 class="text-3xl font-bold text-center mb-6 text-purple-400">Estado de tu Pedido <span id="pedidoIdDisplay"></span></h1>
-        
+        <h1 class="text-3xl font-bold text-center mb-6 text-purple-400">Estado de tu Pedido <span
+                id="pedidoIdDisplay"></span></h1>
+
         <div id="generalInfo" class="mb-8 p-4 bg-gray-800 rounded-lg">
-            <p class="text-lg mb-2"><strong class="text-purple-300">Dirección de Envío:</strong> <span id="direccionEnvio">Cargando...</span></p>
-            <p class="text-lg"><strong class="text-purple-300">Fecha Estimada de Entrega:</strong> <span id="fechaEstimada">Cargando...</span></p>
+            <p class="text-lg mb-2"><strong class="text-purple-300">Dirección de Envío:</strong> <span
+                    id="direccionEnvio">Cargando...</span></p>
+            <p class="text-lg"><strong class="text-purple-300">Fecha Estimada de Entrega:</strong> <span
+                    id="fechaEstimada">Cargando...</span></p>
         </div>
 
         <h2 class="text-2xl font-semibold mb-4 text-purple-400">Historial de Eventos</h2>
-        
+
         <div id="timeline" class="timeline-container">
             <p id="loadingMessage" class="text-center text-gray-400">Cargando historial de seguimiento...</p>
             <p id="errorMessage" class="text-center text-red-400 hidden"></p>
         </div>
-
+        
         <div class="mt-8 text-center">
-            <button onclick="window.location.href='seguimiento.html'" class="btn btn-secondary">
+            <button onclick="window.location.href='buscador.html'" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Volver a Buscar
             </button>
         </div>
-    </div>
 
-    <script src="seguimiento-detalle.js"></script>
+        <script src="seguimiento-detalle.js"></script>
 </body>
+
 </html>
