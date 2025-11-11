@@ -15,7 +15,7 @@ function getProductIdFromUrl() {
 
 // ⭐️ NUEVO: Obtiene el ID del usuario de forma segura ⭐️
 function getCurrentUserId() {
-    const token = localStorage.getItem('supabase-token');
+    const token = sessionStorage.getItem('supabase-token');
     if (!token) return null;
     
     try {
