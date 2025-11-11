@@ -102,21 +102,21 @@ const totalEl = document.getElementById("total");
 const payBtn = document.getElementById("payBtn");
 
 // ELEMENTOS PARA LOS DATOS DE ENTREGA
-const directionModal = document.getElementById("datosEntrega")
-const confirmModal = document.getElementById("confirmDatosModal")
+//const directionModal = document.getElementById("datosEntrega")
+//const confirmModal = document.getElementById("confirmDatosModal")
 
 //ELEMENTO DE LOS DATOS ENTRANTES
-const inputDireccion = document.getElementById("direction")
-const inputCorreo = document.getElementById("username")
-const inputTelefono = document.getElementById("number")
+//const inputDireccion = document.getElementById("direction")
+//const inputCorreo = document.getElementById("username")
+//const inputTelefono = document.getElementById("number")
 
-const showDireccion = document.getElementById("showDireccion")
-const showCorreo = ddocument.getElementById("showCorreo")
-const showTelefono = document.getElementById("showTelefono")
+//const showDireccion = document.getElementById("showDireccion")
+//const showCorreo = ddocument.getElementById("showCorreo")
+//const showTelefono = document.getElementById("showTelefono")
 
-const confirmDatos =  document.getElementById("confirmDatos")
-const yesNotes = document.getElementById("yesNotes")
-const noNotes = document.getElementById("noNotes")
+//const confirmDatos =  document.getElementById("confirmDatos")
+//const yesNotes = document.getElementById("yesNotes")
+//const noNotes = document.getElementById("noNotes")
 
 // ELEMENTOS DEL METOD DE PAGO
 const paymentModal = document.getElementById("paymentModal");
@@ -195,34 +195,34 @@ payBtn.addEventListener("click", () => {
 });
 
 //Mostrar Pantalla de confirmar datos de entrega
-confirmDatos.addEventListener("click", () => {
-    let direccion = inputDireccion.value.trim();
-    let correo = inputCorreo.value.trim();
-    let telefono = inputTelefono.value.trim();
+//confirmDatos.addEventListener("click", () => {
+//    let direccion = inputDireccion.value.trim();
+//    let correo = inputCorreo.value.trim();
+//    let telefono = inputTelefono.value.trim();
 
-    if (direccion === "" || correo === "" || telefono === "") {
-        alert("Por favor llena todos los campos.");
-        return;
-    }
+//    if (direccion === "" || correo === "" || telefono === "") {
+//       alert("Por favor llena todos los campos.");
+//        return;
+//    }
 
-    showDireccion.textContent = direccion;
-    showCorreo.textContent = correo;
-    showTelefono.textContent = telefono;
+//    showDireccion.textContent = direccion;
+//    showCorreo.textContent = correo;
+//    showTelefono.textContent = telefono;
 
-    directionModal.classList.add("hidden");
-    confirmModal.classList.remove("hidden");
-});
+//    directionModal.classList.add("hidden");
+//    confirmModal.classList.remove("hidden");
+//});
 
 //Confirmacion de los datos 
-yesNotes.addEventListener("click", () => {
-    confirmModal.classList.add("hidden");
-    paymentModal.classList.remove("hidden");
-});
+//yesNotes.addEventListener("click", () => {
+//    confirmModal.classList.add("hidden");
+//    paymentModal.classList.remove("hidden");
+//});
 
-noNotes.addEventListener("click", () => {
-    confirmModal.classList.add("hidden");
-    directionModal.classList.remove("hidden");
-});
+//noNotes.addEventListener("click", () => {
+//    confirmModal.classList.add("hidden");
+//    directionModal.classList.remove("hidden");
+//});
 
 // Cancelar compra (abre confirmación)
 cancelPayment.addEventListener("click", () => {
