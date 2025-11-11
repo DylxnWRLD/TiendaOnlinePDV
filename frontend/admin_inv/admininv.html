@@ -138,41 +138,6 @@
       </div>
     </div>
 
-  <div id="modalStock" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">Ajustar stock</h3>
-        <button class="close" data-close>&times;</button>
-        </div>
-      <form id="formAdjust">
-        <input type="hidden" id="adjId">
-        <div class="form-grid-3">
-          <div class="form-group">
-            <label class="form-label" for="adjType">Tipo</label>
-            <select id="adjType" class="form-control">
-              <option value="IN">Entrada (+)</option>
-              <option value="OUT">Salida (-)</option>
-              <option value="ADJUST">Ajuste</option>
-              </select>
-            </div>
-          <div class="form-group">
-            <label class="form-label" for="adjQty">Cantidad</label>
-            <input id="adjQty" type="number" min="1" step="1" class="form-control" value="1">
-            </div>
-          <div class="form-group">
-            <label class="form-label" for="adjReason">Motivo</label>
-            <input id="adjReason" class="form-control" placeholder="Compra, merma…">
-            </div>
-          </div>
-        <div class="form-group"
-          style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; margin-bottom: 0;">
-          <button type="button" class="btn" data-close>Cancelar</button>
-          <button id="applyAdjust" type="submit" class="btn btn-primary">Aplicar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
   <div id="toasts" class="toasts"></div>
 
   <script type="module" src="admininv.js"></script>
