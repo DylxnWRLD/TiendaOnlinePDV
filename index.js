@@ -116,35 +116,32 @@ function setupHeaderAndMenu() {
     // --- Elementos del Menú Lateral ---
     const menuCerrarSesion = document.getElementById("menuCerrarSesion");
     const userSpecificItems = document.querySelectorAll('.menu-item.user-specific');
-
-    // Ítems a ocultar (Consolas y Videojuegos)
     const itemsToRemove = document.querySelectorAll('.category-to-remove');
 
-    // --- Lógica de Sesión (usando localStorage para consistencia) ---
+    // --- Lógica de Sesión (usando localStorage) ---
     const token = localStorage.getItem('supabase-token');
     const role = localStorage.getItem('user-role');
     const isLoggedIn = !!token;
 
 
-    // 1. LÓGICA DE VISIBILIDAD DE ENLACES EN SIDEBAR
+    // 1. LÓGICA DE VISIBILIDAD DE ENLACES Y BOTÓN HAMBURGUESA
 
-    // ⭐️ CAMBIO 1: Ocultar el botón de menú hamburguesa si no está logeado ⭐️
     if (menuToggle) {
         if (!isLoggedIn) {
+            // ⭐️ FIX VISIBILIDAD 1: Ocultar el ícono de hamburguesa si no está logeado ⭐️
             menuToggle.style.display = 'none';
         } else {
-            // Asegura que sea visible si está logeado
             menuToggle.style.display = 'block';
         }
     }
 
-    // ⭐️ CAMBIO 2: Ocultar los ítems "Videojuegos" y "Consolas" ⭐️
+    // Ocultar los ítems "Videojuegos" y "Consolas"
     itemsToRemove.forEach(item => {
         item.style.display = 'none';
     });
 
 
-    // Mostrar/Ocultar: Favoritos, Historial, Cerrar Sesión
+    // Mostrar/Ocultar: Favoritos, Historial, Cerrar Sesión (Elementos user-specific)
     userSpecificItems.forEach(item => {
         if (isLoggedIn) {
             item.classList.remove('hidden');
@@ -156,7 +153,6 @@ function setupHeaderAndMenu() {
 
     // 2. LÓGICA DE BOTONES DEL HEADER
     if (isLoggedIn) {
-        // --- Usuario LOGUEADO ---
         if (loginBtn) {
             loginBtn.textContent = "Mi Cuenta";
             loginBtn.addEventListener("click", () => {
@@ -169,7 +165,6 @@ function setupHeaderAndMenu() {
             });
         }
     } else {
-        // --- Usuario NO LOGUEADO ---
         if (loginBtn) {
             loginBtn.textContent = "Iniciar sesión";
             loginBtn.addEventListener("click", () => {
@@ -177,7 +172,6 @@ function setupHeaderAndMenu() {
             });
         }
         if (cartBtn) {
-            // Redirige a login si intenta comprar sin sesión
             cartBtn.addEventListener("click", () => {
                 window.location.href = "frontend/login/login.html";
             });
@@ -190,7 +184,7 @@ function setupHeaderAndMenu() {
 
         // ⭐️ TOGGLE: Al presionar hamburguesa, abre o cierra ⭐️
         menuToggle.addEventListener("click", () => {
-            // Solo hacemos toggle si el menú es visible
+            // Solo hacemos toggle si el menú es visible (ya que el CSS lo oculta, este chequeo es de seguridad)
             if (menuToggle.style.display !== 'none') {
                 sidebarMenu.classList.toggle("open");
             }
@@ -210,13 +204,12 @@ function setupHeaderAndMenu() {
                     localStorage.removeItem('supabase-token');
                     localStorage.removeItem('user-role');
                     localStorage.removeItem('currentCorteId');
-                    // Redirigir a la página principal
                     window.location.href = 'index.html';
                 }
             });
         }
     } else if (menuToggle) {
-        // Fallback si no se encuentra el sidebar (no debería ocurrir con los cambios en HTML)
+        // Fallback si no se encuentra el sidebar
         menuToggle.addEventListener("click", () => {
             alert("Aquí podría abrir un menú lateral 🧭");
         });
