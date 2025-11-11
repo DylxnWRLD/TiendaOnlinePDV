@@ -101,6 +101,11 @@ const discountEl = document.getElementById("discount");
 const totalEl = document.getElementById("total");
 const payBtn = document.getElementById("payBtn");
 
+// ELEMENTOS PARA LOS DATOS DE ENTREGA
+const directionModal = document.getElementById("datosEntrega")
+const 
+
+// ELEMENTOS DEL METOD DE PAGO
 const paymentModal = document.getElementById("paymentModal");
 const cancelModal = document.getElementById("cancelModal");
 
