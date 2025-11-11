@@ -1,3 +1,5 @@
+// dylxnwrld/tiendaonlinepdv/.../frontend/repartidor/repartidor.html
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,36 +11,45 @@
 </head>
 <body>
     <div class="repartidor-container">
-        <h1 class="cyber-glow">Ruta de Entrega Hoy</h1>
-        <p style="text-align: center; color: #aaa; margin-bottom: 20px;">
-            Bienvenido, Repartidor #<span id="repartidorId">101</span>. Haz clic en un paquete para ver los detalles.
-        </p>
-
-        <div class="paquete-list" id="paqueteList">
-            <div class="paquete-card" data-paquete-id="ORD-001" data-status="pendiente">
-                <div class="paquete-info">
-                    <h4>#1 - Pedido ORD-001 (Prioridad: Alta)</h4>
-                    <p>Cliente: Juan Pérez | Dirección: Av. Siempre Viva 742</p>
+        <h1 class="cyber-glow">Mis Paquetes Pendientes</h1>
+        
+        <div id="paqueteList" class="paquete-list">
+            
+            <div class="paquete-card" data-paquete-id="ORD-001">
+                <div class="paquete-header">
+                    <h3>ID: ORD-001</h3>
+                    <span class="paquete-estado estado-en-ruta">🚚 En Ruta</span> 
                 </div>
-                <span class="paquete-status status-pendiente">Pendiente</span>
+                <p>Cliente: Juan Pérez</p>
+                <p>Dirección: Av. Siempre Viva 742</p>
+                <p class="paquete-enlace">Ver Detalle <i class="fas fa-arrow-right"></i></p>
             </div>
 
-            <div class="paquete-card" data-paquete-id="ORD-003" data-status="pendiente">
-                <div class="paquete-info">
-                    <h4>#2 - Pedido ORD-003</h4>
-                    <p>Cliente: María López | Dirección: Calle Falsa 123</p>
+            <div class="paquete-card" data-paquete-id="ORD-002">
+                <div class="paquete-header">
+                    <h3>ID: ORD-002</h3>
+                    <span class="paquete-estado estado-entregado">✅ Entregado</span> 
                 </div>
-                <span class="paquete-status status-pendiente">Pendiente</span>
+                <p>Cliente: María García</p>
+                <p>Dirección: Calle Falsa 123</p>
+                <p class="paquete-enlace">Ver Detalle <i class="fas fa-arrow-right"></i></p>
+            </div>
+            
+            <div class="paquete-card" data-paquete-id="ORD-003">
+                <div class="paquete-header">
+                    <h3>ID: ORD-003</h3>
+                    <span class="paquete-estado estado-cancelado">🚫 Cancelado</span> 
+                </div>
+                <p>Cliente: Pedro Gómez</p>
+                <p>Dirección: Boulevard de los Sueños</p>
+                <p class="paquete-enlace">Ver Detalle <i class="fas fa-arrow-right"></i></p>
             </div>
 
-            <div class="paquete-card" data-paquete-id="ORD-002" data-status="entregado">
-                <div class="paquete-info">
-                    <h4>Pedido ORD-002</h4>
-                    <p>Cliente: Carlos Gómez | Dirección: Blvrd. El Sol 45</p>
-                </div>
-                <span class="paquete-status status-entregado">Entregado</span>
-            </div>
         </div>
+
+        <button onclick="window.location.href='/frontend/login/login.html'" class="btn btn-secondary logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </button>
     </div>
     
     <script src="repartidor.js"></script>

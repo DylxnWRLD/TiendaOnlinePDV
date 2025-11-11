@@ -43,48 +43,78 @@ body {
 }
 
 /* Lista de Paquetes */
+/* Estilos para el listado de paquetes */
 .paquete-list {
+    margin-top: 20px;
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
 .paquete-card {
-    background-color: #333;
+    background-color: #2D3748; /* Fondo más claro que el contenedor */
     padding: 15px;
     border-radius: 8px;
-    border-left: 5px solid var(--color-secondary);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     cursor: pointer;
-    transition: background-color 0.2s, border-left-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
+    border: 1px solid #444;
 }
 
 .paquete-card:hover {
-    background-color: #444;
-    border-left-color: var(--color-primary);
+    background-color: #3e4858;
+    transform: translateY(-2px);
 }
 
-.paquete-info h4 {
+.paquete-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.paquete-header h3 {
     margin: 0;
-    color: var(--color-text-light);
+    color: var(--color-primary); /* Púrpura */
 }
 
-.paquete-info p {
-    margin: 5px 0 0;
-    font-size: 0.9em;
-    color: #aaa;
+.paquete-card p {
+    margin: 3px 0;
+    color: #ccc;
 }
 
-.paquete-status {
+.paquete-enlace {
+    text-align: right;
+    color: #A78BFA !important; /* Púrpura */
     font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 0.8em;
 }
-.status-pendiente { background-color: #f39c12; color: #333; }
-.status-entregado { background-color: var(--color-success); color: #fff; }
+
+
+/* ⭐️ ESTILOS PARA EL ESTADO DEL PAQUETE ⭐️ */
+.paquete-estado {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #fff;
+}
+
+.estado-pendiente, .estado-preparacion {
+    background-color: #4A5568; /* Gris/Azul */
+}
+
+.estado-en-ruta, .estado-cerca {
+    background-color: #F6AD55; /* Naranja/Amarillo (En camino) */
+    color: #1a202c;
+}
+
+.estado-entregado {
+    background-color: #48BB78; /* Verde (Éxito) */
+    color: #1a202c;
+}
+
+.estado-cancelado, .estado-intento-de-entrega {
+    background-color: #F56565; /* Rojo (Error/Advertencia) */
+}
 
 /* Botones y Acciones */
 .btn {

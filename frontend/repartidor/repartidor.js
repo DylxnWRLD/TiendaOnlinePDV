@@ -3,15 +3,35 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv-hm20.onrender.com';
 
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Lógica para la página de Detalle de Paquete (paquete.html)
+
+    // ⭐️ LÓGICA DE LA LISTA: Asigna el evento de clic y la redirección ⭐️
+    const paqueteList = document.getElementById('paqueteList');
+    if (paqueteList) {
+        // Itera sobre todos los elementos con la clase 'paquete-card'
+        document.querySelectorAll('.paquete-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Lee el ID del atributo HTML data-paquete-id
+                const id = card.getAttribute('data-paquete-id');
+
+                // Redirige directamente al detalle, pasando el ID en la URL
+                window.location.href = `paquete.html?id=${id}`;
+            });
+        });
+
+        // Detiene la ejecución si estamos en la página de lista
+        return;
+    }
+    // ⭐️ FIN LÓGICA DE LA LISTA ⭐️
+
+    // ⬇️ Lógica para la página de Detalle de Paquete (paquete.html) ⬇️
     const paqueteIdElement = document.getElementById('paqueteId');
     if (paqueteIdElement) {
         const urlParams = new URLSearchParams(window.location.search);
         const paqueteId = urlParams.get('id') || 'N/A';
         paqueteIdElement.textContent = paqueteId;
 
+        // Carga de elementos de la página de detalle
         const btnActualizar = document.getElementById('btnActualizarEstado');
         const selectEstado = document.getElementById('nuevoEstado');
         const pruebaDiv = document.getElementById('pruebasEntrega');
@@ -104,9 +124,9 @@ async function handleActualizarEstado(paqueteId) {
         if (nuevoEstado === 'ENTREGADO' && fotoInput.files.length > 0) {
             console.log("Simulando subida de foto de prueba...");
             // Aquí iría la lógica real para subir la imagen a Supabase Storage
-            // con el ID del paquete como referencia.
         }
 
+        // Redirige a la lista principal después de la actualización exitosa.
         window.location.href = 'repartidor.html';
 
     } catch (error) {
