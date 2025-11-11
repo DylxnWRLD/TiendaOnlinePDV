@@ -1673,7 +1673,7 @@ app.get('/api/cliente/data', getUserIdFromToken, async (req, res) => {
     try {
         // Consultar la tabla cliente_Online usando el userId (que es el id_usuario)
         const { data, error } = await supabase
-            .from('cliente_Online')
+            .from('cliente_online')
             .select('correo, direccion, telefono')
             .eq('id_usuario', userId)
             .maybeSingle(); // Esperamos 0 o 1 resultado

@@ -150,15 +150,13 @@ function renderCarrito() {
 
             // HTML que renderiza el producto
             cartItems.innerHTML += `
-                <div class="cart-item flex justify-between items-center p-3 border-b border-gray-200">
-                    <img src="${imageUrl}" class="w-12 h-12 object-cover rounded-md mr-3" onerror="this.onerror=null;this.src='https://placehold.co/50x50/cccccc/000000?text=Error'">
-                    <div class="flex-grow">
-                        <p class="font-semibold">${item.name || 'Producto sin nombre'}</p>
-                        <p class="text-sm text-gray-500">Cant: ${itemQuantity} x $${itemPrice.toFixed(2)}</p>
-                    </div>
-                    <p class="font-bold text-lg">$${(totalProducto - descuentoProducto).toFixed(2)}</p>
-                </div>
-            `;
+                <div class="cart-item">
+                    <img src="${item.imagen || 'https://via.placeholder.com/50'}" class="mini-img">
+                    <p>${item.nombre || 'Producto sin nombre'}</p>
+                    <p>Cant: ${itemQuantity}</p>
+                    <p>$${(totalProducto - descuentoProducto).toFixed(2)}</p>
+                </div>
+            `;
         });
     }
 
