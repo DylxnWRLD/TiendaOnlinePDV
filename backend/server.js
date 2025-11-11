@@ -670,7 +670,7 @@ app.get('/api/promociones/producto/:idProducto', async (req, res) => {
             return res.status(404).json({ message: 'Producto no encontrado' });
         }
 
-         if (producto.descuento && producto.descuento.activa) {
+        if (producto.descuento && producto.descuento.activa) {
             return res.json({
                 activa: true,
                 tipo_descuento: producto.descuento.tipo_descuento,
@@ -738,33 +738,33 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             return res.status(500).json({ message: 'Error al guardar la promoción.', details: error.message });
         }
 
-         const promo = data[0];
-         //let resultadoAplicacion = null;
+        const promo = data[0];
+        //let resultadoAplicacion = null;
 
-       
+
         let filter = {};
-                switch (promo.tipo_regla) {
-                    case 'MARCA':
-                        filter = { brand: promo.valor_regla };
-                        break;
-                    
-                    case 'PRODUCTO':
-                        filter = { name: promo.valor_regla };
-                        break;
-                    case 'GLOBAL':
-                        filter = {}; // Todos los productos
-                        break;
-                    case 'CANTIDAD':
-                        filter = {};
-                        break;
-                    case 'PRECIO':
-                        filter = { price: { $gte: parseFloat(promo.valor_regla) } };
-                        break;
-                    default:
-                        filter = {};
-                }
+        switch (promo.tipo_regla) {
+            case 'MARCA':
+                filter = { brand: promo.valor_regla };
+                break;
 
-     
+            case 'PRODUCTO':
+                filter = { name: promo.valor_regla };
+                break;
+            case 'GLOBAL':
+                filter = {}; // Todos los productos
+                break;
+            case 'CANTIDAD':
+                filter = {};
+                break;
+            case 'PRECIO':
+                filter = { price: { $gte: parseFloat(promo.valor_regla) } };
+                break;
+            default:
+                filter = {};
+        }
+
+
         const descuentoData = {
             tipo_descuento: promo.tipo_descuento,  // 'PORCENTAJE' o 'MONTO'
             valor: promo.valor,           // cantidad numérica
@@ -836,12 +836,12 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
             case 'GLOBAL':
                 filter = {}; // Todos los productos
                 break;
-            
+
             case 'PRECIO':
                 filter = { price: { $gte: parseFloat(promocion.valor_regla) } };
                 break;
             case 'CANTIDAD':
-                
+
                 filter = {};
                 break;
             default:
@@ -1370,7 +1370,7 @@ app.post('/api/caja/calcular_reporte', getUserIdFromToken, async (req, res) => {
     if (!id_corte || monto_declarado === undefined || typeof monto_declarado !== 'number') {
         return res.status(400).json({ message: 'Faltan o son inválidos los parámetros de corte.' });
     }
-    
+
     // NOTA: Se asume que el rol Cajero ya fue verificado antes de llegar al PDV.
 
     try {
@@ -1415,7 +1415,7 @@ app.post('/api/caja/cerrar_definitivo', getUserIdFromToken, async (req, res) => 
     if (!id_corte || monto_declarado === undefined || monto_calculado === undefined) {
         return res.status(400).json({ message: 'Faltan parámetros de cierre definitivo.' });
     }
-    
+
     try {
         // Llama a la función PL/pgSQL para el CIERRE FINAL
         const { data, error } = await supabase
@@ -1665,78 +1665,110 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 // PROCESAMIENTO DE LA COMPRA ONLINE
 // ===============================================
 
+// Verificar si el cliente ya tiene datos registrados
+app.get('/api/cliente/data', getUserIdFromToken, async (req, res) => {
+    // El middleware getUserIdFromToken ya validó el token y puso req.userId
+    const userId = req.userId; 
+    
+    try {
+        // Consultar la tabla cliente_Online usando el userId (que es el id_usuario)
+        const { data, error } = await supabase
+            .from('cliente_Online')
+            .select('correo, direccion, telefono')
+            .eq('id_usuario', userId)
+            .maybeSingle(); // Esperamos 0 o 1 resultado
+
+        if (error) {
+            console.error('[DB ERROR - Cliente]:', error.message);
+            return res.status(500).json({ message: 'Error al consultar datos del cliente.', details: error.message });
+        }
+        
+        // Si data es null, es la primera compra. Devolvemos 404 (Not Found)
+        if (!data) {
+            return res.status(404).json({ message: 'Cliente no registrado (Primera compra).' });
+        }
+
+        // Si se encuentran datos, los devolvemos
+        return res.status(200).json(data);
+
+    } catch (e) {
+        console.error('[SERVER ERROR]: Fallo al obtener datos del cliente.', e);
+        return res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
 // --- ENDPOINT RPC PARA PROCESAR LA COMPRA ---
 app.post('/api/rpc/procesar_compra_online', async (req, res) => {
-    // 1. Extracción y Verificación de Token (Identidad del Cliente)
-    const authHeader = req.headers.authorization;
-    const token = authHeader ? authHeader.split(' ')[1] : null;
+    // 1. Extracción y Verificación de Token (Identidad del Cliente)
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
 
-    if (!token) {
-        return res.status(401).json({ error: 'TOKEN_REQUIRED', message: 'Se requiere un token de autenticación para esta operación.' });
-    }
-    
-    // 2. Extracción de Parámetros
-    const { 
-        p_correo, 
-        p_direccion, 
-        p_telefono, 
-        p_total_final, 
-        p_metodo_pago, 
-        p_detalles // Array con id_producto_mongo, cantidad, etc.
-    } = req.body; 
-    
-    // 3. Crear un cliente Supabase con el token del usuario
-    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-    
-    try {
-        console.log(`[RPC] Llamando a procesar_compra_online para usuario...`);
-        
-        // 4. EJECUCIÓN 1: PostgreSQL (Registro de Cliente, Venta, Detalle)
-        const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
-            p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles 
-        });
+    if (!token) {
+        return res.status(401).json({ error: 'TOKEN_REQUIRED', message: 'Se requiere un token de autenticación para esta operación.' });
+    }
 
-        if (error) {
-            console.error('[DB ERROR - PG]:', error.message);
-            // Si PG falla, devolvemos el error (la transacción de PG se revierte automáticamente)
-            return res.status(400).json({ error: 'DB_TRANSACTION_FAILED', message: error.message });
-        }
-        
-        // 5. EJECUCIÓN 2: MongoDB (Disminución de Stock) ⭐️ NUEVO ⭐️
-        
-        if (p_detalles && p_detalles.length > 0) {
-            const bulkOps = p_detalles.map(d => ({
-                updateOne: {
-                    // Utilizamos el _id de Mongo y el operador $inc
-                    filter: { _id: d.id_producto_mongo }, 
-                    update: { $inc: { stockQty: -d.cantidad } }
-                }
-            }));
+    // 2. Extracción de Parámetros
+    const {
+        p_correo,
+        p_direccion,
+        p_telefono,
+        p_total_final,
+        p_metodo_pago,
+        p_detalles // Array con id_producto_mongo, cantidad, etc.
+    } = req.body;
 
-            console.log('🧩 Ejecutando bulkWrite para disminución de stock...');
-            
-            try {
-                // La variable 'Product' es el modelo de Mongoose
-                const resultMongo = await Product.bulkWrite(bulkOps);
-                console.log('✅ Stock actualizado en Mongo. Productos modificados:', resultMongo.modifiedCount);
-            } catch (mongoError) {
-                console.error('[MONGO STOCK ERROR]: Falló la actualización de stock.', mongoError.message);
-                
-                // Decisión: La venta está registrada, pero el inventario está inconsistente.
-                // Devolvemos 500 para notificar un error crítico, pero la venta existe.
-                return res.status(500).json({ error: 'STOCK_UPDATE_FAILED', message: 'Venta registrada, pero falló la actualización de stock en el inventario. Se requiere revisión manual.' });
-            }
-        }
-        
-        // 6. Respuesta Final (Si PG y Mongo fueron exitosos)
-        res.status(200).json(data);
+    // 3. Crear un cliente Supabase con el token del usuario
+    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+    });
 
-    } catch (e) {
-        console.error('[SERVER ERROR]:', e);
-        res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: 'Ocurrió un error inesperado en el servidor.' });
-    }
+    try {
+        console.log(`[RPC] Llamando a procesar_compra_online para usuario...`);
+
+        // 4. EJECUCIÓN 1: PostgreSQL (Registro de Cliente, Venta, Detalle)
+        const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
+            p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles
+        });
+
+        if (error) {
+            console.error('[DB ERROR - PG]:', error.message);
+            // Si PG falla, devolvemos el error (la transacción de PG se revierte automáticamente)
+            return res.status(400).json({ error: 'DB_TRANSACTION_FAILED', message: error.message });
+        }
+
+        // 5. EJECUCIÓN 2: MongoDB (Disminución de Stock) ⭐️ NUEVO ⭐️
+
+        if (p_detalles && p_detalles.length > 0) {
+            const bulkOps = p_detalles.map(d => ({
+                updateOne: {
+                    // Utilizamos el _id de Mongo y el operador $inc
+                    filter: { _id: d.id_producto_mongo },
+                    update: { $inc: { stockQty: -d.cantidad } }
+                }
+            }));
+
+            console.log('🧩 Ejecutando bulkWrite para disminución de stock...');
+
+            try {
+                // La variable 'Product' es el modelo de Mongoose
+                const resultMongo = await Product.bulkWrite(bulkOps);
+                console.log('✅ Stock actualizado en Mongo. Productos modificados:', resultMongo.modifiedCount);
+            } catch (mongoError) {
+                console.error('[MONGO STOCK ERROR]: Falló la actualización de stock.', mongoError.message);
+
+                // Decisión: La venta está registrada, pero el inventario está inconsistente.
+                // Devolvemos 500 para notificar un error crítico, pero la venta existe.
+                return res.status(500).json({ error: 'STOCK_UPDATE_FAILED', message: 'Venta registrada, pero falló la actualización de stock en el inventario. Se requiere revisión manual.' });
+            }
+        }
+
+        // 6. Respuesta Final (Si PG y Mongo fueron exitosos)
+        res.status(200).json(data);
+
+    } catch (e) {
+        console.error('[SERVER ERROR]:', e);
+        res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: 'Ocurrió un error inesperado en el servidor.' });
+    }
 });
 
 // ===============================================

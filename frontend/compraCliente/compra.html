@@ -13,7 +13,7 @@
         <div class="menu-icon" id="menuToggle">☰</div>
 
         <a href="../../index.html">
-            <h1 class="logo">LEVEL_ONE</h1>
+            <h1 class="logo">LevelOne</h1>
         </a>
 
         <div class="search-bar">
@@ -53,7 +53,9 @@
             <label for="number">Número de contacto</label>
             <input type="tel" id="number" maxlength="10" placeholder="10 dígitos" pattern="[0-9]{10}" required>
 
-            <button id="confirmDatos" class="confirm-btn">Confirmar datos</button>
+            <div class="modal-footer">
+                <button id="confirmDatos" class="confirm-btn">Confirmar datos</button>
+            </div>
         </div>
     </div>
 
@@ -64,8 +66,10 @@
             <p><strong>Correo:</strong> <span id="showCorreo"></span></p>
             <p><strong>Teléfono:</strong> <span id="showTelefono"></span></p>
 
-            <button id="yesNotes" class="confirm-btn">Sí</button>
-            <button id="noNotes" class="cancel-btn">Atrás</button>
+            <div class="modal-footer">
+                <button id="noNotes" class="cancel-btn">Regresar</button>
+                <button id="yesNotes" class="confirm-btn">Sí</button>
+            </div>
         </div>
     </div>
 
@@ -79,17 +83,21 @@
             <input type="text" id="cardNumber" maxlength="16" placeholder="Número de tarjeta (16 dígitos)">
             <input type="text" id="cvv" maxlength="3" placeholder="CVV (3 dígitos)">
 
-            <button id="confirmPayment" class="confirm-btn">Confirmar pago</button>
-            <button id="cancelPayment" class="cancel-btn">Cancelar compra</button>
-            <button id="backBtnPayment" class="cancel-btn">Atrás</button> 
+            <div class="modal-footer">
+                <button id="backBtnPayment" class="cancel-btn">Atrás</button>
+                <button id="cancelPayment" class="cancel-btn">Cancelar compra</button>
+                <button id="confirmPayment" class="confirm-btn">Confirmar pago</button>
+            </div>
         </div>
     </div>
 
     <div id="cancelModal" class="modal hidden">
         <div class="modal-content">
             <h3>¿Seguro que deseas cancelar la compra?</h3>
-            <button id="yesCancel" class="confirm-btn">Sí</button>
-            <button id="noCancel" class="cancel-btn">No</button>
+            <div class="modal-footer">
+                <button id="noCancel" class="cancel-btn">No</button>
+                <button id="yesCancel" class="confirm-btn">Sí</button>
+            </div>
         </div>
     </div>
 
@@ -99,8 +107,10 @@
             <p>Número: <span id="showCard"></span></p>
             <p>CVV: <span id="showCVV"></span></p>
 
-            <button id="yesCard" class="confirm-btn">Sí</button>
-            <button id="noCard" class="cancel-btn">No (Corregir)</button>
+            <div class="modal-footer">
+                <button id="noCard" class="cancel-btn">Regresar</button>
+                <button id="yesCard" class="confirm-btn">Sí</button>
+            </div>
         </div>
     </div>
 
@@ -110,7 +120,9 @@
             <p>Tu código de pedido es:</p>
             <h2 id="codigoGenerado"></h2>
             <p>Este código se envió al repartidor</p>
-            <button id="finalRedirectBtn">Rastrear mi pedido</button>
+            <div class="modal-footer">
+                <button id="finalRedirectBtn">Rastrear mi pedido</button>
+            </div>
         </div>
     </div>
 

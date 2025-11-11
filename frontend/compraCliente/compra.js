@@ -5,6 +5,8 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 
 // Endpoint RPC a tu servidor que llamará a PostgreSQL
 const RPC_ENDPOINT_URL = `${API_BASE_URL}/api/rpc/procesar_compra_online`;
+// ⭐️ NUEVO ENDPOINT PARA CONSULTAR DATOS DEL CLIENTE ⭐️
+const CLIENTE_DATA_URL = `${API_BASE_URL}/api/cliente/data`;
 
 // -------------------------------------------------------------------------
 // ⭐️ LÓGICA DE SESIÓN Y DATOS ⭐️
@@ -101,15 +103,15 @@ const showDireccion = document.getElementById("showDireccion");
 const showCorreo = document.getElementById("showCorreo");
 const showTelefono = document.getElementById("showTelefono");
 
-// ⭐️ Botones de Navegación (IDs de tu HTML) ⭐️
-const backBtnConfirm = document.getElementById("noNotes"); // "No" en el modal de confirmación
-const backBtnPayment = document.getElementById("backBtnPayment"); // Asumiendo que agregaste este ID al botón 'Atrás' en paymentModal
+// Botones de Navegación (Atrás)
+const backBtnConfirm = document.getElementById("noNotes");
+const backBtnPayment = document.getElementById("backBtnPayment");
 
 // Estado para almacenar temporalmente los datos del cliente y pago
 let datosCliente = {};
 
 // -------------------------------------------------------------------------
-// ⭐️ FUNCIÓN: RENDERIZAR CARRITO (CORREGIDA) ⭐️
+// ⭐️ FUNCIÓN: RENDERIZAR CARRITO (IMAGEN CORREGIDA) ⭐️
 // -------------------------------------------------------------------------
 
 function renderCarrito() {
@@ -126,7 +128,6 @@ function renderCarrito() {
     } else {
         if (payBtn) payBtn.disabled = false;
         carrito.forEach(item => {
-            // Aseguramos usar las propiedades correctas del producto
             const itemQuantity = item.quantity || item.cantidad || 1;
             const itemPrice = item.price || item.precio || 0;
             const itemDiscountPercent = item.descuento?.valor || item.descuento || 0;
@@ -137,10 +138,20 @@ function renderCarrito() {
             subtotal += totalProducto;
             descuento += descuentoProducto;
 
-            // ⭐️ CÓDIGO HTML CORREGIDO PARA MOSTRAR EL PRODUCTO ⭐️
+            // ⭐️ CORRECCIÓN CLAVE: Lógica robusta para obtener la URL de la imagen ⭐️
+            let imageUrl = 'https://placehold.co/50x50/cccccc/000000?text=IMG';
+            if (Array.isArray(item.images) && item.images.length > 0) {
+                imageUrl = item.images[0];
+            } else if (item.image) {
+                imageUrl = item.image;
+            } else if (typeof item.images === 'string' && item.images.startsWith('http')) {
+                imageUrl = item.images;
+            }
+
+            // HTML que renderiza el producto
             cartItems.innerHTML += `
                 <div class="cart-item flex justify-between items-center p-3 border-b border-gray-200">
-                    <img src="${item.images?.[0] || 'https://placehold.co/50x50/3498db/ffffff?text=IMG'}" class="w-12 h-12 object-cover rounded-md mr-3">
+                    <img src="${imageUrl}" class="w-12 h-12 object-cover rounded-md mr-3" onerror="this.onerror=null;this.src='https://placehold.co/50x50/cccccc/000000?text=Error'">
                     <div class="flex-grow">
                         <p class="font-semibold">${item.name || 'Producto sin nombre'}</p>
                         <p class="text-sm text-gray-500">Cant: ${itemQuantity} x $${itemPrice.toFixed(2)}</p>
@@ -160,10 +171,45 @@ function renderCarrito() {
 }
 
 // -------------------------------------------------------------------------
-// FUNCIÓN RPC DE COMUNICACIÓN CON EL BACKEND
+// ⭐️ FUNCIÓN: OBTENER DATOS DEL CLIENTE DESDE EL BACKEND (PRECarga) ⭐️
+// -------------------------------------------------------------------------
+
+async function fetchClienteData() {
+    const token = sessionStorage.getItem('supabase-token');
+    if (!token) return;
+
+    try {
+        const response = await fetch(CLIENTE_DATA_URL, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            // ⭐️ Precarga los campos del formulario con los datos guardados ⭐️
+            inputCorreo.value = data.correo || '';
+            inputDireccion.value = data.direccion || '';
+            inputTelefono.value = data.telefono || '';
+            console.log('Datos del cliente precargados.');
+        } else if (response.status === 404) {
+            console.log('Cliente nuevo. No hay datos previos para precargar.');
+        } else {
+            console.error('Error al obtener datos del cliente:', response.statusText);
+        }
+    } catch (e) {
+        console.error('Fallo de red al obtener datos del cliente:', e);
+    }
+}
+
+
+// -------------------------------------------------------------------------
+// FUNCIÓN RPC DE COMUNICACIÓN CON EL BACKEND (procesarCompraFinal)
 // -------------------------------------------------------------------------
 
 async function procesarCompraFinal() {
+    // ... (El cuerpo de procesarCompraFinal se mantiene igual) ...
     const totalFinal = parseFloat(totalEl.textContent) || 0;
 
     const detallesVenta = carrito.map(item => ({
@@ -224,7 +270,7 @@ async function procesarCompraFinal() {
 }
 
 // -------------------------------------------------------------------------
-// LISTENERS Y NAVEGACIÓN (Corregido y con Atrás)
+// LISTENERS Y NAVEGACIÓN
 // -------------------------------------------------------------------------
 
 // Listener: Botón "Realizar compra"
@@ -259,12 +305,13 @@ confirmDatos.addEventListener("click", () => {
 });
 
 
-// ⭐️ Listener: Botón "Atrás"/"No" en Modal 2 (Confirmar Datos -> Dirección) ⭐️
-// Usa el ID 'noNotes' de tu HTML
-document.getElementById("noNotes").addEventListener("click", () => {
-    confirmModal.classList.add("hidden");
-    directionModal.classList.remove("hidden");
-});
+// Listener: Botón "Atrás"/"No" en Modal 2 (Confirmar Datos -> Dirección) 
+if (document.getElementById("noNotes")) {
+    document.getElementById("noNotes").addEventListener("click", () => {
+        confirmModal.classList.add("hidden");
+        directionModal.classList.remove("hidden");
+    });
+}
 
 
 // Listener: Botón "Sí" - Datos Correctos (Modal 2 -> Modal 3: Pago)
@@ -297,12 +344,11 @@ confirmPayment.addEventListener("click", () => {
 });
 
 
-// ⭐️ Listener: Botón "Atrás" en Modal 3 (Pago -> Confirmar Datos) ⭐️
-// NECESITAS AGREGAR ID="backBtnPayment" al botón de Atrás en el modal de pago
+// Listener: Botón "Atrás" en Modal 3 (Pago -> Confirmar Datos) ⭐️
 if (document.getElementById("backBtnPayment")) {
     document.getElementById("backBtnPayment").addEventListener("click", () => {
         paymentModal.classList.add("hidden");
-        confirmModal.classList.remove("hidden"); // Regresa al modal de Confirmar Datos
+        confirmModal.classList.remove("hidden");
     });
 }
 
@@ -313,14 +359,12 @@ yesCard.addEventListener("click", async () => {
     noCard.disabled = true;
 
     confirmCardModal.classList.add("hidden");
-    alert("Procesando pago... por favor espera.");
-
     try {
         const resultado = await procesarCompraFinal();
 
         if (resultado && resultado.codigo_ped) {
             clearCart();
-            renderCarrito(); // Vuelve a renderizar el carrito vacío
+            renderCarrito();
 
             codeModal.classList.remove("hidden");
             document.getElementById("codigoGenerado").textContent = resultado.codigo_ped;
@@ -367,10 +411,11 @@ document.getElementById("noCancel").addEventListener("click", () => {
 
 
 // -------------------------------------------------------------------------
-// 🚀 INICIALIZACIÓN
+// 🚀 INICIALIZACIÓN (Añadido fetchClienteData) ⭐️
 // -------------------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
     renderCarrito();
+    fetchClienteData(); // ⭐️ Llama a la función para precargar datos ⭐️
 });
