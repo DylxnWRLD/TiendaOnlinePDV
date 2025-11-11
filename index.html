@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tienda LEVEL_ONE - Inicio</title>
+    <title>LevelOne - Inicio</title>
     <link rel="stylesheet" href="index.css">
     <!--<meta http-equiv="refresh" content="0; url=frontend/login/login.html">-->
   </head>
@@ -37,68 +37,28 @@
       <section class="carousel-section">
         <h2>Los más vendidos en Videojuegos</h2>
         <div class="carousel-wrapper">
+                    <!-- ⭐️ MODIFICACIÓN: Contenedor vacío para que JS lo rellene ⭐️ -->
           <div class="carousel-container" id="carousel1">
-            <div class="product-card">
-              <img src="frontend/images/conSwitch.jpg" alt="Nintendo Switch" />
-              <p>Nintendo Switch </p>
-            </div>
-            <div class="product-card">
-              <img src="/frontend/images/conPS5.jpg" alt="PS5" />
-              <p>PlayStation 5 Slim</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/conXbox.jpg" alt="Xbox Series S" />
-              <p>Xbox Series S</p>
-            </div>
-            <div class="product-card">
-              <img src="https://hffnxicpuehhsybeiljb.supabase.co/storage/v1/object/public/products/conNin.jpg" alt="Nintendo 3DS" />
-              <p>Nintendo 3DS</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/conGBA.jpg" alt="GameBoy" />
-              <p>GameBoy Advance</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/conSega.jpg" alt="Sega Genesis" />
-              <p>Sega</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/ps3.jpg" alt="ps3" />
-              <p>Versiones De PS3</p>
-            </div>
+            <p style="color: #333; padding: 20px;">Cargando productos...</p>
           </div>
+
           <button class="arrow right" data-target="carousel1">&#10095;</button>
           <button class="arrow left" data-target="carousel1">&#10094;</button>
+        </div>
         </div>
       </section>
 
       <!-- Sección 2 -->
       <section class="carousel-section">
-        <h2>Ahorra en productos reacondicionados</h2>
+        <h2></h2>
         <div class="carousel-wrapper">
           <button class="arrow left" data-target="carousel2">&#10094;</button>
+
+          <!-- ⭐️ MODIFICACIÓN: Contenedor vacío ⭐️ -->
           <div class="carousel-container" id="carousel2">
-            <div class="product-card">
-              <img src="frontend/images/PS4.jpg" alt="Consola PlayStation 4" />
-              <p>Consola PlayStation 4</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/xHalo3.jpg" alt="Xbox 360" />
-              <p>Xbox 360</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/PSP.jpg" alt="PSP" />
-              <p>PlayStation Portatil</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/wii.jpg" alt="Wii" />
-              <p>Wii</p>
-            </div>
-            <div class="product-card">
-              <img src="frontend/images/ps3.jpg" alt="PlayStation 3" />
-              <p>PlayStation 3</p>
-            </div>
+            <!-- Los productos se cargarán aquí dinámicamente -->
           </div>
+
           <button class="arrow right" data-target="carousel2">&#10095;</button>
         </div>
       </section>
@@ -113,29 +73,9 @@
       </div>
     </section>
 
-    <section class="card">
-        <div class="product-card">
-          <a href="frontend/productos/prod1.html">
-            <img src="https://hffnxicpuehhsybeiljb.supabase.co/storage/v1/object/public/products/Playstation-5-30-Aniversary.jpg" alt="Play5-30-Aniversary">
-            <p>Consola PlayStation 5, 1TB de almacenamiento</p>
-            <p class="precio">$6,500 <span class="before">$7,999</span></p>
-          </a>
-        </div>
-        <div class="product-card">
-          <a href="frontend/productos/prod2.html">
-            <img src="https://hffnxicpuehhsybeiljb.supabase.co/storage/v1/object/public/products/product-654321-1762183730725.jpg" alt="xHalo3">
-            <p>Consola Xbox Serie S, 512GB de almacenamiento, Edición Halo3</p>
-            <p class="precio">$4,500 <span class="before">$6,999</span></p>
-          </a>
-        </div>
-        <div class="product-card">
-          <a href="frontend/productos/prod3.html">
-            <img src="https://hffnxicpuehhsybeiljb.supabase.co/storage/v1/object/public/products/conNin.jpg" alt="Nintendo 3DS" />
-            <p>Nintendo 3DS Azul, 64Gb de almacenamiento</p>
-            <p class="precio">$2,000 <span class="before">$4,499</span></p>
-          </a>
-        </div>
-
+    <!-- ⭐️ MODIFICACIÓN: Contenedor vacío y con ID nuevo ⭐️ -->
+    <section class="product-grid-container" id="product-grid">
+      <!-- Los productos sueltos (de la sección "card") se cargarán aquí -->
     </section>
 
     <script src="index.js"></script>

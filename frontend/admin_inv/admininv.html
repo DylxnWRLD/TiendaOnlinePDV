@@ -5,140 +5,174 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel de Administración de Inventario</title>
-  <link rel="stylesheet" href="admininv.css">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../admin_unificado.css">
 </head>
 
 <body>
-  <div class="inv-layout">
-    <!-- Sidebar -->
-    <aside class="inv-sidebar">
-      <div class="inv-sidebar__header">
-        <span class="inv-logo">INV</span>
-        <h2 class="inv-appname">Inventario</h2>
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2><i class="fas fa-boxes"></i> <span class="menu-text">Inventario</span></h2>
       </div>
-      <div class="inv-sidebar__footer">
-        <button id="btnLogout" class="inv-nav__item inv-nav__item--muted"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button> 
+    <ul class="sidebar-menu">
+      <li><a href="#" class="active" data-tab="inventario"><i class="fas fa-boxes"></i> <span
+            class="menu-text">Inventario</span></a></li>
+      <li><a href="#" id="btnLogout"><i class="fas fa-sign-out-alt"></i> <span class="menu-text">Cerrar
+            Sesión</span></a></li>
+      </ul>
+    </nav>
+
+  <main class="main-content">
+    <div class="header">
+      <h1>Panel de Administración de Inventario</h1>
+      <div class="user-info">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span id="userName">Bienvenido, Admin</span>
       </div>
-    </aside>
+      </div>
 
-    <!-- Main -->
-    <main class="inv-main">
-      <header class="inv-topbar">
-        <h1 class="inv-topbar__title">Panel de Administración de Inventario</h1>
-        <div id="lowStockAlert" class="inv-alert inv-alert--danger hidden" style="margin-bottom: 16px;">
-        </div>
-        <div class="inv-user">Bienvenido, Admin</div>
-      </header>
+    <div id="lowStockAlert" class="alert alert-danger hidden">
+      </div>
 
-      <section class="inv-card">
-        <div class="inv-card__head">
-          <div class="inv-card__title">
-            <h2>Inventario Actual</h2>
-            <span id="lastUpdated" class="inv-pill">Sin cambios recientes</span>
-          </div>
-          <div class="inv-actions">
-            <button id="btnNew" class="btn btn--success"><i class="fa-solid fa-plus"></i> Agregar nuevo</button>
-            <div class="inv-search">
-              <input id="search" class="input" placeholder="Buscar por nombre o SKU…">
-              <button id="btnSearch" class="btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+    <div id="inventario" class="tab-content active">
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Inventario Actual</h2>
+          <span id="lastUpdated" class="badge badge-cliente" style="font-size: 12px;">Cargando...</span>
+          <div class="inv-actions" style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
+            <button id="btnNew" class="btn btn-success"><i class="fas fa-plus"></i> Agregar nuevo</button>
+            <div class="inv-search" style="display: flex; gap: 5px;">
+              <input id="search" class="form-control" placeholder="Buscar por nombre o SKU…">
+              <button id="btnSearch" class="btn btn-primary"><i
+                  class="fas fa-magnifying-glass"></i></button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="inv-tablewrap">
-          <table class="inv-table" id="table">
-            <thead>
+        <div class="table-container">
+          <table id="table">
+           <thead>
               <tr>
-                <th style="width:84px">SKU</th>
+                 <th style="width:84px">SKU</th>
                 <th>Nombre</th>
                 <th style="width:180px">Marca / Categoría</th>
                 <th style="width:120px">Precio</th>
                 <th style="width:100px">Stock</th>
                 <th style="width:120px">Estado</th>
                 <th style="width:160px; text-align:right;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tbody"><!-- rows --></tbody>
-          </table>
-        </div>
+                </tr>
+              </thead>
+            <tbody id="tbody"></tbody>
+            </table>
+          </div>
 
-        <div class="inv-footer">
+        <div class="table-footer">
           <div id="meta" class="muted">0 productos</div>
-          <div class="inv-pager">
-            <button id="prev" class="btn" title="Anterior"><i class="fa-solid fa-chevron-left"></i></button>
-            <span id="page" class="muted">1 / 1</span>
-            <button id="next" class="btn" title="Siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+          <div class="pager">
+            <button id="prev" class="btn btn-sm" title="Anterior"><i
+                class="fa-solid fa-chevron-left"></i></button>
+            <span id="page" class="muted" style="padding: 0 5px;">1 / 1</span>
+            <button id="next" class="btn btn-sm" title="Siguiente"><i
+                class="fa-solid fa-chevron-right"></i></button>
+            </div>
           </div>
         </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- Modal: Form -->
-  <div id="modalForm" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal__dialog inv-card">
-      <div class="modal__head">
-        <h3 id="formTitle">Nuevo producto</h3>
-        <button class="modal__close" data-close>&times;</button>
       </div>
-      <div class="modal__body">
-        <form id="form" class="grid">
-          <input type="hidden" id="id">
-          <label>SKU <input id="sku" class="input" required></label>
-          <label>Nombre <input id="name" class="input" required></label>
-          <label>Marca/Categoría <input id="brand" class="input" placeholder="Sony, Electrónica…"></label>
-          <label>Precio <input id="price" type="number" min="0" step="0.01" class="input" required></label>
-          <label>Stock <input id="stock" type="number" min="0" step="1" class="input" required></label>
-          <label>Mín. Stock <input id="minStock" type="number" min="0" step="1" class="input" value="0"></label>
-          <label class="grid-span-2">Descripción
-            <textarea id="desc" rows="3" class="input"></textarea>
-          </label>
-          <label class="grid-span-2">Subir imagen (opcional)
-            <input id="imageUpload" type="file" class="input" accept="image/png, image/jpeg, image/webp">
-          </label>
-          <label class="check">
-            <input id="active" type="checkbox" checked> Activo
-          </label>
+    </main>
+
+  <div id="modalForm" class="modal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h3 id="formTitle" class="modal-title">Nuevo producto</h3>
+        <button class="close" data-close>&times;</button>
+        </div>
+      <form id="form">
+        <input type="hidden" id="id">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="sku">SKU</label>
+            <input id="sku" class="form-control" required>
+            </div>
+          <div class="form-group">
+            <label class="form-label" for="name">Nombre</label>
+            <input id="name" class="form-control" required>
+            </div>
+          <div class="form-group">
+            <label class="form-label" for="brand">Marca/Categoría</label>
+            <input id="brand" class="form-control" placeholder="Sony, Electrónica…">
+            </div>
+          <div class="form-group">
+            <label class="form-label" for="price">Precio</label>
+            <input id="price" type="number" min="0" step="0.01" class="form-control" required>
+            </div>
+          <div class="form-group">
+            <label class="form-label" for="stock">Stock</label>
+            <input id="stock" type="number" min="0" step="1" class="form-control" required>
+            </div>
+          <div class="form-group">
+            <label class="form-label" for="minStock">Mín. Stock</label>
+            <input id="minStock" type="number" min="0" step="1" class="form-control" value="0">
+            </div>
+          <div class="form-group grid-span-2">
+            <label class="form-label" for="desc">Descripción</label>
+            <textarea id="desc" rows="3" class="form-control"></textarea>
+            </div>
+          <div class="form-group grid-span-2">
+            <label class="form-label" for="imageUpload">Subir imagen (opcional)</label>
+            <input id="imageUpload" type="file" class="form-control"
+              accept="image/png, image/jpeg, image/webp">
+            </div>
+          <div class="form-group grid-span-2">
+            <input id="active" type="checkbox" checked style="margin-right: 10px; width: auto;">
+            <label class="form-label" for="active" style="display: inline-block; vertical-align: middle;">
+              Activo
+              </label>
+            </div>
+          </div>
+        <div class="form-group"
+          style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; margin-bottom: 0;">
+          <button type="button" class="btn" data-close>Cancelar</button>
+          <button id="save" type="submit" class="btn btn-primary">Guardar</button>
+        </div>
         </form>
       </div>
-      <div class="modal__foot">
-        <button class="btn" data-close>Cancelar</button>
-        <button id="save" class="btn btn--primary">Guardar</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Modal: Ajustar Stock -->
-  <div id="modalStock" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal__dialog inv-card">
-      <div class="modal__head">
-        <h3>Ajustar stock</h3>
-        <button class="modal__close" data-close>&times;</button>
-      </div>
-      <div class="modal__body">
-        <form id="formAdjust" class="grid-3">
-          <input type="hidden" id="adjId">
-          <label>Tipo
-            <select id="adjType" class="input">
+  <div id="modalStock" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Ajustar stock</h3>
+        <button class="close" data-close>&times;</button>
+        </div>
+      <form id="formAdjust">
+        <input type="hidden" id="adjId">
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label" for="adjType">Tipo</label>
+            <select id="adjType" class="form-control">
               <option value="IN">Entrada (+)</option>
               <option value="OUT">Salida (-)</option>
               <option value="ADJUST">Ajuste</option>
-            </select>
-          </label>
-          <label>Cantidad <input id="adjQty" type="number" min="1" step="1" class="input" value="1"></label>
-          <label>Motivo <input id="adjReason" class="input" placeholder="Compra, merma, corrección…"></label>
+              </select>
+            </div>
+          <div class="form-group">
+            <label class="form-label" for="adjQty">Cantidad</label>
+            <input id="adjQty" type="number" min="1" step="1" class="form-control" value="1">
+            </div>
+          <div class="form-group">
+            <label class="form-label" for="adjReason">Motivo</label>
+            <input id="adjReason" class="form-control" placeholder="Compra, merma…">
+            </div>
+          </div>
+        <div class="form-group"
+          style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; margin-bottom: 0;">
+          <button type="button" class="btn" data-close>Cancelar</button>
+          <button id="applyAdjust" type="submit" class="btn btn-primary">Aplicar</button>
+          </div>
         </form>
       </div>
-      <div class="modal__foot">
-        <button class="btn" data-close>Cancelar</button>
-        <button id="applyAdjust" class="btn btn--primary">Aplicar</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Toasts -->
   <div id="toasts" class="toasts"></div>
 
   <script type="module" src="admininv.js"></script>

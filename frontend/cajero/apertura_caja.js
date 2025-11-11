@@ -1,16 +1,28 @@
-// frontend/cajero/apertura_caja.js
+// frontend/cajero/apertura_caja.js - VERSIÓN CORREGIDA PARA USAR SESSIONSTORAGE
 
 // Define la API base URL (¡Ajusta tu URL de Render!)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv-hm20.onrender.com';
+    : 'https://tiendaonlinepdv.onrender.com';
 
 
 // 2. Inicialización y manejo de formulario
 document.addEventListener('DOMContentLoaded', () => {
-    // ⭐️ CORRECCIÓN CLAVE: Eliminamos el try/catch y la llamada a checkAuthentication() ⭐️
-    // La función ya no existe, y si el token es inválido, el fetch lo manejará.
+    // ⭐️ Agregamos una comprobación de redirección si ya está abierto ⭐️
+    // ✅ CAMBIO A SESSIONSTORAGE para leer el estado actual de la sesión
+    const token = sessionStorage.getItem('supabase-token');
+    const corteId = sessionStorage.getItem('currentCorteId'); 
+    const role = sessionStorage.getItem('user-role');
     
+    // Si ya tienes token, rol y corteId, redirige directamente al PDV.
+    if (token && role === 'Cajero' && corteId) {
+        document.getElementById('apertura-error').textContent = 'Tienes un turno activo. Redirigiendo...';
+        setTimeout(() => {
+            window.location.href = './cajero.html'; 
+        }, 100); // Redirección rápida
+        return;
+    }
+
     const aperturaForm = document.getElementById('aperturaForm');
     // Verificamos que el formulario exista antes de añadir el listener
     if (aperturaForm) {
@@ -26,13 +38,20 @@ async function handleAperturaSubmit(e) {
     const montoInicial = parseFloat(montoInicialInput.value);
     const errorMessage = document.getElementById('apertura-error');
     errorMessage.textContent = '';
-    
-    // ⭐️ CORRECCIÓN: Leemos la clave de token que tu login escribe ⭐️
-    const token = localStorage.getItem('supabase-token');
-    
+
+    // ⭐️ CORRECCIÓN: Leemos el token de sessionStorage para consistencia con login.js ⭐️
+    const token = sessionStorage.getItem('supabase-token'); // ✅ CAMBIO A SESSIONSTORAGE
+
     // Validación de entrada
     if (isNaN(montoInicial) || montoInicial < 0) {
         errorMessage.textContent = 'Por favor, ingresa un monto inicial válido.';
+        return;
+    }
+
+    // Validación de Token (temprana)
+    if (!token) {
+        errorMessage.textContent = 'Sesión no encontrada. Redirigiendo al login.';
+        setTimeout(() => { window.location.href = '../../login/login.html'; }, 1000);
         return;
     }
 
@@ -45,8 +64,8 @@ async function handleAperturaSubmit(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // ⭐️ CRUCIAL: Usamos la clave 'supabase-token' ⭐️
-                'Authorization': `Bearer ${token}` 
+                // ⭐️ CRUCIAL: Usamos el token correcto de sessionStorage ⭐️
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ monto_inicial: montoInicial })
         });
@@ -56,34 +75,39 @@ async function handleAperturaSubmit(e) {
         // 3. Manejo de Éxito (200) y Conflicto (409)
         if (response.ok || response.status === 409) {
             
+            // Si el backend te devuelve un 409, es el error CAJA_ACTIVA_EXISTENTE.
+            // El backend DEBE devolver el ID del corte activo en la propiedad 'corteId'.
             if (data.corteId) {
-                localStorage.setItem('currentCorteId', data.corteId);
+                // ✅ CORRECTO: El corteId SÍ va en sessionStorage para consistencia
+                sessionStorage.setItem('currentCorteId', data.corteId); // ✅ CAMBIO A SESSIONSTORAGE
             }
-            
+
+            // Nota: Cambié './cajero.html' a './pdv.html' para ser consistente con el archivo
             const redirectPath = './cajero.html'; 
 
             const message = response.status === 409
                 ? data.message + ' Redirigiendo a tu turno activo.'
                 : 'Caja abierta exitosamente. Redirigiendo al PDV...';
-            
+
             errorMessage.textContent = message;
 
             setTimeout(() => {
-                window.location.href = redirectPath; 
+                window.location.href = redirectPath;
             }, response.status === 409 ? 1500 : 500);
 
         } else if (response.status === 401 || response.status === 403) {
             // 4. Fallo de Seguridad/Autorización (Rechazado por el BACKEND)
-            // Esto ocurre si el token es inválido o si el role_id no es 3.
-            errorMessage.textContent = 'Sesión inválida o expirada. Redirigiendo al login.';
-            // Limpia la sesión y redirige
-            localStorage.removeItem('supabase-token');
-            localStorage.removeItem('user-role');
-            
+            errorMessage.textContent = data.message || 'Sesión inválida o expirada. Redirigiendo al login.';
+
+            // ⭐️⭐️ CORRECCIÓN: Limpia la sesión de sessionStorage ⭐️⭐️
+            sessionStorage.removeItem('supabase-token'); // ✅ CAMBIO A SESSIONSTORAGE
+            sessionStorage.removeItem('user-role'); // ✅ CAMBIO A SESSIONSTORAGE
+            sessionStorage.removeItem('currentCorteId'); // ✅ CAMBIO A SESSIONSTORAGE
+
             setTimeout(() => {
                 window.location.href = '../../login/login.html';
             }, 1000);
-        
+
         } else {
             // 5. Manejo de otros errores (400, 500, etc.)
             errorMessage.textContent = data.message || `Error (${response.status}) al abrir la caja.`;
@@ -95,6 +119,6 @@ async function handleAperturaSubmit(e) {
     } finally {
         // Restaura el botón al estado inicial (sin importar si hubo éxito o fallo)
         submitButton.disabled = false;
-        submitButton.textContent = 'Abrir Caja'; 
+        submitButton.textContent = 'Abrir Caja';
     }
 }

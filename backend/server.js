@@ -1,6 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
-const bodyParser = require('body-parser');
+
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -100,7 +100,7 @@ function traducirErrorSupabase(originalMessage) {
 
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 
 // ===============================================
@@ -314,6 +314,31 @@ app.put('/api/products/:id', upload.single('imageUpload'), async (req, res) => {
         });
     }
 });
+
+/**
+ * RUTA: GET /api/products/lowstock
+ * Objetivo: Obtener la lista de productos con stockQty <= minStock.
+ * Creado para: Sprint 2 - HU "Alertas automáticas de stock"
+ * Panel: admin_inv
+ */
+app.get('/api/products/lowstock', async (req, res) => {
+    try {
+        // Busca productos donde el stock actual (stockQty) es menor o igual al stock mínimo (minStock)
+        const productosLowStock = await Product.find({
+            $expr: { $lte: ['$stockQty', '$minStock'] },
+            active: true // Solo productos activos
+        }).select('sku name stockQty minStock');
+
+        res.status(200).json(productosLowStock);
+    } catch (error) {
+        console.error('Error al obtener productos con stock bajo:', error.message);
+        res.status(500).json({
+            message: 'Error interno del servidor al consultar stock bajo.',
+            details: error.message
+        });
+    }
+});
+
 
 /**
  * RUTA: GET /api/products/:id
@@ -633,6 +658,34 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
 
 
 
+
+
+
+app.get('/api/promociones/producto/:idProducto', async (req, res) => {
+    try {
+        const { idProducto } = req.params;
+        const producto = await Product.findById(idProducto);
+
+        if (!producto) {
+            return res.status(404).json({ message: 'Producto no encontrado' });
+        }
+
+         if (producto.descuento && producto.descuento.activa) {
+            return res.json({
+                activa: true,
+                tipo_descuento: producto.descuento.tipo_descuento,
+                valor: producto.descuento.valor,
+                nombre_promo: producto.descuento.nombre_promo
+            });
+        }
+
+        return res.json({ activa: false, message: 'No hay promociones activas para este producto.' });
+    } catch (err) {
+        console.error('Error obteniendo promoción:', err);
+        res.status(500).json({ error: 'Error al obtener promoción.' });
+    }
+});
+
 // ===============================================
 // RUTA PARA CREAR PROMOCIONES (ADMIN)
 // ===============================================
@@ -669,7 +722,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
                     tipo_descuento: tipo_descuento,
                     valor: valor,
                     tipo_regla: tipo_regla,
-                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'REBAJAS' || tipo_regla === 'FECHA ESPECIAL') ? null : valor_regla,
+                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'MARCA' || tipo_regla === 'PRODUCTO' || tipo_regla === 'PRECIO' || tipo_regla === 'CANTIDAD') ? null : valor_regla,
                     fecha_inicio: fecha_inicio,
                     fecha_fin: fecha_fin || null,
                     activa: activa
@@ -685,13 +738,214 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             return res.status(500).json({ message: 'Error al guardar la promoción.', details: error.message });
         }
 
+         const promo = data[0];
+         //let resultadoAplicacion = null;
+
+       
+        let filter = {};
+                switch (promo.tipo_regla) {
+                    case 'MARCA':
+                        filter = { brand: promo.valor_regla };
+                        break;
+                    
+                    case 'PRODUCTO':
+                        filter = { name: promo.valor_regla };
+                        break;
+                    case 'GLOBAL':
+                        filter = {}; // Todos los productos
+                        break;
+                    case 'CANTIDAD':
+                        filter = {};
+                        break;
+                    case 'PRECIO':
+                        filter = { price: { $gte: parseFloat(promo.valor_regla) } };
+                        break;
+                    default:
+                        filter = {};
+                }
+
+     
+        const descuentoData = {
+            tipo_descuento: promo.tipo_descuento,  // 'PORCENTAJE' o 'MONTO'
+            valor: promo.valor,           // cantidad numérica
+            nombre_promo: promo.nombre,
+            activa: promo.activa
+        };
+
+        const result = await Product.updateMany(filter, {
+            $set: { descuento: descuentoData }
+        });
+
+        console.log(`Se actualizaron ${result.modifiedCount} productos con la promoción.`);
+
+
         res.status(201).json(data[0]);
 
     } catch (error) {
         console.error('Error inesperado en /api/admin/promociones:', error.message);
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
+
 });
+
+
+
+
+
+
+
+
+
+
+
+
+// ===============================================
+// RUTA PARA APLICAR PROMOCIONES A PRODUCTOS (SOLO MongoDB)
+// ===============================================
+app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req, res) => {
+    const { idPromocion } = req.params;
+
+    try {
+        // 1. Obtener la promoción de Supabase
+        const { data: promocion, error: promocionError } = await supabase
+            .from('promociones')
+            .select('*')
+            .eq('id', idPromocion)
+            .single();
+
+        if (promocionError || !promocion) {
+            return res.status(404).json({ message: 'Promoción no encontrada.' });
+        }
+
+        if (!promocion.activa) {
+            return res.status(400).json({ message: 'La promoción no está activa.' });
+        }
+
+        // 2. Construir filtro para MongoDB según el tipo_regla
+        let filter = {};
+        switch (promocion.tipo_regla) {
+            case 'MARCA':
+                filter = { brand: promocion.valor_regla };
+                break;
+            case 'CATEGORIA':
+                filter = { category: promocion.valor_regla };
+                break;
+            case 'PRODUCTO':
+                filter = { name: promocion.valor_regla };
+                break;
+            case 'GLOBAL':
+                filter = {}; // Todos los productos
+                break;
+            
+            case 'PRECIO':
+                filter = { price: { $gte: parseFloat(promocion.valor_regla) } };
+                break;
+            case 'CANTIDAD':
+                
+                filter = {};
+                break;
+            default:
+                filter = {};
+        }
+
+        // 3. Preparar datos de descuento
+        const descuentoData = {
+            tipo_descuento: promocion.tipo_descuento,
+            valor: promocion.valor,
+            nombre_promo: promocion.nombre,
+            activa: promocion.activa,
+            id_promocion_supabase: promocion.id,
+            tipo_regla: promocion.tipo_regla,
+            valor_regla: promocion.valor_regla
+        };
+
+        // 4. Aplicar descuento a los productos
+        const result = await Product.updateMany(filter, {
+            $set: { descuento: descuentoData }
+        });
+
+        console.log(`Promoción "${promocion.nombre}" aplicada a ${result.modifiedCount} productos`);
+
+        res.status(200).json({
+            message: `Promoción aplicada a ${result.modifiedCount} productos.`,
+            productosAfectados: result.modifiedCount,
+            promocion: promocion.nombre
+        });
+
+    } catch (error) {
+        console.error('Error al aplicar promoción:', error.message);
+        res.status(500).json({
+            message: 'Error interno al aplicar promoción.',
+            details: error.message
+        });
+    }
+});
+
+
+
+
+
+
+
+
+// ===============================================
+// RUTA PARA REMOVER PROMOCIONES DE PRODUCTOS
+// ===============================================
+app.post('/api/promociones/remover/:idPromocion', authenticateAdmin, async (req, res) => {
+    const { idPromocion } = req.params;
+
+    try {
+        // Remover descuento de todos los productos que tengan esta promoción
+        const result = await Product.updateMany(
+            { 'descuento.id_promocion_supabase': idPromocion },
+            { $set: { descuento: null } }
+        );
+
+        console.log(`🗑️ Promoción removida de ${result.modifiedCount} productos`);
+
+        res.status(200).json({
+            message: `Promoción removida de ${result.modifiedCount} productos.`,
+            productosAfectados: result.modifiedCount
+        });
+
+    } catch (error) {
+        console.error('Error al remover promoción:', error.message);
+        res.status(500).json({
+            message: 'Error interno al remover promoción.',
+            details: error.message
+        });
+    }
+});
+
+
+
+
+
+
+// ===============================================
+// RUTA PARA OBTENER PRODUCTOS CON PROMOCIONES ACTIVAS
+// ===============================================
+app.get('/api/productos/con-promociones', async (req, res) => {
+    try {
+        const productos = await Product.find({
+            'descuento.activa': true,
+            'active': true
+        }).select('name brand price descuento images');
+
+        res.status(200).json(productos);
+    } catch (error) {
+        console.error('Error al obtener productos con promociones:', error.message);
+        res.status(500).json({
+            message: 'Error interno al obtener productos con promociones.',
+            details: error.message
+        });
+    }
+});
+
+
+
+
+
 
 
 
@@ -1105,6 +1359,93 @@ app.post('/api/caja/abrir', getUserIdFromToken, async (req, res) => {
     }
 });
 
+/**
+ * RUTA: POST /api/caja/calcular_reporte (1er Paso: Solo calcula, no cierra)
+ * Objetivo: Llama a la RPC calcular_corte_caja.
+ */
+app.post('/api/caja/calcular_reporte', getUserIdFromToken, async (req, res) => {
+    const userId = req.userId;
+    const { id_corte, monto_declarado } = req.body;
+
+    if (!id_corte || monto_declarado === undefined || typeof monto_declarado !== 'number') {
+        return res.status(400).json({ message: 'Faltan o son inválidos los parámetros de corte.' });
+    }
+    
+    // NOTA: Se asume que el rol Cajero ya fue verificado antes de llegar al PDV.
+
+    try {
+        // Llama a la nueva función PL/pgSQL para SOLO CALCULAR (no actualiza estado)
+        const { data, error } = await supabase
+            .rpc('calcular_corte_caja', { // ⚠️ Asume que ya creaste esta RPC en Supabase
+                p_id_corte: id_corte,
+                p_monto_declarado: monto_declarado
+            })
+            .single();
+
+        if (error) {
+            console.error('[RPC ERROR]: Error en calcular_corte_caja:', error.message);
+            // Manejamos el caso de que el corte no esté abierto
+            if (error.message.includes('CORTE_NO_ACTIVO')) {
+                return res.status(409).json({ message: 'El corte no está activo o ya fue cerrado.' });
+            }
+            return res.status(500).json({ message: 'Error en DB al calcular reporte.', details: error.message });
+        }
+
+        // Devuelve los resultados del cálculo (monto_calculado, diferencia, etc.)
+        return res.status(200).json({
+            message: 'Cálculo de reporte exitoso.',
+            reporte: data
+        });
+
+    } catch (error) {
+        console.error('[FATAL ERROR]: Cálculo de reporte falló:', error);
+        res.status(500).json({ message: 'Error interno del servidor al calcular el reporte.' });
+    }
+});
+
+
+/**
+ * RUTA: POST /api/caja/cerrar_definitivo (2do Paso: Cierre final)
+ * Objetivo: Llama a la RPC cerrar_corte_definitivo y cambia el estado a CERRADA.
+ */
+app.post('/api/caja/cerrar_definitivo', getUserIdFromToken, async (req, res) => {
+    const userId = req.userId;
+    const { id_corte, monto_declarado, monto_calculado } = req.body;
+
+    if (!id_corte || monto_declarado === undefined || monto_calculado === undefined) {
+        return res.status(400).json({ message: 'Faltan parámetros de cierre definitivo.' });
+    }
+    
+    try {
+        // Llama a la función PL/pgSQL para el CIERRE FINAL
+        const { data, error } = await supabase
+            .rpc('cerrar_corte_definitivo', { // ⚠️ Asume que ya creaste esta RPC en Supabase
+                p_id_corte: id_corte,
+                p_monto_declarado: monto_declarado,
+                p_monto_calculado: monto_calculado // Se utiliza el valor ya calculado/validado
+            })
+            .single(); // Devuelve el estado 'CERRADA'
+
+        if (error) {
+            console.error('[RPC ERROR]: Error en cerrar_corte_definitivo:', error.message);
+            if (error.message.includes('CORTE_NO_ACTIVO')) {
+                // Si ya está cerrado, no hay problema, devolvemos un 200 para limpiar el frontend
+                return res.status(200).json({ message: 'Corte ya cerrado o no activo, pero flujo completado.' });
+            }
+            return res.status(500).json({ message: 'Error en DB al cerrar definitivamente.', details: error.message });
+        }
+
+        // Respuesta Exitosa
+        return res.status(200).json({
+            message: 'Corte de caja cerrado con éxito.',
+            estado: data
+        });
+
+    } catch (error) {
+        console.error('[FATAL ERROR]: Cierre definitivo falló:', error);
+        res.status(500).json({ message: 'Error interno del servidor en cierre crítico.' });
+    }
+});
 
 app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     // Nota: Asume que el middleware de autenticación ya extrajo el id_cajero
@@ -1112,67 +1453,14 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
     const { id_corte, total_descuento, total_final, metodo_pago, detalles } = req.body;
 
     try {
-
-        // 1. Consultar MongoDB para detalles de producto Y STOCK
-        const productoIds = detalles.map(item => new mongoose.Types.ObjectId(item.producto_id_mongo));
-        const productosMongo = await Product.find({ _id: { $in: productoIds } });
-
-        // 2. Consultar Promociones (Postgres)
-        const { data: promocionesActivas, error: promoError } = await supabase
-            .from("promociones")
-            .select("*")
-            .eq("activa", true)
-            .lte("fecha_inicio", new Date().toISOString())
-            .or(`fecha_fin.is.null, fecha_fin.gte.${new Date().toISOString()}`)
-            .neq("tipo_regla", "GLOBAL"); // Excluye promos globales por ahora
-
-        if (promoError) throw promoError;
-
-        // 3. Validar Stock y Calcular Totales
-        let totalFinalVenta = 0;
-        let totalDescuentoVenta = 0;
-        const detallesParaSupabase = [];
-
-        for (const item of detalles) {
-            const productoInfo = productosMongo.find(p => p._id.toString() === item.producto_id_mongo);
-            if (!productoInfo) {
-                throw new Error(`Producto ${item.producto_id_mongo} no encontrado en inventario.`);
-            }
-
-            // 3. Validar Stock
-            if (item.cantidad > productoInfo.stockQty) {
-                throw new Error(`Stock insuficiente para ${productoInfo.name}. Solicitado: ${item.cantidad}, Disponible: ${productoInfo.stockQty}`);
-            }
-
-            // 4. Calcular Descuentos Aplicables
-            const {
-                precio_original,
-                monto_descuento_unitario,
-                precio_final_unitario
-            } = calcularDescuentoItem(productoInfo, promocionesActivas || []);
-
-            // 5. Calcular Totales
-            const totalLinea = precio_final_unitario * item.cantidad;
-            totalFinalVenta += totalLinea;
-            totalDescuentoVenta += (monto_descuento_unitario * item.cantidad);
-            // Preparar detalle para Supabase
-            detallesParaSupabase.push({
-                id_producto_mongo: productoInfo._id.toString(),
-                nombre_producto: productoInfo.name,
-                cantidad: item.cantidad,
-                precio_unitario_venta: precio_original, // El precio ANTES del descuento
-                monto_descuento: monto_descuento_unitario, // El descuento POR UNIDAD
-            });
-        }
-
         // 1. **Transacción de Venta en PostgreSQL**
-
+        console.log('➡️ Llamando a función registrar_venta en Supabase...');
         // Llama a la función PL/pgSQL
         const { data, error } = await supabase
             .rpc('registrar_venta', {
                 p_id_cajero: id_cajero,
                 p_id_corte: id_corte,
-                p_total_descuento: total_descuento,
+                p_total_descuento: total_descuento || 0,
                 p_total_final: total_final,
                 p_metodo_pago: metodo_pago,
                 p_detalles: detalles // Pasa el array de detalles como JSONB
@@ -1184,6 +1472,7 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
         const id_venta = data.id_v;
         const ticket_numero = data.ticket_num;
 
+        console.log('✅ Venta registrada en Supabase:', data);
         // 2. **Actualización de Stock en MongoDB (CRÍTICO)**
         // Esto debería envolverse en una transacción de MongoDB si es posible.
         const bulkOps = detalles.map(d => ({
@@ -1193,8 +1482,9 @@ app.post('/api/ventas/finalizar', getUserIdFromToken, async (req, res) => {
             }
         }));
 
+        console.log('🧩 Ejecutando bulkWrite de stock en Mongo...');
         const result = await Product.bulkWrite(bulkOps);
-
+        console.log('✅ Stock actualizado en Mongo:', result);
         // 3. Respuesta Exitosa
         return res.status(200).json({
             message: 'Venta registrada y stock actualizado.',
@@ -1370,74 +1660,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     }
 });
 
-/**
- * RUTA: GET /api/products/lowstock
- * Objetivo: Obtener la lista de productos con stockQty <= minStock.
- * Creado para: Sprint 2 - HU "Alertas automáticas de stock"
- * Panel: admin_inv
- */
-app.get('/api/products/lowstock', async (req, res) => {
-    try {
-        // Busca productos donde el stock actual (stockQty) es menor o igual al stock mínimo (minStock)
-        const productosLowStock = await Product.find({
-            $expr: { $lte: ['$stockQty', '$minStock'] },
-            active: true // Solo productos activos
-        }).select('sku name stockQty minStock');
 
-        res.status(200).json(productosLowStock);
-    } catch (error) {
-        console.error('Error al obtener productos con stock bajo:', error.message);
-        res.status(500).json({
-            message: 'Error interno del servidor al consultar stock bajo.',
-            details: error.message
-        });
-    }
-});
-
-/**
- * Función auxiliar para encontrar la mejor promoción y calcular descuentos.
- * Esta es la clave de tu "motor de reglas".
- * @param {object} producto - El objeto del producto desde MongoDB
- * @param {Array} promociones - Array de todas las promociones activas desde Postgres
- * @returns {object} - { precio_original, monto_descuento_unitario, promocion_aplicada }
- */
-function calcularDescuentoItem(producto, promociones) {
-    const precioBase = producto.price;
-    let mejorPrecio = precioBase;
-    let promocionAplicada = null;
-
-    // 1. Filtrar promociones que aplican a este producto
-    const promosAplicables = promociones.filter(promo => {
-        if (promo.tipo_regla === 'MARCA' && promo.valor_regla === producto.brand) return true;
-        if (promo.tipo_regla === 'PRODUCTO' && promo.valor_regla === producto._id.toString()) return true;
-        if (promo.tipo_regla === 'SKU' && promo.valor_regla === producto.sku) return true;
-
-        return false;
-    });
-
-    for (const promo of promosAplicables) {
-        let precioCalculado = precioBase;
-        if (promo.tipo_descuento === 'PORCENTAJE') {
-            precioCalculado = precioBase * (1 - promo.valor / 100);
-        } else if (promo.tipo_descuento === 'FIJO') {
-            precioCalculado = precioBase - promo.valor;
-        }
-
-        /**if (precioCalculado < mejorPrecio) {
-            mejorPrecio = precioCalculado;
-            promocionAplicada = promo;
-        }*/
-    }
-
-    const montoDescuento = precioBase - precioCalculado;
-
-    return {
-        precio_original: precioBase, // Precio base de Mongo
-        precio_final_unitario: Math.round(mejorPrecio * 100) / 100,
-        monto_descuento_unitario: Math.round(montoDescuento * 100) / 100, // Descuento por unidad
-        promocion_aplicada: promocionAplicada // Objeto de la promo (o null)
-    };
-}
 
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR

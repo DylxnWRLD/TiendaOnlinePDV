@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="productTitlePage">Detalle del Producto - LEVEL ONE</title>
+    <link rel="icon" type="image/png" href="../images/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="./product_detail.css"> 
+</head>
+
+<body>
+    <header class="header">
+        <div class="menu-icon" id="menuToggle">☰</div>
+        <a href="../../index.html" class="logo">LEVEL_ONE</a>
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Buscar productos...">
+            <button id="searchBtn">Buscar</button>
+        </div>
+        <div class="user-actions">
+            <button id="loginBtn" class="login-btn">Iniciar sesión</button>
+            
+            <button id="cartBtn" class="cart-btn">
+                🛒 (<span id="cart-count">0</span>)
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="product-detail-container">
+            <div class="product-gallery">
+                <img id="productImage" src="https://via.placeholder.com/400" alt="Imagen del producto">
+                <div id="productThumbnails">
+                    </div>
+            </div>
+
+            <div class="product-info">
+                <h1 id="productName">Nombre del Producto</h1>
+                <div class="product-meta">
+                    <p>SKU: <span id="productSku">Cargando...</span></p>
+                    <p>Marca: <span id="productBrand">Cargando...</span></p>
+                </div>
+
+                <div class="product-price-box">
+                    <h2 id="productPrice">$X,XXX.XX</h2>
+                    <span id="productOldPrice">$Y,YYY.YY</span>
+                    <span id="productDiscount">Ahorro Z%</span>
+                </div>
+
+                <p id="productDescription">Breve descripción del producto.</p>
+
+                <div class="quantity-selector">
+                    <label for="productQuantity">Cantidad:</label>
+                    <div class="quantity-input-group">
+                        <button type="button" id="minusQuantity">-</button>
+                        <input type="text" value="1" id="productQuantity" min="1">
+                        <button type="button" id="plusQuantity">+</button>
+                    </div>
+                    <small id="productStock">En stock</small>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="addToCartBtn" class="btn-custom btn-custom-primary">
+                        <i class="fas fa-shopping-cart"></i> Agregar al carrito
+                    </button>
+                    <button id="buyNowBtn" class="btn-custom btn-custom-secondary">
+                        Comprar ahora
+                    </button>
+                </div>
+
+                <h3>Acerca de este producto</h3>
+                <ul id="productDetailsList">
+                    <li>Material: <span id="detailMaterial">N/A</span></li>
+                    <li>Color: <span id="detailColor">N/A</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <section class="reviews-section">
+            <h2>Reseñas de Clientes</h2>
+            <div id="productReviews">
+                <p>No hay reseñas aún para este producto. ¡Sé el primero en escribir una!</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 LevelOne. Todos los derechos reservados.</p>
+    </footer>
+
+    <div id="toastContainer" class="toast-container">
+        </div>
+
+    <div id="cartModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Tu Carrito de Compras</h2>
+                <button id="closeCartModal" class="modal-close-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="cartItemsContainer">
+                    <p id="emptyCartMessage" class="empty-cart-msg">Tu carrito está vacío.</p>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="total-price-section">
+                    <strong>Total:</strong>
+                    <span id="cart-total-price">$0.00</span>
+                </div>
+                <button id="checkoutBtnModal" class="btn-custom btn-custom-primary" disabled>
+                    Proceder al Pago
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./product_detail.js"></script>
+</body>
+
+</html>

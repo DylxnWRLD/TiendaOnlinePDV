@@ -32,7 +32,7 @@ document.getElementById('registerForm').addEventListener('submit', async (event)
     // 2. Definición de la URL base de la API (sin cambios)
     const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://127.0.0.1:3000'
-        : 'https://tiendaonlinepdv-hm20.onrender.com';
+        : 'https://tiendaonlinepdv.onrender.com';
 
     try {
         // 3. Petición al servidor
