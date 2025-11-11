@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +10,10 @@
         /* Estilos base para el fondo oscuro */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #343a40; /* Gris oscuro */
-            color: #f8f9fa; /* Texto claro */
+            background-color: #343a40;
+            /* Gris oscuro */
+            color: #f8f9fa;
+            /* Texto claro */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,7 +25,8 @@
         .container {
             max-width: 600px;
             padding: 40px;
-            background-color: #2D3748; /* Contenedor más oscuro */
+            background-color: #2D3748;
+            /* Contenedor más oscuro */
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             text-align: center;
@@ -32,10 +36,13 @@
             font-size: 2rem;
             font-weight: bold;
             margin-bottom: 25px;
-            color: #A78BFA; /* Púrpura de énfasis */
+            color: #A78BFA;
+            /* Púrpura de énfasis */
         }
 
-        .form-group { margin-bottom: 20px; }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
         label {
             display: block;
@@ -56,11 +63,11 @@
             box-sizing: border-box;
             transition: border-color 0.3s;
         }
-        
+
         input[type="text"]::placeholder {
             color: #A0AEC0;
         }
-        
+
         input[type="text"]:focus {
             outline: none;
             border-color: #A78BFA;
@@ -80,31 +87,36 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            text-decoration: none; /* Asegura que los enlaces se vean como botones */
-            box-sizing: border-box; /* Vital para que el padding no cambie el ancho */
+            text-decoration: none;
+            /* Asegura que los enlaces se vean como botones */
+            box-sizing: border-box;
+            /* Vital para que el padding no cambie el ancho */
         }
 
         /* Contenedor para manejar el espaciado entre botones */
         .button-group {
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Espaciado uniforme entre los botones */
+            gap: 15px;
+            /* Espaciado uniforme entre los botones */
             margin-top: 20px;
         }
 
         /* Estilo específico del botón de búsqueda */
         .btn-rastrear {
-            background-color: #8B5CF6; /* Púrpura */
+            background-color: #8B5CF6;
+            /* Púrpura */
             color: white;
         }
 
         .btn-rastrear:hover {
             background-color: #7C3AED;
         }
-        
+
         /* Estilo específico del botón de inicio */
         .btn-inicio {
-            background-color: #6c757d; /* Gris secundario */
+            background-color: #6c757d;
+            /* Gris secundario */
             color: white;
         }
 
@@ -113,12 +125,14 @@
         }
 
         #mensaje-error {
-            color: #F56565; /* Rojo de error */
+            color: #F56565;
+            /* Rojo de error */
             margin-top: 15px;
             font-weight: bold;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>Rastrea tu Pedido</h2>
@@ -127,43 +141,92 @@
                 <label for="pedidoId">Ingresa tu ID de Pedido:</label>
                 <input type="text" id="pedidoId" placeholder="Ej: ENT-123456" required>
             </div>
-            
+
             <div class="button-group">
                 <button type="submit" class="btn-base btn-rastrear">
                     <i class="fas fa-search"></i> Buscar Seguimiento
                 </button>
-                
+
                 <a href="../../index.html" class="btn-base btn-inicio">
                     <i class="fas fa-home"></i> Volver al Inicio
                 </a>
             </div>
-            
+
             <p id="mensaje-error"></p>
         </form>
     </div>
 
     <script>
-        // La lógica del antiguo seguimiento.js, ahora solo maneja la redirección
-        document.getElementById('buscadorForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const pedidoId = document.getElementById('pedidoId').value.trim();
-            if (pedidoId) {
-                // Redirige a la página de detalle, pasando el ID
-                window.location.href = `seguimiento-detalle.html?id=${pedidoId}`;
-            } else {
-                document.getElementById('mensaje-error').textContent = 'Por favor, ingresa un ID de pedido.';
-            }
-        });
-        
-        // Maneja la redirección directa si el ID viene de la pantalla de compra
         document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Lógica de Búsqueda de Pedido (Ya existente) ---
+            document.getElementById('buscadorForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const pedidoId = document.getElementById('pedidoId').value.trim();
+                if (pedidoId) {
+                    // Redirige a la página de detalle, pasando el ID
+                    window.location.href = `seguimiento-detalle.html?id=${pedidoId}`;
+                } else {
+                    document.getElementById('mensaje-error').textContent = 'Por favor, ingresa un ID de pedido.';
+                }
+            });
+
+            // Maneja la redirección directa si el ID viene de la pantalla de compra
             const urlParams = new URLSearchParams(window.location.search);
             const idFromUrl = urlParams.get('id');
             if (idFromUrl) {
-                // Si el ID ya viene de la pantalla de compra, redirige directamente al detalle
                 window.location.href = `seguimiento-detalle.html?id=${idFromUrl}`;
+            }
+            // --- Fin Lógica de Búsqueda ---
+
+
+            // ⭐️ LÓGICA DE REDIRECCIÓN EXCLUSIVA PARA CLIENTES Y NO LOGEADOS ⭐️
+            const btnInicio = document.getElementById('btnVolverInicio');
+            if (btnInicio) {
+                btnInicio.addEventListener('click', () => {
+                    const userRole = localStorage.getItem('user-role');
+                    const token = localStorage.getItem('supabase-token');
+
+                    // Si NO está logeado O si el rol es 'Cliente', redirigir al inicio público.
+                    if (!token || userRole === 'Cliente') {
+                        window.location.href = '../../index.html';
+                        return;
+                    }
+
+                    // Si está logeado y el rol NO es 'Cliente' (es decir, es privilegiado),
+                    // lo devolvemos a su panel seguro.
+                    if (token && userRole) {
+                        let redirectPath = '';
+
+                        // Las rutas son relativas a frontend/cliente/
+                        switch (userRole) {
+                            case 'Admin':
+                                redirectPath = '../admin/admin.html';
+                                break;
+                            case 'Cajero':
+                                // Cajero debe ir a la pantalla de apertura/caja
+                                redirectPath = '../cajero/apertura_caja.html';
+                                break;
+                            case 'AdminInventario':
+                                redirectPath = '../admin_inv/admininv.html';
+                                break;
+                            case 'Repartidor':
+                                redirectPath = '../repartidor/repartidor.html';
+                                break;
+                            default:
+                                // Rol desconocido pero logeado: enviar a la página principal pública por seguridad
+                                redirectPath = '../../index.html';
+                                break;
+                        }
+                        window.location.href = redirectPath;
+                    } else {
+                        // Doble verificación: si por alguna razón falló el chequeo superior
+                        window.location.href = '../../index.html';
+                    }
+                });
             }
         });
     </script>
 </body>
+
 </html>
