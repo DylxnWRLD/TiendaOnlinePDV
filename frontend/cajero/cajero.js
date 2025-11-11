@@ -173,9 +173,22 @@ window.addEventListener('beforeunload', () => {
  * Agrega un producto al carrito, incluyendo la verificación de stock.
  * Se asume que productoMongo contiene el campo stockQty.
  */
-function agregarProducto(productoMongo) {
+async function agregarProducto(productoMongo) {
     const index = ventaActual.productos.findIndex(p => p.id_producto_mongo === productoMongo._id);
     const stockDisponible = productoMongo.stockQty; 
+
+    const promocionInfo = await verificarPromocionProducto(productoMongo._id);
+
+    let descuentoAplicado = 0;
+    let precioFinal = productoMongo.price;
+
+    if (promocionInfo.activa) {
+        if (promocionInfo.tipo_descuento === 'PORCENTAJE') {
+            descuentoAplicado = (productoMongo.price * promocionInfo.valor) / 100;
+        } else if (promocionInfo.tipo_descuento === 'FIJO') {
+            descuentoAplicado = promocionInfo.valor;
+        }
+        precioFinal = Math.max(0, productoMongo.price - descuentoAplicado);
 
     if (index > -1) {
         if (ventaActual.productos[index].cantidad + 1 > stockDisponible) {
@@ -183,6 +196,11 @@ function agregarProducto(productoMongo) {
             return;
         }
         ventaActual.productos[index].cantidad += 1;
+
+        ventaActual.productos[index].monto_descuento = descuentoAplicado;
+        ventaActual.productos[index].precio_final = precioFinal;
+        ventaActual.productos[index].promocion_aplicada = promocionInfo.activa ? promocionInfo : null;
+
     } else {
         if (stockDisponible <= 0) {
             alert(`❌ ${productoMongo.name} no tiene stock disponible.`);
@@ -192,15 +210,50 @@ function agregarProducto(productoMongo) {
             id_producto_mongo: productoMongo._id, 
             nombre_producto: productoMongo.name, 
             precio_unitario: productoMongo.price, 
+            precio_final: precioFinal,
             cantidad: 1,
-            monto_descuento: 0,
-            stock_disponible: stockDisponible 
+            monto_descuento: descuentoAplicado,
+            stock_disponible: stockDisponible,
+            promocion_aplicada: promocionInfo.activa ? promocionInfo : null,
+            tiene_descuento: promocionInfo.activa
         });
     }
     
     updateVentaSummary();
     renderCarrito();
+
+    if (promocionInfo.activa) {
+        mostrarNotificacionDescuento(productoMongo.name, descuentoAplicado, promocionInfo);
+    }
 }
+
+
+
+
+
+
+async function verificarPromocionProducto(id_producto_mongo) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/promociones/producto/${id_producto_mongo}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok){
+            return await response.json();
+        } 
+        return { activa: false };
+
+
+    }catch (error) {
+        console.error('Error verificando promoción:', error);
+        return { activa: false }; 
+    }
+
+
+}
+
+
+
 
 function updateVentaSummary() {
     let subtotal = 0;
@@ -657,7 +710,7 @@ function setupEventListeners() {
             }
         }
     });
-    
+  
     // Cancelar Venta
     document.getElementById('btn-cancelar-venta').addEventListener('click', () => {
         if (confirm('¿Seguro que deseas CANCELAR la venta actual?')) {
@@ -666,4 +719,5 @@ function setupEventListeners() {
             renderCarrito();
         }
     });
+}
 }

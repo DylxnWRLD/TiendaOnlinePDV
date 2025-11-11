@@ -666,31 +666,25 @@ app.get('/api/promociones/producto/:idProducto', async (req, res) => {
         const { idProducto } = req.params;
         const producto = await Producto.findById(idProducto);
 
-        if (!producto || !producto.descuento || !producto.descuento.activa) {
-            return res.json({ activa: false });
+        if (!producto) {
+            return res.status(404).json({ message: 'Producto no encontrado' });
         }
 
-        const promoParaCajero = {
-            activa: producto.descuento.activa,
-            tipo: producto.descuento.tipo_descuento, // <-- Traduce 'tipo_descuento' a 'tipo'
-            valor: producto.descuento.valor
-        };
+         if (producto.descuento && producto.descuento.activa) {
+            return res.json({
+                activa: true,
+                tipo: producto.descuento.tipo_descuento,
+                valor: producto.descuento.valor,
+                nombre_promo: producto.descuento.nombre_promo
+            });
+        }
 
-        return res.json(promoParaCajero); // {tipo, valor, activa}
+        return res.json({ activa: false});
     } catch (err) {
         console.error('Error obteniendo promoción:', err);
         res.status(500).json({ error: 'Error al obtener promoción.' });
     }
 });
-
-
-
-
-
-
-
-
-
 
 // ===============================================
 // RUTA PARA CREAR PROMOCIONES (ADMIN)
@@ -728,7 +722,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
                     tipo_descuento: tipo_descuento,
                     valor: valor,
                     tipo_regla: tipo_regla,
-                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'REBAJAS' || tipo_regla === 'FECHA ESPECIAL') ? null : valor_regla,
+                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'MARCA' || tipo_regla === 'PRODUCTO' || tipo_regla === 'PRECIO' || tipo_regla === 'CANTIDAD') ? null : valor_regla,
                     fecha_inicio: fecha_inicio,
                     fecha_fin: fecha_fin || null,
                     activa: activa
@@ -744,33 +738,38 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             return res.status(500).json({ message: 'Error al guardar la promoción.', details: error.message });
         }
 
-
-
-
-
-
-
-
-
-
          const promo = data[0];
+         //let resultadoAplicacion = null;
 
        
         let filter = {};
-        if (tipo_regla === 'PRODUCTO') {
-            filter = { name: valor_regla };
-        } else if (tipo_regla === 'MARCA') {
-            filter = { brand: valor_regla };
-        } else if (tipo_regla === 'GLOBAL') {
-            filter = {}; // todos los productos
-        }
+                switch (promo.tipo_regla) {
+                    case 'MARCA':
+                        filter = { brand: promo.valor_regla };
+                        break;
+                    
+                    case 'PRODUCTO':
+                        filter = { name: promo.valor_regla };
+                        break;
+                    case 'GLOBAL':
+                        filter = {}; // Todos los productos
+                        break;
+                    case 'CANTIDAD':
+                        filter = {};
+                        break;
+                    case 'PRECIO':
+                        filter = { price: { $gte: parseFloat(promo.valor_regla) } };
+                        break;
+                    default:
+                        filter = {};
+                }
 
      
         const descuentoData = {
-            tipo_descuento,  // 'PORCENTAJE' o 'MONTO'
-            valor,           // cantidad numérica
-            nombre_promo: nombre,
-            activa
+            tipo_descuento: promo.tipo_descuento,  // 'PORCENTAJE' o 'MONTO'
+            valor: promo.valor,           // cantidad numérica
+            nombre_promo: promo.nombre,
+            activa: promo.activa
         };
 
         const result = await Product.updateMany(filter, {
@@ -778,18 +777,6 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
         });
 
         console.log(`Se actualizaron ${result.modifiedCount} productos con la promoción.`);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         res.status(201).json(data[0]);
@@ -800,6 +787,165 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
     }
 
 });
+
+
+
+
+
+
+
+
+
+
+
+
+// ===============================================
+// RUTA PARA APLICAR PROMOCIONES A PRODUCTOS (SOLO MongoDB)
+// ===============================================
+app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req, res) => {
+    const { idPromocion } = req.params;
+
+    try {
+        // 1. Obtener la promoción de Supabase
+        const { data: promocion, error: promocionError } = await supabase
+            .from('promociones')
+            .select('*')
+            .eq('id', idPromocion)
+            .single();
+
+        if (promocionError || !promocion) {
+            return res.status(404).json({ message: 'Promoción no encontrada.' });
+        }
+
+        if (!promocion.activa) {
+            return res.status(400).json({ message: 'La promoción no está activa.' });
+        }
+
+        // 2. Construir filtro para MongoDB según el tipo_regla
+        let filter = {};
+        switch (promocion.tipo_regla) {
+            case 'MARCA':
+                filter = { brand: promocion.valor_regla };
+                break;
+            case 'CATEGORIA':
+                filter = { category: promocion.valor_regla };
+                break;
+            case 'PRODUCTO':
+                filter = { name: promocion.valor_regla };
+                break;
+            case 'GLOBAL':
+                filter = {}; // Todos los productos
+                break;
+            
+            case 'PRECIO':
+                filter = { price: { $gte: parseFloat(promocion.valor_regla) } };
+                break;
+            case 'CANTIDAD':
+                
+                filter = {};
+                break;
+            default:
+                filter = {};
+        }
+
+        // 3. Preparar datos de descuento
+        const descuentoData = {
+            tipo_descuento: promocion.tipo_descuento,
+            valor: promocion.valor,
+            nombre_promo: promocion.nombre,
+            activa: promocion.activa,
+            id_promocion_supabase: promocion.id,
+            tipo_regla: promocion.tipo_regla,
+            valor_regla: promocion.valor_regla
+        };
+
+        // 4. Aplicar descuento a los productos
+        const result = await Product.updateMany(filter, {
+            $set: { descuento: descuentoData }
+        });
+
+        console.log(`Promoción "${promocion.nombre}" aplicada a ${result.modifiedCount} productos`);
+
+        res.status(200).json({
+            message: `Promoción aplicada a ${result.modifiedCount} productos.`,
+            productosAfectados: result.modifiedCount,
+            promocion: promocion.nombre
+        });
+
+    } catch (error) {
+        console.error('Error al aplicar promoción:', error.message);
+        res.status(500).json({
+            message: 'Error interno al aplicar promoción.',
+            details: error.message
+        });
+    }
+});
+
+
+
+
+
+
+
+
+// ===============================================
+// RUTA PARA REMOVER PROMOCIONES DE PRODUCTOS
+// ===============================================
+app.post('/api/promociones/remover/:idPromocion', authenticateAdmin, async (req, res) => {
+    const { idPromocion } = req.params;
+
+    try {
+        // Remover descuento de todos los productos que tengan esta promoción
+        const result = await Product.updateMany(
+            { 'descuento.id_promocion_supabase': idPromocion },
+            { $set: { descuento: null } }
+        );
+
+        console.log(`🗑️ Promoción removida de ${result.modifiedCount} productos`);
+
+        res.status(200).json({
+            message: `Promoción removida de ${result.modifiedCount} productos.`,
+            productosAfectados: result.modifiedCount
+        });
+
+    } catch (error) {
+        console.error('Error al remover promoción:', error.message);
+        res.status(500).json({
+            message: 'Error interno al remover promoción.',
+            details: error.message
+        });
+    }
+});
+
+
+
+
+
+
+// ===============================================
+// RUTA PARA OBTENER PRODUCTOS CON PROMOCIONES ACTIVAS
+// ===============================================
+app.get('/api/productos/con-promociones', async (req, res) => {
+    try {
+        const productos = await Product.find({
+            'descuento.activa': true,
+            'active': true
+        }).select('name brand price descuento images');
+
+        res.status(200).json(productos);
+    } catch (error) {
+        console.error('Error al obtener productos con promociones:', error.message);
+        res.status(500).json({
+            message: 'Error interno al obtener productos con promociones.',
+            details: error.message
+        });
+    }
+});
+
+
+
+
+
 
 
 
