@@ -44,15 +44,12 @@
         <div class="modal-content">
             <h3>Información de entrega</h3>
 
-            <!-- Dirección -->
             <label for="direction">Dirección de entrega</label>
             <input id="direction" type="text" name="deliveryAddress" placeholder="Escribe tu dirección completa" required>
 
-            <!-- Correo -->
             <label for="username">Correo electrónico</label>
             <input type="email" id="username" name="username" placeholder="ejemplo@correo.com" required>
 
-            <!-- Teléfono -->
             <label for="number">Número de contacto</label>
             <input type="tel" id="number" maxlength="10" placeholder="10 dígitos" pattern="[0-9]{10}" required>
 
@@ -68,7 +65,7 @@
             <p><strong>Teléfono:</strong> <span id="showTelefono"></span></p>
 
             <button id="yesNotes" class="confirm-btn">Sí</button>
-            <button id="noNotes" class="cancel-btn">No</button>
+            <button id="noNotes" class="cancel-btn">Atrás</button>
         </div>
     </div>
 
@@ -84,6 +81,7 @@
 
             <button id="confirmPayment" class="confirm-btn">Confirmar pago</button>
             <button id="cancelPayment" class="cancel-btn">Cancelar compra</button>
+            <button id="backBtnPayment" class="cancel-btn">Atrás</button> 
         </div>
     </div>
 
@@ -100,8 +98,9 @@
             <h3>¿Los datos son correctos?</h3>
             <p>Número: <span id="showCard"></span></p>
             <p>CVV: <span id="showCVV"></span></p>
+
             <button id="yesCard" class="confirm-btn">Sí</button>
-            <button id="noCard" class="cancel-btn">No</button>
+            <button id="noCard" class="cancel-btn">No (Corregir)</button>
         </div>
     </div>
 

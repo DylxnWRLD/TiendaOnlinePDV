@@ -1686,7 +1686,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
     } = req.body; 
     
     // 3. Crear un cliente Supabase con el token del usuario
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
         global: { headers: { Authorization: `Bearer ${token}` } },
     });
     
