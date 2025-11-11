@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Código de tu compañero (Manejo de estado y botones)
     setupHeaderAndMenu();
-    
+
     // Código de tu compañero (Flechas del carrusel)
     setupCarouselArrows();
 });
@@ -34,7 +34,7 @@ async function cargarProductosDinamicos(searchQuery = "") {
     const carousel1 = document.getElementById('carousel1');
     const carousel2 = document.getElementById('carousel2');
     const productGrid = document.getElementById('product-grid');
-    
+
     if (!carousel1 || !carousel2 || !productGrid) {
         console.error("No se encontraron los contenedores de productos.");
         return;
@@ -48,11 +48,11 @@ async function cargarProductosDinamicos(searchQuery = "") {
     try {
         // 1. Llama a tu backend para "jalar" los datos de MongoDB
         const response = await fetch(`${API_BASE_URL}/api/products?search=${searchQuery}`);
-        
+
         if (!response.ok) {
             throw new Error(`No se pudieron cargar los productos (Error ${response.status})`);
         }
-        
+
         const { items: productos } = await response.json();
 
         // 2. Limpiamos los contenedores
@@ -61,16 +61,16 @@ async function cargarProductosDinamicos(searchQuery = "") {
         productGrid.innerHTML = '';
 
         if (productos.length === 0) {
-             carousel1.innerHTML = '<p style="color: #333; padding: 20px;">No se encontraron productos.</p>';
-             return;
+            carousel1.innerHTML = '<p style="color: #333; padding: 20px;">No se encontraron productos.</p>';
+            return;
         }
 
         // 3. Creamos la "plantilla" HTML dinámicamente
         productos.forEach((producto, index) => {
-            
+
             // Usamos una imagen de placeholder si no existe una
-            const imageUrl = producto.images && producto.images[0] 
-                ? producto.images[0] 
+            const imageUrl = producto.images && producto.images[0]
+                ? producto.images[0]
                 : 'frontend/images/conXbox.jpg'; // Placeholder
 
             // Esta es la plantilla.
@@ -91,7 +91,7 @@ async function cargarProductosDinamicos(searchQuery = "") {
             } else if (index < 10) {
                 carousel2.innerHTML += productHTML;
             } else {
-                productGrid.innerHTML += productHTML; 
+                productGrid.innerHTML += productHTML;
             }
         });
 
@@ -112,6 +112,12 @@ function setupHeaderAndMenu() {
     const searchInput = document.getElementById("search");
     const searchBtn = document.getElementById("searchBtn");
 
+    // ⭐️ NUEVOS ELEMENTOS DEL MENÚ LATERAL ⭐️
+    const sideMenu = document.getElementById("clientSideMenu");
+    const menuOverlay = document.getElementById("menuOverlay");
+    const clientMenuLinks = document.getElementById("clientMenuLinks");
+
+
     // --- Lógica de Sesión (de tu compañero) ---
     const token = sessionStorage.getItem('supabase-token');
     const role = sessionStorage.getItem('user-role');
@@ -121,13 +127,65 @@ function setupHeaderAndMenu() {
         if (loginBtn) {
             loginBtn.textContent = "Mi Cuenta";
             loginBtn.addEventListener("click", () => {
-                window.location.href = "frontend/cliente/cliente.html"; // Ajusta esta ruta
+                // Redirección basada en el rol
+                if (role === 'Cliente') {
+                    // Se asume la existencia de la página cliente.html
+                    window.location.href = "frontend/cliente/cliente.html";
+                } else if (role === 'Admin') {
+                    window.location.href = "frontend/admin/admin.html";
+                } else if (role === 'Cajero') {
+                    window.location.href = "frontend/cajero/apertura_caja.html";
+                } else if (role === 'AdminInventario') {
+                    window.location.href = "frontend/admin_inv/admininv.html";
+                } else if (role === 'Repartidor') {
+                    window.location.href = "frontend/repartidor/repartidor.html";
+                } else {
+                    window.location.href = "frontend/cliente/cliente.html";
+                }
             });
         }
         if (cartBtn) {
             cartBtn.addEventListener("click", () => {
-                window.location.href = "frontend/compraCliente/compra.html"; // Ajusta esta ruta
+                window.location.href = "frontend/compraCliente/compra.html";
             });
+        }
+
+        // ⭐️ Lógica del Menú Hamburguesa (Solo visible y funcional para Cliente) ⭐️
+        if (menuToggle) {
+            if (role === 'Cliente') {
+                menuToggle.style.display = 'block'; // Asegurar que esté visible
+
+                // Función para abrir/cerrar menú
+                const toggleMenu = () => {
+                    if (sideMenu.style.left === '0px') {
+                        sideMenu.style.left = '-250px';
+                        menuOverlay.style.display = 'none';
+                    } else {
+                        sideMenu.style.left = '0px';
+                        menuOverlay.style.display = 'block';
+                    }
+                };
+
+                menuToggle.addEventListener("click", toggleMenu);
+
+                // Clic en el overlay para cerrar el menú
+                menuOverlay.addEventListener("click", toggleMenu);
+
+                // Lógica de los nuevos enlaces del menú
+                clientMenuLinks.addEventListener('click', (e) => {
+                    const action = e.target.getAttribute('data-action');
+                    if (action) {
+                        // Cerrar el menú antes de ejecutar la acción
+                        sideMenu.style.left = '-250px';
+                        menuOverlay.style.display = 'none';
+                        handleClientMenuAction(action);
+                    }
+                });
+            } else {
+                // Ocultar el menú hamburguesa para roles no-cliente
+                menuToggle.style.display = 'none';
+                if (sideMenu) sideMenu.style.display = 'none';
+            }
         }
     } else {
         // --- Usuario NO LOGUEADO ---
@@ -138,17 +196,15 @@ function setupHeaderAndMenu() {
         }
         if (cartBtn) {
             cartBtn.addEventListener("click", () => {
+                // Redirigir al login si intenta comprar sin sesión
                 window.location.href = "frontend/login/login.html";
             });
         }
+        if (menuToggle) {
+            menuToggle.style.display = 'none';
+        }
     }
 
-    if (menuToggle) {
-        menuToggle.addEventListener("click", () => {
-            alert("Abrir menú lateral (por implementar)");
-        });
-    }
-    
     // --- ⭐️ Lógica de Búsqueda (MODIFICADA) ⭐️ ---
     // Ahora la búsqueda llama a la API
     if (searchBtn && searchInput) {
@@ -157,7 +213,7 @@ function setupHeaderAndMenu() {
         });
     }
     if (searchInput) {
-         searchInput.addEventListener("keydown", (e) => {
+        searchInput.addEventListener("keydown", (e) => {
             if (e.key === 'Enter') {
                 cargarProductosDinamicos(searchInput.value);
             }
@@ -165,19 +221,45 @@ function setupHeaderAndMenu() {
     }
 }
 
+// ⭐️ FUNCIÓN: Manejar las acciones del menú del cliente (Nueva) ⭐️
+function handleClientMenuAction(action) {
+    switch (action) {
+        case 'rastreo':
+            // Redirige al buscador de pedidos
+            window.location.href = "frontend/cliente/buscador.html";
+            break;
+        case 'favoritos':
+            alert("Favoritos: Función no implementada aún.");
+            // Aquí iría la lógica de redirección a la página de favoritos
+            break;
+        case 'historial':
+            alert("Historial de Compra: Función no implementada aún.");
+            // Aquí iría la lógica de redirección a la página de historial
+            break;
+        case 'logout':
+            if (confirm("¿Seguro que deseas cerrar sesión?")) {
+                sessionStorage.clear(); // Limpiar todos los datos de sesión
+                // Asegurarse de que el botón de login en el header se vea como "Iniciar sesión"
+                window.location.href = "frontend/login/login.html";
+            }
+            break;
+        default:
+            console.error("Acción de menú desconocida:", action);
+    }
+}
 // ==========================================
 // 🔹 FUNCIONES DEL CARRUSEL (CÓDIGO DE TU COMPAÑERO)
 // ==========================================
 
 function setupCarouselArrows() {
     const arrows = document.querySelectorAll(".arrow");
-    
+
     arrows.forEach(arrow => {
         arrow.addEventListener("click", () => {
             const targetId = arrow.dataset.target;
             const carouselContainer = document.getElementById(targetId);
             if (!carouselContainer) return;
-            const scrollAmount = 300; 
+            const scrollAmount = 300;
 
             if (arrow.classList.contains("left")) {
                 carouselContainer.scrollBy({ left: -scrollAmount, behavior: "smooth" });
@@ -186,7 +268,7 @@ function setupCarouselArrows() {
             }
         });
     });
-    
+
     // Animación continua (de tu compañero)
     setInterval(() => {
         const carousel1 = document.getElementById('carousel1');
@@ -202,7 +284,7 @@ function setupCarouselArrows() {
     // Click en tarjetas (de tu compañero)
     document.querySelectorAll(".product-card a").forEach(card => {
         card.addEventListener("click", (e) => {
-            e.stopPropagation(); 
+            e.stopPropagation();
         });
     });
 }
