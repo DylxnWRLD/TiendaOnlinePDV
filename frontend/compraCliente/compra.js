@@ -118,6 +118,25 @@ const payBtn = document.getElementById("payBtn");
 //const yesNotes = document.getElementById("yesNotes")
 //const noNotes = document.getElementById("noNotes")
 
+// ELEMENTOS PARA LOS DATOS DE ENTREGA
+const directionModal = document.getElementById("directionModal");
+const confirmModal = document.getElementById("confirDatosModal");
+
+// Inputs
+const inputDireccion = document.getElementById("direction");
+const inputCorreo = document.getElementById("username");
+const inputTelefono = document.getElementById("number");
+
+// Contenedores para mostrar los datos
+const showDireccion = document.getElementById("showDireccion");
+const showCorreo = document.getElementById("showCorreo");
+const showTelefono = document.getElementById("showTelefono");
+
+// Botones
+const confirmDatos = document.getElementById("confirmDatos");
+const yesNotes = document.getElementById("yesNotes");
+const noNotes = document.getElementById("noNotes");
+
 // ELEMENTOS DEL METOD DE PAGO
 const paymentModal = document.getElementById("paymentModal");
 const cancelModal = document.getElementById("cancelModal");
@@ -191,7 +210,51 @@ payBtn.addEventListener("click", () => {
         alert("Tu carrito está vacío.");
         return;
     }
-    paymentModal.classList.remove("hidden");
+    directionModal.classList.remove("hidden");
+});
+
+confirmDatos.addEventListener("click", () => {
+    const direccion = inputDireccion.value.trim();
+    const correo = inputCorreo.value.trim();
+    const telefono = inputTelefono.value.trim();
+
+    if (!direccion || !correo || !telefono) {
+        alert("Por favor completa todos los campos.");
+        return;
+    }
+
+    // Validación de correo básico
+    if (!correo.includes("@") || !correo.includes(".")) {
+        alert("Ingresa un correo válido.");
+        return;
+    }
+
+    // Validación de teléfono
+    if (telefono.length !== 10 || isNaN(telefono)) {
+        alert("El número de teléfono debe tener 10 dígitos.");
+        return;
+    }
+
+    // Mostrar datos
+    showDireccion.textContent = direccion;
+    showCorreo.textContent = correo;
+    showTelefono.textContent = telefono;
+
+    // Cambiar modales
+    directionModal.classList.add("hidden");
+    confirmModal.classList.remove("hidden");
+});
+
+// datos correctos → pasar al método de pago
+yesNotes.addEventListener("click", () => {
+    confirmModal.classList.add("hidden");
+    paymentModal.classList.remove("hidden");
+});
+
+// corregir → regresar al modal de dirección
+noNotes.addEventListener("click", () => {
+    confirmModal.classList.add("hidden");
+    directionModal.classList.remove("hidden");
 });
 
 //Mostrar Pantalla de confirmar datos de entrega
@@ -223,6 +286,8 @@ payBtn.addEventListener("click", () => {
 //    confirmModal.classList.add("hidden");
 //    directionModal.classList.remove("hidden");
 //});
+
+
 
 // Cancelar compra (abre confirmación)
 cancelPayment.addEventListener("click", () => {

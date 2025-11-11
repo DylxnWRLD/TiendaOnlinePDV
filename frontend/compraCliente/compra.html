@@ -42,12 +42,20 @@
 
     <div id="directionModal" class="modal hidden">
         <div class="modal-content">
-            <h3>Informacion de entrega</h3>
+            <h3>Información de entrega</h3>
 
-            <label><input id="direction" type="text" name="directionMethos" value="Direccion">DIreccion del entrega</label><br>
-            <label for="username"><input type="text" id="username" name="username" required>Correo Electronico</label>
-            <label><input type="text" id="number" maxlength="10" placeholder="Digita tu numero de telefono" >Numero de contacto</label>
-            
+            <!-- Dirección -->
+            <label for="direction">Dirección de entrega</label>
+            <input id="direction" type="text" name="deliveryAddress" placeholder="Escribe tu dirección completa" required>
+
+            <!-- Correo -->
+            <label for="username">Correo electrónico</label>
+            <input type="email" id="username" name="username" placeholder="ejemplo@correo.com" required>
+
+            <!-- Teléfono -->
+            <label for="number">Número de contacto</label>
+            <input type="tel" id="number" maxlength="10" placeholder="10 dígitos" pattern="[0-9]{10}" required>
+
             <button id="confirmDatos" class="confirm-btn">Confirmar datos</button>
         </div>
     </div>
@@ -55,9 +63,10 @@
     <div id="confirDatosModal" class="modal hidden">
         <div class="modal-content">
             <h3>¿Los datos son correctos?</h3>
-            <p>Direccion: <span id="showDireccion"></span></p>
-            <p>Correo: <span id="showCorreo"></span></p>
-            <p>Telefono<span id="showTelefono"></span></p>
+            <p><strong>Dirección:</strong> <span id="showDireccion"></span></p>
+            <p><strong>Correo:</strong> <span id="showCorreo"></span></p>
+            <p><strong>Teléfono:</strong> <span id="showTelefono"></span></p>
+
             <button id="yesNotes" class="confirm-btn">Sí</button>
             <button id="noNotes" class="cancel-btn">No</button>
         </div>
