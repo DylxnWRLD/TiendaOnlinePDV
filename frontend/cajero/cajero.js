@@ -189,7 +189,7 @@ async function agregarProducto(productoMongo) {
             descuentoAplicado = promocionInfo.valor;
         }
         precioFinal = Math.max(0, productoMongo.price - descuentoAplicado);
-
+    }
     if (index > -1) {
         if (ventaActual.productos[index].cantidad + 1 > stockDisponible) {
             alert(`⚠️ Stock insuficiente. Solo quedan ${stockDisponible} unidades de ${productoMongo.name}.`);
@@ -720,4 +720,4 @@ function setupEventListeners() {
         }
     });
 }
-}
+
