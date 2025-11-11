@@ -664,7 +664,7 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
 app.get('/api/promociones/producto/:idProducto', async (req, res) => {
     try {
         const { idProducto } = req.params;
-        const producto = await Producto.findById(idProducto);
+        const producto = await Product.findById(idProducto);
 
         if (!producto) {
             return res.status(404).json({ message: 'Producto no encontrado' });
@@ -679,7 +679,7 @@ app.get('/api/promociones/producto/:idProducto', async (req, res) => {
             });
         }
 
-        return res.json({ activa: false});
+        return res.json({ activa: false, message: 'No hay promociones activas para este producto.' });
     } catch (err) {
         console.error('Error obteniendo promoción:', err);
         res.status(500).json({ error: 'Error al obtener promoción.' });
