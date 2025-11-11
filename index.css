@@ -23,7 +23,20 @@
 }
 
 body {
-  background-color: var(--color-fondo);
+  /* 1. Color de fondo base (blanco) para el final de la página */
+  background-color: var(--color-superficie);
+
+  /* 2. Imagen de fondo (el degradado) */
+  background-image: linear-gradient(
+    to bottom, /* De arriba hacia abajo */
+    var(--color-primario-oscuro), /* Color inicial (el del header) */
+    var(--color-superficie) 80vh  /* Color final (blanco, alcanzado al 80% de la altura de la pantalla) */
+  );
+
+  /* 3. Evita que el degradado se repita */
+  background-repeat: no-repeat;
+  
+  /* 4. Mantenemos el color de texto por defecto */
   color: var(--color-texto-principal);
 }
 
@@ -409,4 +422,3 @@ body {
     font-size: 1.4rem;
   }
 }
-
