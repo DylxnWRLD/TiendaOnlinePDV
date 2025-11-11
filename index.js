@@ -17,13 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Código de tu compañero (Manejo de estado y botones)
     setupHeaderAndMenu();
-
+    
     // Código de tu compañero (Flechas del carrusel)
     setupCarouselArrows();
 });
 
 // ==========================================
-// 🔹 LÓGICA DE CARGA DE PRODUCTOS
+// 🔹 LÓGICA DE CARGA DE PRODUCTOS (NUEVO)
 // ==========================================
 
 /**
@@ -34,63 +34,64 @@ async function cargarProductosDinamicos(searchQuery = "") {
     const carousel1 = document.getElementById('carousel1');
     const carousel2 = document.getElementById('carousel2');
     const productGrid = document.getElementById('product-grid');
-
-    if (!carousel1 || !carousel2) {
-        console.error("No se encontraron los contenedores de carrusel.");
+    
+    if (!carousel1 || !carousel2 || !productGrid) {
+        console.error("No se encontraron los contenedores de productos.");
         return;
     }
 
     // Mostrar un "cargando..."
     carousel1.innerHTML = '<p style="color: #333; padding: 20px;">Cargando productos...</p>';
     carousel2.innerHTML = '';
-    if (productGrid) productGrid.innerHTML = '';
+    productGrid.innerHTML = '';
 
     try {
         // 1. Llama a tu backend para "jalar" los datos de MongoDB
         const response = await fetch(`${API_BASE_URL}/api/products?search=${searchQuery}`);
-
+        
         if (!response.ok) {
             throw new Error(`No se pudieron cargar los productos (Error ${response.status})`);
         }
-
+        
         const { items: productos } = await response.json();
 
         // 2. Limpiamos los contenedores
         carousel1.innerHTML = '';
         carousel2.innerHTML = '';
-        if (productGrid) productGrid.innerHTML = '';
+        productGrid.innerHTML = '';
 
         if (productos.length === 0) {
-            carousel1.innerHTML = '<p style="color: #333; padding: 20px;">No se encontraron productos.</p>';
-            return;
+             carousel1.innerHTML = '<p style="color: #333; padding: 20px;">No se encontraron productos.</p>';
+             return;
         }
 
         // 3. Creamos la "plantilla" HTML dinámicamente
         productos.forEach((producto, index) => {
-
+            
             // Usamos una imagen de placeholder si no existe una
-            const imageUrl = producto.images && producto.images[0]
-                ? producto.images[0]
+            const imageUrl = producto.images && producto.images[0] 
+                ? producto.images[0] 
                 : 'frontend/images/conXbox.jpg'; // Placeholder
 
-            // Esta es la plantilla. Usamos product_detail.html
+            // Esta es la plantilla.
             const productHTML = `
-            <a href="frontend/productos/product_detail.html?id=${producto._id}" class="product-link">
-            <div class="product-card">
-            <img src="${imageUrl}" alt="${producto.name}" />
-            <p>${producto.name}</p>
-            <p class="precio">$${producto.price.toFixed(2)}</p>
-            </div>
-            </a>
-            `;
+                <!-- ⭐️ CADA TARJETA ES UN ENLACE A LA PÁGINA DE DETALLE ⭐️ -->
+                <a href="frontend/productos/product_detail.html?id=${producto._id}" class="product-link">
+                    <div class="product-card">
+                        <img src="${imageUrl}" alt="${producto.name}" />
+                        <p>${producto.name}</p>
+                        <p class="precio">$${producto.price.toFixed(2)}</p>
+                    </div>
+                </a>
+            `;
 
             // Dividimos los productos entre los diferentes contenedores
             if (index < 5) {
                 carousel1.innerHTML += productHTML;
             } else if (index < 10) {
                 carousel2.innerHTML += productHTML;
-            } else if (productGrid) {
-                productGrid.innerHTML += productHTML;
+            } else {
+                productGrid.innerHTML += productHTML; 
             }
         });
 
@@ -101,72 +102,36 @@ async function cargarProductosDinamicos(searchQuery = "") {
 }
 
 // ==========================================
-// 🔹 FUNCIONES DE BOTONES Y MENÚ (UNIFICADO)
+// 🔹 FUNCIONES DE BOTONES (CÓDIGO DE TU COMPAÑERO MEJORADO)
 // ==========================================
 
 function setupHeaderAndMenu() {
     const loginBtn = document.getElementById("loginBtn");
     const cartBtn = document.getElementById("cartBtn");
     const menuToggle = document.getElementById("menuToggle");
-    const sidebarMenu = document.getElementById("sidebarMenu");
-    const closeMenu = document.getElementById("closeMenu");
     const searchInput = document.getElementById("search");
     const searchBtn = document.getElementById("searchBtn");
 
-    // --- Elementos del Menú Lateral ---
-    const menuCerrarSesion = document.getElementById("menuCerrarSesion");
-    const userSpecificItems = document.querySelectorAll('.menu-item.user-specific');
-    const itemsToRemove = document.querySelectorAll('.category-to-remove');
+    // --- Lógica de Sesión (de tu compañero) ---
+    const token = sessionStorage.getItem('supabase-token');
+    const role = sessionStorage.getItem('user-role');
 
-    // --- Lógica de Sesión (usando localStorage) ---
-    const token = localStorage.getItem('supabase-token');
-    const role = localStorage.getItem('user-role');
-    const isLoggedIn = !!token;
-
-
-    // 1. LÓGICA DE VISIBILIDAD DE ENLACES Y BOTÓN HAMBURGUESA
-
-    if (menuToggle) {
-        if (!isLoggedIn) {
-            // ⭐️ FIX VISIBILIDAD 1: Ocultar el ícono de hamburguesa si no está logeado ⭐️
-            menuToggle.style.display = 'none';
-        } else {
-            menuToggle.style.display = 'block';
-        }
-    }
-
-    // Ocultar los ítems "Videojuegos" y "Consolas"
-    itemsToRemove.forEach(item => {
-        item.style.display = 'none';
-    });
-
-
-    // Mostrar/Ocultar: Favoritos, Historial, Cerrar Sesión (Elementos user-specific)
-    userSpecificItems.forEach(item => {
-        if (isLoggedIn) {
-            item.classList.remove('hidden');
-        } else {
-            item.classList.add('hidden');
-        }
-    });
-
-
-    // 2. LÓGICA DE BOTONES DEL HEADER
-    if (isLoggedIn) {
+    if (token && role) {
+        // --- Usuario LOGUEADO ---
         if (loginBtn) {
             loginBtn.textContent = "Mi Cuenta";
             loginBtn.addEventListener("click", () => {
-                window.location.href = "frontend/cliente/cliente.html";
+                window.location.href = "frontend/cliente/cliente.html"; // Ajusta esta ruta
             });
         }
         if (cartBtn) {
             cartBtn.addEventListener("click", () => {
-                window.location.href = "frontend/compraCliente/compra.html";
+                window.location.href = "frontend/compraCliente/compra.html"; // Ajusta esta ruta
             });
         }
     } else {
+        // --- Usuario NO LOGUEADO ---
         if (loginBtn) {
-            loginBtn.textContent = "Iniciar sesión";
             loginBtn.addEventListener("click", () => {
                 window.location.href = "frontend/login/login.html";
             });
@@ -178,51 +143,21 @@ function setupHeaderAndMenu() {
         }
     }
 
-
-    // 3. LÓGICA DEL SIDEBAR (TOGGLE Y CERRAR SESIÓN)
-    if (menuToggle && sidebarMenu && closeMenu) {
-
-        // ⭐️ TOGGLE: Al presionar hamburguesa, abre o cierra ⭐️
+    if (menuToggle) {
         menuToggle.addEventListener("click", () => {
-            // Solo hacemos toggle si el menú es visible (ya que el CSS lo oculta, este chequeo es de seguridad)
-            if (menuToggle.style.display !== 'none') {
-                sidebarMenu.classList.toggle("open");
-            }
-        });
-
-        // Cierre con la 'X'
-        closeMenu.addEventListener("click", () => {
-            sidebarMenu.classList.remove("open");
-        });
-
-        // Lógica de Cerrar Sesión
-        if (menuCerrarSesion) {
-            menuCerrarSesion.addEventListener("click", (e) => {
-                e.preventDefault();
-
-                if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                    localStorage.removeItem('supabase-token');
-                    localStorage.removeItem('user-role');
-                    localStorage.removeItem('currentCorteId');
-                    window.location.href = 'index.html';
-                }
-            });
-        }
-    } else if (menuToggle) {
-        // Fallback si no se encuentra el sidebar
-        menuToggle.addEventListener("click", () => {
-            alert("Aquí podría abrir un menú lateral 🧭");
+            alert("Abrir menú lateral (por implementar)");
         });
     }
-
-    // --- Lógica de Búsqueda (MODIFICADA) ---
+    
+    // --- ⭐️ Lógica de Búsqueda (MODIFICADA) ⭐️ ---
+    // Ahora la búsqueda llama a la API
     if (searchBtn && searchInput) {
         searchBtn.addEventListener("click", () => {
             cargarProductosDinamicos(searchInput.value);
         });
     }
     if (searchInput) {
-        searchInput.addEventListener("keydown", (e) => {
+         searchInput.addEventListener("keydown", (e) => {
             if (e.key === 'Enter') {
                 cargarProductosDinamicos(searchInput.value);
             }
@@ -231,18 +166,18 @@ function setupHeaderAndMenu() {
 }
 
 // ==========================================
-// 🔹 FUNCIONES DEL CARRUSEL
+// 🔹 FUNCIONES DEL CARRUSEL (CÓDIGO DE TU COMPAÑERO)
 // ==========================================
 
 function setupCarouselArrows() {
     const arrows = document.querySelectorAll(".arrow");
-
+    
     arrows.forEach(arrow => {
         arrow.addEventListener("click", () => {
             const targetId = arrow.dataset.target;
             const carouselContainer = document.getElementById(targetId);
             if (!carouselContainer) return;
-            const scrollAmount = 300;
+            const scrollAmount = 300; 
 
             if (arrow.classList.contains("left")) {
                 carouselContainer.scrollBy({ left: -scrollAmount, behavior: "smooth" });
@@ -251,7 +186,7 @@ function setupCarouselArrows() {
             }
         });
     });
-
+    
     // Animación continua (de tu compañero)
     setInterval(() => {
         const carousel1 = document.getElementById('carousel1');
@@ -267,7 +202,7 @@ function setupCarouselArrows() {
     // Click en tarjetas (de tu compañero)
     document.querySelectorAll(".product-card a").forEach(card => {
         card.addEventListener("click", (e) => {
-            e.stopPropagation();
+            e.stopPropagation(); 
         });
     });
 }
