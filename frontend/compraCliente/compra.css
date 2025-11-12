@@ -280,3 +280,29 @@ body {
 #confirmCardModal .modal-content {
   width: 300px;
 }
+
+/* ==========================================================
+   ⭐️ NUEVOS ESTILOS PARA POSICIONAR BOTONES DE RETROCESO ⭐️
+   ========================================================== */
+
+/* 1. Establecer el contexto de posicionamiento para los botones absolutos */
+.modal-content {
+    position: relative;
+    padding: 35px 25px 25px 25px; 
+}
+
+/* 2. Estilo para los botones de regreso/cancelación en la esquina superior izquierda */
+.top-left-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: auto;
+    padding: 5px 10px; 
+    font-size: 0.8rem;
+    background: #56565a;
+    color: white;
+}
+
+.top-left-btn:hover {
+    background: #77777a;
+}

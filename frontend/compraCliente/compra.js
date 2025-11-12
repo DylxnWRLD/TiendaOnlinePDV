@@ -162,7 +162,7 @@ function renderCarrito() {
 
     let total = subtotal - descuento;
 
-    subtotalEl.textContent = subtotal.toFixed(2);
+    subtotalEl.textContent = total.toFixed(2); // Corregido: total en vez de subtotal
     discountEl.textContent = descuento.toFixed(2);
     totalEl.textContent = total.toFixed(2);
     return total;
@@ -281,6 +281,14 @@ document.getElementById("payBtn").addEventListener("click", () => {
     if (carrito.length === 0) { alert("Tu carrito está vacío."); return; }
     document.getElementById("directionModal").classList.remove("hidden");
 });
+
+// ⭐️ NUEVO LISTENER: Botón "Cancelar compra" en Modal 1 (Dirección) ⭐️
+if (document.getElementById("cancelDatos")) {
+    document.getElementById("cancelDatos").addEventListener("click", () => {
+        directionModal.classList.add("hidden");
+        document.getElementById("cancelModal").classList.remove("hidden");
+    });
+}
 
 // Listener: Botón "Confirmar datos" (Modal 1 -> Modal 2)
 confirmDatos.addEventListener("click", () => {
@@ -409,11 +417,11 @@ document.getElementById("noCancel").addEventListener("click", () => {
 
 
 // -------------------------------------------------------------------------
-// 🚀 INICIALIZACIÓN (Añadido fetchClienteData) ⭐️
+// 🚀 INICIALIZACIÓN 
 // -------------------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
     renderCarrito();
-    fetchClienteData(); // ⭐️ Llama a la función para precargar datos ⭐️
+    fetchClienteData(); 
 });
