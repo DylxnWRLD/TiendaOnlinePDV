@@ -975,13 +975,6 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
     }
 });
 
-
-
-
-
-
-
-
 // ===============================================
 // RUTA PARA REMOVER PROMOCIONES DE PRODUCTOS
 // ===============================================

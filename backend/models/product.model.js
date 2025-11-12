@@ -17,7 +17,8 @@ const productSchema = new mongoose.Schema({
         tipo_descuento: { type: String, enum: ['PORCENTAJE', 'MONTO'], default: null },
         valor: { type: Number, default: null },
         nombre_promo: { type: String, default: null },
-        activa: { type: Boolean, default: false }
+        activa: { type: Boolean, default: false },
+        id_promocion_supabase: { type: Number, default: null}
     },
 
     
