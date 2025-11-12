@@ -224,13 +224,7 @@ main {
     margin-bottom: 10px;
 }
 
-/* Título secundario (Inicio de Sesión / Crear Cuenta) */
-.login-title {
-    font-weight: 600;
-    font-size: 1.5rem;
-    color: var(--color-texto-principal);
-    margin-bottom: 30px;
-}
+
 
 .login-form {
     text-align: left;
