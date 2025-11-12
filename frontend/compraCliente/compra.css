@@ -172,6 +172,7 @@ body {
   align-items: center;
 }
 
+/* Estilo general (ancho 280px) - Sobrescrito por el siguiente */
 .modal-content {
   background: white;
   padding: 20px;
@@ -202,17 +203,20 @@ body {
   color: white;
 }
 
-/* ============================
-   ESTILOS PARA MODAL DE PAGO
-============================ */
+/* ==========================================================
+   ESTILOS DE MODAL CORREGIDOS (Ajustes para ancho 320px y padding)
+========================================================== */
 
 .modal-content {
   background: #ffffff;
-  padding: 25px;
   border-radius: 10px;
   width: 320px;
   text-align: center;
   animation: popup 0.2s ease-out;
+
+  /* ⭐️ CORRECCIÓN CLAVE: Agrega position: relative y el padding aumentado ⭐️ */
+  position: relative; 
+  padding: 45px 25px 25px 25px; /* 45px superior para hacer espacio al botón top-left */
 }
 
 /* Animación de aparición */
@@ -282,27 +286,21 @@ body {
 }
 
 /* ==========================================================
-   ⭐️ NUEVOS ESTILOS PARA POSICIONAR BOTONES DE RETROCESO ⭐️
+   ⭐️ ESTILOS PARA POSICIONAR BOTONES DE RETROCESO ⭐️
    ========================================================== */
 
-/* 1. Establecer el contexto de posicionamiento para los botones absolutos */
-.modal-content {
-    position: relative;
-    padding: 35px 25px 25px 25px; 
-}
-
-/* 2. Estilo para los botones de regreso/cancelación en la esquina superior izquierda */
 .top-left-btn {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: auto;
-    padding: 5px 10px; 
-    font-size: 0.8rem;
-    background: #56565a;
-    color: white;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: auto;
+  padding: 5px 10px; 
+  font-size: 0.8rem;
+  background: #56565a;
+  color: white;
+  z-index: 10; /* Asegura que esté por encima de cualquier otro elemento */
 }
 
 .top-left-btn:hover {
-    background: #77777a;
+  background: #77777a;
 }
