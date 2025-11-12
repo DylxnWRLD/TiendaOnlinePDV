@@ -373,6 +373,100 @@ app.get('/api/products/:id', async (req, res) => {
     }
 });
 
+// ===============================================
+// ⭐️ NUEVO: RUTAS DE COMENTARIOS DE PRODUCTOS
+// ===============================================
+
+/**
+ * RUTA: GET /api/products/:id/comments
+ * Objetivo: Obtener todos los comentarios para un producto específico.
+ * Es pública, cualquiera puede leer los comentarios.
+ */
+app.get('/api/products/:id/comments', async (req, res) => {
+    const productId = req.params.id; // Este es el ID de Mongo
+    console.log(`[Comentarios] Petición GET para producto: ${productId}`);
+
+    try {
+        // Hacemos un JOIN para obtener el correo del cliente desde la tabla 'cliente_online'
+        const { data, error } = await supabase
+            .from('comentarios_producto')
+            .select(`
+                id_comentario,
+                comentario,
+                created_at,
+                cliente_online (
+                    correo 
+                )
+            `)
+            .eq('id_producto_mongo', productId)
+            .order('created_at', { ascending: false }); // Mostrar más nuevos primero
+
+        if (error) {
+            console.error('Error de Supabase al obtener comentarios:', error.message);
+            throw error;
+        }
+
+        res.status(200).json(data);
+
+    } catch (error) {
+        console.error('Error al obtener comentarios:', error.message);
+        res.status(500).json({ message: 'Error al cargar comentarios.' });
+    }
+});
+
+/**
+ * RUTA: POST /api/products/:id/comments
+ * Objetivo: Publicar un nuevo comentario.
+ * Está protegida y requiere que el usuario esté logueado.
+ */
+app.post('/api/products/:id/comments', getUserIdFromToken, async (req, res) => {
+    const id_producto_mongo = req.params.id;
+    const id_usuario_auth = req.userId; // ID del token (de auth.users)
+    const { comentario } = req.body;
+
+    if (!comentario || comentario.trim() === '') {
+        return res.status(400).json({ message: 'El comentario no puede estar vacío.' });
+    }
+
+    try {
+        // 1. Encontrar el 'id_cliente' (PK de cliente_online) usando el 'id_usuario' (de auth)
+        // Esto es necesario porque tu tabla 'comentarios_producto' se relaciona con 'cliente_online'.
+        const { data: cliente, error: clienteError } = await supabase
+            .from('cliente_online')
+            .select('id_cliente') // El Primary Key de cliente_online
+            .eq('id_usuario', id_usuario_auth) // El Foreign Key a auth.users
+            .single();
+
+        if (clienteError || !cliente) {
+            console.error('Intento de comentar sin perfil de cliente (quizás no ha comprado):', id_usuario_auth, clienteError?.message);
+            return res.status(403).json({ message: 'No se encontró tu perfil de cliente. Debes haber realizado una compra para poder comentar.' });
+        }
+
+        // 2. Ahora sí, insertar el comentario con el 'id_cliente' correcto
+        const { data: newComment, error: insertError } = await supabase
+            .from('comentarios_producto')
+            .insert({
+                id_cliente: cliente.id_cliente, // Usamos el PK de cliente_online
+                id_producto_mongo: id_producto_mongo,
+                comentario: comentario
+            })
+            .select() // Devolvemos el comentario recién creado
+            .single();
+
+        if (insertError) {
+            console.error('Error de Supabase al insertar comentario:', insertError.message);
+            throw insertError;
+        }
+
+        // 3. Devolvemos el nuevo comentario (para añadirlo a la UI si queremos)
+        res.status(201).json(newComment);
+
+    } catch (error) {
+        console.error('Error al publicar comentario:', error.message);
+        res.status(500).json({ message: 'Error interno al guardar el comentario.' });
+    }
+});
+
 // Ruta de LOGIN PRINCIPAL
 app.post('/api/login', async (req, res) => {
     console.log('¡Petición de Login Recibida!');
