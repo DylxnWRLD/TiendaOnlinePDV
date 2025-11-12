@@ -11,41 +11,6 @@ const multer = require('multer');
 const storage = multer.memoryStorage(); // Guarda el archivo en la RAM temporalmente
 const upload = multer({ storage: storage });
 
-// ===============================================
-// Catálogos y búsqueda para UI de promociones
-// ===============================================
-app.get('/api/products/distinct/brands', authenticateAdmin, async (req, res) => {
-    try {
-        const brands = await Product.distinct('brand', { brand: { $ne: null, $ne: '' } });
-        res.status(200).json(brands.sort());
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener marcas', details: error.message });
-    }
-});
-
-app.get('/api/products/distinct/categories', authenticateAdmin, async (req, res) => {
-    try {
-        const categories = await Product.distinct('category', { category: { $ne: null, $ne: '' } });
-        res.status(200).json(categories.sort());
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener categorías', details: error.message });
-    }
-});
-
-app.get('/api/products/search', authenticateAdmin, async (req, res) => {
-    try {
-        const q = (req.query.q || '').trim();
-        if (!q) return res.status(200).json([]);
-        const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        const items = await Product.find({ $or: [ { name: { $regex: regex } }, { sku: { $regex: regex } } ] })
-            .limit(20)
-            .select('name sku');
-        const results = items.map(p => ({ id: p._id.toString(), name: p.name, sku: p.sku }));
-        res.status(200).json(results);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al buscar productos', details: error.message });
-    }
-});
 
 // ⭐️ SE ELIMINÓ: const cajeroRoutes = require('./routes/cajeroRoutes');
 // Importar dotenv y cargar las variables de entorno
@@ -1286,6 +1251,53 @@ async function removePromocionFromMongoDB(idPromocion) {
         throw error;
     }
 }
+
+
+
+
+
+
+// ===============================================
+// Catálogos y búsqueda para UI de promociones
+// ===============================================
+app.get('/api/products/distinct/brands', authenticateAdmin, async (req, res) => {
+    try {
+        const brands = await Product.distinct('brand', { brand: { $ne: null, $ne: '' } });
+        res.status(200).json(brands.sort());
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener marcas', details: error.message });
+    }
+});
+
+app.get('/api/products/distinct/categories', authenticateAdmin, async (req, res) => {
+    try {
+        const categories = await Product.distinct('category', { category: { $ne: null, $ne: '' } });
+        res.status(200).json(categories.sort());
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener categorías', details: error.message });
+    }
+});
+
+app.get('/api/products/search', authenticateAdmin, async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        if (!q) return res.status(200).json([]);
+        const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        const items = await Product.find({ $or: [ { name: { $regex: regex } }, { sku: { $regex: regex } } ] })
+            .limit(20)
+            .select('name sku');
+        const results = items.map(p => ({ id: p._id.toString(), name: p.name, sku: p.sku }));
+        res.status(200).json(results);
+    } catch (error) {
+        res.status(500).json({ message: 'Error al buscar productos', details: error.message });
+    }
+});
+
+
+
+
+
+
 
 // ===============================================
 // NUEVO: RUTA DE REPORTE DE VENTAS (DINÁMICO)
