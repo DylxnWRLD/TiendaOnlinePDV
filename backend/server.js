@@ -2121,3 +2121,5 @@ app.listen(port, '0.0.0.0', () => {
 
 // Exportaciones
 module.exports = { app, supabase, traducirErrorSupabase, authenticateAdmin, getUserIdFromToken };
+
+//

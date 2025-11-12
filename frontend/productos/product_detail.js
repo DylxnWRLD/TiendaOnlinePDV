@@ -304,7 +304,7 @@ function renderComments(comments) {
     }
 
     comments.forEach(comment => {
-        const author = comment.cliente_online?.correo || 'Usuario verificado';
+        const author = comment.cliente_online?.correo;
         
         const date = formatDate(comment.created_at); 
 
