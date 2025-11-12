@@ -172,6 +172,7 @@ body {
   align-items: center;
 }
 
+/* Estilo general (ancho 280px) - Sobrescrito por el siguiente */
 .modal-content {
   background: white;
   padding: 20px;
@@ -202,17 +203,20 @@ body {
   color: white;
 }
 
-/* ============================
-   ESTILOS PARA MODAL DE PAGO
-============================ */
+/* ==========================================================
+   ESTILOS DE MODAL CORREGIDOS (Ajustes para ancho 320px y padding)
+========================================================== */
 
 .modal-content {
   background: #ffffff;
-  padding: 25px;
   border-radius: 10px;
   width: 320px;
   text-align: center;
   animation: popup 0.2s ease-out;
+
+  /* ⭐️ CORRECCIÓN CLAVE: Agrega position: relative y el padding aumentado ⭐️ */
+  position: relative; 
+  padding: 45px 25px 25px 25px; /* 45px superior para hacer espacio al botón top-left */
 }
 
 /* Animación de aparición */
@@ -279,4 +283,24 @@ body {
 /* Modal de confirmación de tarjeta */
 #confirmCardModal .modal-content {
   width: 300px;
+}
+
+/* ==========================================================
+   ⭐️ ESTILOS PARA POSICIONAR BOTONES DE RETROCESO ⭐️
+   ========================================================== */
+
+.top-left-btn {
+  position: absolute;
+  top: 5px; /* Ajustado: 10px -> 5px */
+  left: 5px; /* Ajustado: 10px -> 5px */
+  width: auto;
+  padding: 5px 10px; 
+  font-size: 0.8rem;
+  background: #eb0808;
+  color: white;
+  z-index: 10;
+}
+
+.top-left-btn:hover {
+  background: #77777a;
 }

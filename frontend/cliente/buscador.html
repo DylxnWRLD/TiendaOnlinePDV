@@ -157,73 +157,25 @@
     </div>
 
     <script>
+        // La lógica del antiguo seguimiento.js, ahora solo maneja la redirección
+        document.getElementById('buscadorForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pedidoId = document.getElementById('pedidoId').value.trim();
+            if (pedidoId) {
+                // Redirige a la página de detalle, pasando el ID
+                window.location.href = `seguimiento-detalle.html?id=${pedidoId}`;
+            } else {
+                document.getElementById('mensaje-error').textContent = 'Por favor, ingresa un ID de pedido.';
+            }
+        });
+
+        // Maneja la redirección directa si el ID viene de la pantalla de compra
         document.addEventListener('DOMContentLoaded', () => {
-
-            // --- Lógica de Búsqueda de Pedido (Ya existente) ---
-            document.getElementById('buscadorForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const pedidoId = document.getElementById('pedidoId').value.trim();
-                if (pedidoId) {
-                    // Redirige a la página de detalle, pasando el ID
-                    window.location.href = `seguimiento-detalle.html?id=${pedidoId}`;
-                } else {
-                    document.getElementById('mensaje-error').textContent = 'Por favor, ingresa un ID de pedido.';
-                }
-            });
-
-            // Maneja la redirección directa si el ID viene de la pantalla de compra
             const urlParams = new URLSearchParams(window.location.search);
             const idFromUrl = urlParams.get('id');
             if (idFromUrl) {
+                // Si el ID ya viene de la pantalla de compra, redirige directamente al detalle
                 window.location.href = `seguimiento-detalle.html?id=${idFromUrl}`;
-            }
-            // --- Fin Lógica de Búsqueda ---
-
-
-            // ⭐️ LÓGICA DE REDIRECCIÓN EXCLUSIVA PARA CLIENTES Y NO LOGEADOS ⭐️
-            const btnInicio = document.getElementById('btnVolverInicio');
-            if (btnInicio) {
-                btnInicio.addEventListener('click', () => {
-                    const userRole = localStorage.getItem('user-role');
-                    const token = localStorage.getItem('supabase-token');
-
-                    // Si NO está logeado O si el rol es 'Cliente', redirigir al inicio público.
-                    if (!token || userRole === 'Cliente') {
-                        window.location.href = '../../index.html';
-                        return;
-                    }
-
-                    // Si está logeado y el rol NO es 'Cliente' (es decir, es privilegiado),
-                    // lo devolvemos a su panel seguro.
-                    if (token && userRole) {
-                        let redirectPath = '';
-
-                        // Las rutas son relativas a frontend/cliente/
-                        switch (userRole) {
-                            case 'Admin':
-                                redirectPath = '../admin/admin.html';
-                                break;
-                            case 'Cajero':
-                                // Cajero debe ir a la pantalla de apertura/caja
-                                redirectPath = '../cajero/apertura_caja.html';
-                                break;
-                            case 'AdminInventario':
-                                redirectPath = '../admin_inv/admininv.html';
-                                break;
-                            case 'Repartidor':
-                                redirectPath = '../repartidor/repartidor.html';
-                                break;
-                            default:
-                                // Rol desconocido pero logeado: enviar a la página principal pública por seguridad
-                                redirectPath = '../../index.html';
-                                break;
-                        }
-                        window.location.href = redirectPath;
-                    } else {
-                        // Doble verificación: si por alguna razón falló el chequeo superior
-                        window.location.href = '../../index.html';
-                    }
-                });
             }
         });
     </script>

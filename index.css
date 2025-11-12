@@ -23,7 +23,20 @@
 }
 
 body {
-  background-color: var(--color-fondo);
+  /* 1. Color de fondo base (blanco) para el final de la página */
+  background-color: var(--color-superficie);
+
+  /* 2. Imagen de fondo (el degradado) */
+  background-image: linear-gradient(
+    to bottom, /* De arriba hacia abajo */
+    var(--color-primario-oscuro), /* Color inicial (el del header) */
+    var(--color-superficie) 80vh  /* Color final (blanco, alcanzado al 80% de la altura de la pantalla) */
+  );
+
+  /* 3. Evita que el degradado se repita */
+  background-repeat: no-repeat;
+  
+  /* 4. Mantenemos el color de texto por defecto */
   color: var(--color-texto-principal);
 }
 
@@ -408,84 +421,4 @@ body {
   .promo-box h2 {
     font-size: 1.4rem;
   }
-}
-
-/* ======================================= */
-/* NUEVOS ESTILOS: SIDEBAR HAMBURGUESA */
-/* ======================================= */
-
-.sidebar {
-  height: 100%;
-  width: 0;
-  /* Inicialmente oculto */
-  position: fixed;
-  z-index: 1000;
-  /* Asegura que esté por encima de todo */
-  top: 0;
-  left: 0;
-  background-color: #2c3e50;
-  /* Color oscuro para el menú */
-  overflow-x: hidden;
-  transition: 0.5s;
-  padding-top: 60px;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar.open {
-  width: 250px;
-  /* Ancho cuando está abierto */
-}
-
-.close-btn {
-  position: absolute;
-  top: 0;
-  right: 25px;
-  font-size: 36px;
-  margin-left: 50px;
-  color: #f1f1f1;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.menu-title {
-  padding: 8px 8px 8px 24px;
-  font-size: 1.5rem;
-  color: #ffdfde;
-  /* Color de acento */
-  margin-bottom: 10px;
-}
-
-.menu-item {
-  padding: 10px 15px;
-  text-decoration: none;
-  font-size: 1.1rem;
-  color: #e0e0e0;
-  display: block;
-  transition: 0.3s;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.menu-item i {
-  margin-right: 10px;
-}
-
-.menu-item:hover {
-  color: white;
-  background-color: #3e5368;
-}
-
-.menu-footer {
-  margin-top: auto;
-  /* Empuja el footer hacia abajo */
-  padding: 20px 15px;
-  text-align: center;
-  font-size: 0.8rem;
-  color: #888;
-}
-
-/* Estilo para ocultar enlaces si el usuario no está logeado (manejado en JS) */
-.menu-item.hidden {
-  display: none !important;
 }

@@ -83,15 +83,6 @@ class HttpAdapter {
     if (!r.ok) throw new Error("Error eliminando");
     return { ok: true };
   }
-  async adjust({ productId, type, quantity, reason }) {
-    // Usa backticks (`) y quita credentials
-    const r = await fetch(`${RENDER_SERVER_URL}/api/stock/adjust`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, type, quantity, reason })
-    });
-    if (!r.ok) throw new Error((await r.json()).message || "Error de ajuste");
-    return r.json();
-  }
 
   // Obtener productos con stock bajo ⭐️
   async getLowStock() {
@@ -200,9 +191,6 @@ const el = {
   form: $("#form"),
   formTitle: $("#formTitle"),
   save: $("#save"),
-  modalStock: $("#modalStock"),
-  formAdjust: $("#formAdjust"),
-  applyAdjust: $("#applyAdjust"),
 };
 
 function updateLast() {
@@ -236,7 +224,6 @@ function renderRows(list) {
       <td>
         <div class="row-actions">
           <button class="btn" data-edit="${p._id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn" data-adj="${p._id}" title="Ajustar stock"><i class="fa-solid fa-arrow-up-right-dots"></i></button>
           <button class="btn btn--danger" data-del="${p._id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
         </div>
       </td>
@@ -244,7 +231,6 @@ function renderRows(list) {
   `).join("");
   $$("button[data-edit]").forEach(b => b.addEventListener("click", () => openEdit(b.dataset.edit)));
   $$("button[data-del]").forEach(b => b.addEventListener("click", () => removeProduct(b.dataset.del)));
-  $$("button[data-adj]").forEach(b => b.addEventListener("click", () => openAdjust(b.dataset.adj)));
 }
 
 function paginate(total) {
@@ -301,27 +287,38 @@ $("#btnLogout").addEventListener("click", () => {
 });
 
 $$("[data-close]").forEach(b => b.addEventListener("click", closeModals));
-[el.modalForm, el.modalStock].forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
+[el.modalForm].forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
 
-el.save.addEventListener("click", async () => {
-  // Leer el ID del campo oculto ANTES de crear el payload 
-  const productId = $("#id").value.trim();
-  const payload = collectForm(); // Contiene solo los campos del producto (sin ID)
+el.form.addEventListener("submit", async (e) => {
+    e.preventDefault(); // <-- ¡LA CLAVE! Evita que la página se recargue
 
-  try {
-    if (productId) { // Si tenemos un ID, estamos EDITANDO
-      await api.update(productId, payload); // Pasamos el ID del producto y los datos
-      toast("Producto actualizado", "ok");
+    // Leer el ID del campo oculto ANTES de crear el payload 
+    const productId = $("#id").value.trim();
+    
+    // ⭐️ Agregamos un try/catch aquí para que la validación de collectForm() no rompa el flujo
+    let payload;
+    try {
+        payload = collectForm(); // Contiene solo los campos del producto (sin ID)
+    } catch (err) {
+        toast(err.message || "Error en el formulario", "err");
+        return; // Detener si el formulario es inválido
     }
-    else { // Si no hay ID, estamos CREANDO
-      await api.create(payload);
-      toast("Producto creado", "ok");
+
+    try {
+        if (productId) { // Si tenemos un ID, estamos EDITANDO
+            await api.update(productId, payload); // Pasamos el ID del producto y los datos
+            toast("Producto actualizado", "ok");
+        }
+        else { // Si no hay ID, estamos CREANDO
+            await api.create(payload);
+            toast("Producto creado", "ok");
+        }
+        closeModals(); 
+        refresh(); // <-- Esto ahora se ejecutará siempre
+    } catch (err) {
+        // Si el backend devuelve un error de SKU duplicado, este lo mostrará correctamente.
+        toast(err.message || "Error al guardar", "err");
     }
-    closeModals(); refresh();
-  } catch (err) {
-    // Si el backend devuelve un error de SKU duplicado, este lo mostrará correctamente.
-    toast(err.message || "Error", "err");
-  }
 });
 
 /********** CRUD UI **********/
@@ -357,18 +354,8 @@ function removeProduct(id) {
     .catch(e => toast(e.message || "Error", "err"));
 }
 
-function openAdjust(id) {
-  $("#formAdjust").reset();
-  $("#adjId").value = id;
-  $("#adjType").value = "IN";
-  $("#adjQty").value = 1;
-  $("#adjReason").value = "";
-  el.modalStock.style.display = 'flex';
-}
-
 function closeModals() { 
   el.modalForm.style.display = 'none'; // ⬅️ CAMBIO AQUÍ
-  el.modalStock.style.display = 'none'; // ⬅️ CAMBIO AQUÍ
 }
 
 function fillForm(p) {

@@ -4,49 +4,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tienda LEVEL_ONE - Inicio</title>
+  <title>LevelOne - Inicio</title>
   <link rel="stylesheet" href="index.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <!--<meta http-equiv="refresh" content="0; url=frontend/login/login.html">-->
 </head>
 
 <body>
-
-  <div id="sidebarMenu" class="sidebar">
-        <span class="close-btn" id="closeMenu">&times;</span>
-        <h3 class="menu-title">Navegación</h3>
-
-        <a href="frontend/cliente/buscador.html" class="menu-item" id="menuRastreo">
-            <i class="fas fa-search"></i> Rastrea tu Pedido
-          </a>
-
-        <a href="frontend/cliente/favoritos.html" class="menu-item user-specific" id="menuFavoritos">
-            <i class="fas fa-heart"></i> Favoritos
-          </a>
-
-        <a href="frontend/cliente/historial.html" class="menu-item user-specific" id="menuHistorial">
-            <i class="fas fa-history"></i> Historial de compra
-          </a>
-
-        <a href="frontend/productos/prod1.html" class="menu-item category-to-remove">Consolas</a>
-        <a href="frontend/productos/prod2.html" class="menu-item category-to-remove">Videojuegos</a>
-
-        <a href="#" class="menu-item user-specific menu-bottom" id="menuCerrarSesion">
-            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-          </a>
-
-        <div class="menu-footer">
-            <p>LEVEL_ONE © 2025</p>
-          </div>
+  <div id="clientSideMenu" style="
+    position: fixed; 
+    top: 0; 
+    left: -250px; 
+    width: 250px; 
+    height: 100%; 
+    background-color: #211949; 
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5); 
+    z-index: 2000; 
+    transition: left 0.3s;
+    padding-top: 60px;
+    color: white;
+    box-sizing: border-box;
+  ">
+    <h3 style="padding: 15px 20px; border-bottom: 1px solid #4a69ff; margin: 0; color: #4a69ff;">Menú Cliente</h3>
+    <ul id="clientMenuLinks" style="list-style: none; padding: 0;">
+      <li
+        style="padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #332a68; transition: background-color 0.2s;"
+        data-action="rastreo">Rastreo de Pedidos</li>
+      <li
+        style="padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #332a68; transition: background-color 0.2s;"
+        data-action="favoritos">Favoritos</li>
+      <li
+        style="padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #332a68; transition: background-color 0.2s;"
+        data-action="historial">Historial de Compra</li>
+      <li id="logoutMenuItem"
+        style="padding: 15px 20px; cursor: pointer; border-top: 1px solid #4a69ff; margin-top: 10px; background-color: #e74c3c; transition: opacity 0.2s;"
+        data-action="logout">Cerrar Sesión</li>
+    </ul>
   </div>
-  </div>
+  <div id="menuOverlay" style="
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0,0,0,0.6); 
+    z-index: 1999; 
+    display: none;
+  "></div>
   <header class="header">
-    <!-- Menú hamburguesa -->
+
     <div class="menu-icon" id="menuToggle">
       ☰
     </div>
 
     <!-- Nombre de la tienda -->
-    <h1 class="logo">LEVEL_ONE</h1>
+    <h1 class="logo">LevelOne</h1>
 
     <!-- Barra de búsqueda -->
     <div class="search-bar">
@@ -67,6 +78,7 @@
     <section class="carousel-section">
       <h2>Los más vendidos en Videojuegos</h2>
       <div class="carousel-wrapper">
+
         <!-- ⭐️ MODIFICACIÓN: Contenedor vacío para que JS lo rellene ⭐️ -->
         <div class="carousel-container" id="carousel1">
           <p style="color: #333; padding: 20px;">Cargando productos...</p>
@@ -86,9 +98,9 @@
 
         <!-- ⭐️ MODIFICACIÓN: Contenedor vacío ⭐️ -->
         <div class="carousel-container" id="carousel2">
+
           <!-- Los productos se cargarán aquí dinámicamente -->
         </div>
-
         <button class="arrow right" data-target="carousel2">&#10095;</button>
       </div>
     </section>

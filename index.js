@@ -1,5 +1,3 @@
-// dylxnwrld/tiendaonlinepdv/TiendaOnlinePDV-6fd25318790eabba740e5931df289c127ba0141b/index.js (UNIFICADO)
-
 // ==========================================
 // 🔹 CONFIGURACIÓN
 // ==========================================
@@ -7,25 +5,25 @@
 // Apunta a tu servidor de Render (el mismo que usan tus otros JS)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv-hm20.onrender.com'; // Corregida la URL base para consistencia
+    : 'https://tiendaonlinepdv.onrender.com';
 
 // ==========================================
 // 🔸 INICIALIZACIÓN
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", () => {
-    // ⭐️ Llama a la función unificada de setup ⭐️
-    setupHeaderAndMenu();
-
-    // Carga los productos desde la API
+    // ⭐️ NUEVO: Carga los productos desde la API
     cargarProductosDinamicos();
 
-    // Flechas del carrusel
+    // Código de tu compañero (Manejo de estado y botones)
+    setupHeaderAndMenu();
+
+    // Código de tu compañero (Flechas del carrusel)
     setupCarouselArrows();
 });
 
 // ==========================================
-// 🔹 LÓGICA DE CARGA DE PRODUCTOS
+// 🔹 LÓGICA DE CARGA DE PRODUCTOS (NUEVO)
 // ==========================================
 
 /**
@@ -35,18 +33,17 @@ document.addEventListener("DOMContentLoaded", () => {
 async function cargarProductosDinamicos(searchQuery = "") {
     const carousel1 = document.getElementById('carousel1');
     const carousel2 = document.getElementById('carousel2');
-    // ASUMIDO: Añadir product-grid al index.html si es necesario
     const productGrid = document.getElementById('product-grid');
 
-    if (!carousel1 || !carousel2) { // productGrid puede ser opcional
-        console.error("No se encontraron los contenedores de carrusel.");
+    if (!carousel1 || !carousel2 || !productGrid) {
+        console.error("No se encontraron los contenedores de productos.");
         return;
     }
 
     // Mostrar un "cargando..."
     carousel1.innerHTML = '<p style="color: #333; padding: 20px;">Cargando productos...</p>';
     carousel2.innerHTML = '';
-    if (productGrid) productGrid.innerHTML = '';
+    productGrid.innerHTML = '';
 
     try {
         // 1. Llama a tu backend para "jalar" los datos de MongoDB
@@ -61,7 +58,7 @@ async function cargarProductosDinamicos(searchQuery = "") {
         // 2. Limpiamos los contenedores
         carousel1.innerHTML = '';
         carousel2.innerHTML = '';
-        if (productGrid) productGrid.innerHTML = '';
+        productGrid.innerHTML = '';
 
         if (productos.length === 0) {
             carousel1.innerHTML = '<p style="color: #333; padding: 20px;">No se encontraron productos.</p>';
@@ -76,15 +73,16 @@ async function cargarProductosDinamicos(searchQuery = "") {
                 ? producto.images[0]
                 : 'frontend/images/conXbox.jpg'; // Placeholder
 
-            // Esta es la plantilla. Usamos product_detail.html
+            // Esta es la plantilla.
             const productHTML = `
-            <a href="frontend/productos/product_detail.html?id=${producto._id}" class="product-link">
-            <div class="product-card">
-            <img src="${imageUrl}" alt="${producto.name}" />
-            <p>${producto.name}</p>
-            <p class="precio">$${producto.price.toFixed(2)}</p>
-            </div>
-            </a>
+                <!-- ⭐️ CADA TARJETA ES UN ENLACE A LA PÁGINA DE DETALLE ⭐️ -->
+                <a href="frontend/productos/product_detail.html?id=${producto._id}" class="product-link">
+                    <div class="product-card">
+                        <img src="${imageUrl}" alt="${producto.name}" />
+                        <p>${producto.name}</p>
+                        <p class="precio">$${producto.price.toFixed(2)}</p>
+                    </div>
+                </a>
             `;
 
             // Dividimos los productos entre los diferentes contenedores
@@ -92,7 +90,7 @@ async function cargarProductosDinamicos(searchQuery = "") {
                 carousel1.innerHTML += productHTML;
             } else if (index < 10) {
                 carousel2.innerHTML += productHTML;
-            } else if (productGrid) {
+            } else {
                 productGrid.innerHTML += productHTML;
             }
         });
@@ -104,66 +102,46 @@ async function cargarProductosDinamicos(searchQuery = "") {
 }
 
 // ==========================================
-// 🔹 FUNCIONES DE BOTONES Y MENÚ (UNIFICADO)
+// 🔹 FUNCIONES DE BOTONES (CÓDIGO DE TU COMPAÑERO MEJORADO)
 // ==========================================
 
 function setupHeaderAndMenu() {
     const loginBtn = document.getElementById("loginBtn");
     const cartBtn = document.getElementById("cartBtn");
     const menuToggle = document.getElementById("menuToggle");
-    const sidebarMenu = document.getElementById("sidebarMenu");
-    const closeMenu = document.getElementById("closeMenu");
     const searchInput = document.getElementById("search");
     const searchBtn = document.getElementById("searchBtn");
 
-    // --- Elementos del Menú Lateral ---
-    const menuCerrarSesion = document.getElementById("menuCerrarSesion");
-    const userSpecificItems = document.querySelectorAll('.menu-item.user-specific');
-
-    // NUEVO: Ítems a ocultar (Requiere que añadas la clase 'category-to-remove' en tu HTML)
-    const itemsToRemove = document.querySelectorAll('.category-to-remove');
-
-    // --- Lógica de Sesión (usando localStorage para consistencia) ---
-    const token = localStorage.getItem('supabase-token');
-    const role = localStorage.getItem('user-role');
-    const isLoggedIn = !!token;
-
-    // ===============================================
-    // ⭐️ CAMBIO 1: Ocultar el botón de menú hamburguesa si no está logeado ⭐️
-    if (menuToggle) {
-        if (!isLoggedIn) {
-            menuToggle.style.display = 'none';
-        } else {
-            // Asegura que sea visible si está logeado
-            menuToggle.style.display = 'block'; // O el valor que corresponda a su visualización
-        }
-    }
-
-    // ===============================================
-    // ⭐️ CAMBIO 2: Ocultar los ítems "Videojuegos" y "Consolas" ⭐️
-    itemsToRemove.forEach(item => {
-        item.style.display = 'none';
-    });
-    // ===============================================
+    // ⭐️ NUEVOS ELEMENTOS DEL MENÚ LATERAL ⭐️
+    const sideMenu = document.getElementById("clientSideMenu");
+    const menuOverlay = document.getElementById("menuOverlay");
+    const clientMenuLinks = document.getElementById("clientMenuLinks");
 
 
-    // 1. LÓGICA DE VISIBILIDAD DE ENLACES EN SIDEBAR (Mi Cuenta, Favoritos, Historial, Cerrar Sesión)
-    userSpecificItems.forEach(item => {
-        if (isLoggedIn) {
-            item.classList.remove('hidden');
-        } else {
-            item.classList.add('hidden');
-        }
-    });
+    // --- Lógica de Sesión (de tu compañero) ---
+    const token = sessionStorage.getItem('supabase-token');
+    const role = sessionStorage.getItem('user-role');
 
-
-    // 2. LÓGICA DE BOTONES DEL HEADER
-    if (isLoggedIn) {
+    if (token && role) {
         // --- Usuario LOGUEADO ---
         if (loginBtn) {
             loginBtn.textContent = "Mi Cuenta";
             loginBtn.addEventListener("click", () => {
-                window.location.href = "frontend/cliente/cliente.html";
+                // Redirección basada en el rol
+                if (role === 'Cliente') {
+                    // Se asume la existencia de la página cliente.html
+                    window.location.href = "frontend/cliente/cliente.html";
+                } else if (role === 'Admin') {
+                    window.location.href = "frontend/admin/admin.html";
+                } else if (role === 'Cajero') {
+                    window.location.href = "frontend/cajero/apertura_caja.html";
+                } else if (role === 'AdminInventario') {
+                    window.location.href = "frontend/admin_inv/admininv.html";
+                } else if (role === 'Repartidor') {
+                    window.location.href = "frontend/repartidor/repartidor.html";
+                } else {
+                    window.location.href = "frontend/cliente/cliente.html";
+                }
             });
         }
         if (cartBtn) {
@@ -171,61 +149,63 @@ function setupHeaderAndMenu() {
                 window.location.href = "frontend/compraCliente/compra.html";
             });
         }
+
+        // ⭐️ Lógica del Menú Hamburguesa (Solo visible y funcional para Cliente) ⭐️
+        if (menuToggle) {
+            if (role === 'Cliente') {
+                menuToggle.style.display = 'block'; // Asegurar que esté visible
+
+                // Función para abrir/cerrar menú
+                const toggleMenu = () => {
+                    if (sideMenu.style.left === '0px') {
+                        sideMenu.style.left = '-250px';
+                        menuOverlay.style.display = 'none';
+                    } else {
+                        sideMenu.style.left = '0px';
+                        menuOverlay.style.display = 'block';
+                    }
+                };
+
+                menuToggle.addEventListener("click", toggleMenu);
+
+                // Clic en el overlay para cerrar el menú
+                menuOverlay.addEventListener("click", toggleMenu);
+
+                // Lógica de los nuevos enlaces del menú
+                clientMenuLinks.addEventListener('click', (e) => {
+                    const action = e.target.getAttribute('data-action');
+                    if (action) {
+                        // Cerrar el menú antes de ejecutar la acción
+                        sideMenu.style.left = '-250px';
+                        menuOverlay.style.display = 'none';
+                        handleClientMenuAction(action);
+                    }
+                });
+            } else {
+                // Ocultar el menú hamburguesa para roles no-cliente
+                menuToggle.style.display = 'none';
+                if (sideMenu) sideMenu.style.display = 'none';
+            }
+        }
     } else {
         // --- Usuario NO LOGUEADO ---
         if (loginBtn) {
-            loginBtn.textContent = "Iniciar sesión";
             loginBtn.addEventListener("click", () => {
                 window.location.href = "frontend/login/login.html";
             });
         }
         if (cartBtn) {
-            // Redirige a login si intenta comprar sin sesión
             cartBtn.addEventListener("click", () => {
+                // Redirigir al login si intenta comprar sin sesión
                 window.location.href = "frontend/login/login.html";
             });
         }
-    }
-
-
-    // 3. LÓGICA DEL SIDEBAR (TOGGLE Y CERRAR SESIÓN)
-    if (menuToggle && sidebarMenu && closeMenu) {
-
-        // TOGGLE: Al presionar hamburguesa, abre o cierra 
-        menuToggle.addEventListener("click", () => {
-            // Solo abrimos/cerramos si el menú es visible (i.e., el usuario está logeado)
-            if (menuToggle.style.display !== 'none') {
-                sidebarMenu.classList.toggle("open");
-            }
-        });
-
-        // Cierre con la 'X'
-        closeMenu.addEventListener("click", () => {
-            sidebarMenu.classList.remove("open");
-        });
-
-        // Lógica de Cerrar Sesión
-        if (menuCerrarSesion) {
-            menuCerrarSesion.addEventListener("click", (e) => {
-                e.preventDefault();
-
-                if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                    localStorage.removeItem('supabase-token');
-                    localStorage.removeItem('user-role');
-                    localStorage.removeItem('currentCorteId');
-                    // Redirigir a la página principal
-                    window.location.href = 'index.html';
-                }
-            });
+        if (menuToggle) {
+            menuToggle.style.display = 'none';
         }
-    } else if (menuToggle) {
-        // En caso de que no se encuentre el sidebar, mantener el alert original como fallback
-        menuToggle.addEventListener("click", () => {
-            alert("Aquí podría abrir un menú lateral 🧭");
-        });
     }
 
-    // --- Lógica de Búsqueda (MODIFICADA) ---
+    // --- ⭐️ Lógica de Búsqueda (MODIFICADA) ⭐️ ---
     // Ahora la búsqueda llama a la API
     if (searchBtn && searchInput) {
         searchBtn.addEventListener("click", () => {
@@ -241,8 +221,34 @@ function setupHeaderAndMenu() {
     }
 }
 
+// ⭐️ FUNCIÓN: Manejar las acciones del menú del cliente (Nueva) ⭐️
+function handleClientMenuAction(action) {
+    switch (action) {
+        case 'rastreo':
+            // Redirige al buscador de pedidos
+            window.location.href = "frontend/cliente/buscador.html";
+            break;
+        case 'favoritos':
+            alert("Favoritos: Función no implementada aún.");
+            // Aquí iría la lógica de redirección a la página de favoritos
+            break;
+        case 'historial':
+            alert("Historial de Compra: Función no implementada aún.");
+            // Aquí iría la lógica de redirección a la página de historial
+            break;
+        case 'logout':
+            if (confirm("¿Seguro que deseas cerrar sesión?")) {
+                sessionStorage.clear(); // Limpiar todos los datos de sesión
+                // Asegurarse de que el botón de login en el header se vea como "Iniciar sesión"
+                window.location.href = "frontend/login/login.html";
+            }
+            break;
+        default:
+            console.error("Acción de menú desconocida:", action);
+    }
+}
 // ==========================================
-// 🔹 FUNCIONES DEL CARRUSEL
+// 🔹 FUNCIONES DEL CARRUSEL (CÓDIGO DE TU COMPAÑERO)
 // ==========================================
 
 function setupCarouselArrows() {

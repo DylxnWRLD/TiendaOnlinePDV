@@ -13,7 +13,7 @@
         <div class="menu-icon" id="menuToggle">☰</div>
 
         <a href="../../index.html">
-            <h1 class="logo">LEVEL_ONE</h1>
+            <h1 class="logo">LevelOne</h1>
         </a>
 
         <div class="search-bar">
@@ -40,8 +40,46 @@
         </div>
     </main>
 
+    <div id="directionModal" class="modal hidden">
+        <div class="modal-content">
+            <button id="cancelDatos" class="cancel-btn top-left-btn">Atrás</button>
+
+            <h3>Información de entrega</h3>
+
+            <label for="direction">Dirección de entrega</label>
+            <input id="direction" type="text" name="deliveryAddress" placeholder="Escribe tu dirección completa" required>
+
+            <label for="username">Correo electrónico</label>
+            <input type="email" id="username" name="username" placeholder="ejemplo@correo.com" required>
+
+            <label for="number">Número de contacto</label>
+            <input type="tel" id="number" maxlength="10" placeholder="10 dígitos" pattern="[0-9]{10}" required>
+
+            <div class="modal-footer">
+                <button id="confirmDatos" class="confirm-btn">Confirmar datos</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirDatosModal" class="modal hidden">
+        <div class="modal-content">
+            <button id="noNotes" class="cancel-btn top-left-btn">Atrás</button>
+
+            <h3>¿Los datos son correctos?</h3>
+            <p><strong>Dirección:</strong> <span id="showDireccion"></span></p>
+            <p><strong>Correo:</strong> <span id="showCorreo"></span></p>
+            <p><strong>Teléfono:</strong> <span id="showTelefono"></span></p>
+
+            <div class="modal-footer">
+                <button id="yesNotes" class="confirm-btn">Sí</button>
+            </div>
+        </div>
+    </div>
+
     <div id="paymentModal" class="modal hidden">
         <div class="modal-content">
+            <button id="backBtnPayment" class="cancel-btn top-left-btn">Atrás</button>
+
             <h3>Método de pago</h3>
 
             <label><input type="radio" name="payMethod" value="Debito"> Débito</label><br>
@@ -50,26 +88,34 @@
             <input type="text" id="cardNumber" maxlength="16" placeholder="Número de tarjeta (16 dígitos)">
             <input type="text" id="cvv" maxlength="3" placeholder="CVV (3 dígitos)">
 
-            <button id="confirmPayment" class="confirm-btn">Confirmar pago</button>
-            <button id="cancelPayment" class="cancel-btn">Cancelar compra</button>
+            <div class="modal-footer">
+                <button id="cancelPayment" class="cancel-btn">Cancelar compra</button>
+                <button id="confirmPayment" class="confirm-btn">Confirmar pago</button>
+            </div>
         </div>
     </div>
 
     <div id="cancelModal" class="modal hidden">
         <div class="modal-content">
             <h3>¿Seguro que deseas cancelar la compra?</h3>
-            <button id="yesCancel" class="confirm-btn">Sí</button>
-            <button id="noCancel" class="cancel-btn">No</button>
+            <div class="modal-footer">
+                <button id="noCancel" class="cancel-btn">No</button>
+                <button id="yesCancel" class="confirm-btn">Sí</button>
+            </div>
         </div>
     </div>
 
     <div id="confirmCardModal" class="modal hidden">
         <div class="modal-content">
+            <button id="noCard" class="cancel-btn top-left-btn">Atrás</button>
+
             <h3>¿Los datos son correctos?</h3>
             <p>Número: <span id="showCard"></span></p>
             <p>CVV: <span id="showCVV"></span></p>
-            <button id="yesCard" class="confirm-btn">Sí</button>
-            <button id="noCard" class="cancel-btn">No</button>
+
+            <div class="modal-footer">
+                <button id="yesCard" class="confirm-btn">Sí</button>
+            </div>
         </div>
     </div>
 
@@ -79,7 +125,9 @@
             <p>Tu código de pedido es:</p>
             <h2 id="codigoGenerado"></h2>
             <p>Este código se envió al repartidor</p>
-            <button id="finalRedirectBtn">Rastrear mi pedido</button>
+            <div class="modal-footer">
+                <button id="finalRedirectBtn">Rastrear mi pedido</button>
+            </div>
         </div>
     </div>
 

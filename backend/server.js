@@ -670,7 +670,7 @@ app.get('/api/promociones/producto/:idProducto', async (req, res) => {
             return res.status(404).json({ message: 'Producto no encontrado' });
         }
 
-         if (producto.descuento && producto.descuento.activa) {
+        if (producto.descuento && producto.descuento.activa) {
             return res.json({
                 activa: true,
                 tipo_descuento: producto.descuento.tipo_descuento,
@@ -738,33 +738,33 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             return res.status(500).json({ message: 'Error al guardar la promoción.', details: error.message });
         }
 
-         const promo = data[0];
-         //let resultadoAplicacion = null;
+        const promo = data[0];
+        //let resultadoAplicacion = null;
 
-       
+
         let filter = {};
-                switch (promo.tipo_regla) {
-                    case 'MARCA':
-                        filter = { brand: promo.valor_regla };
-                        break;
-                    
-                    case 'PRODUCTO':
-                        filter = { name: promo.valor_regla };
-                        break;
-                    case 'GLOBAL':
-                        filter = {}; // Todos los productos
-                        break;
-                    case 'CANTIDAD':
-                        filter = {};
-                        break;
-                    case 'PRECIO':
-                        filter = { price: { $gte: parseFloat(promo.valor_regla) } };
-                        break;
-                    default:
-                        filter = {};
-                }
+        switch (promo.tipo_regla) {
+            case 'MARCA':
+                filter = { brand: promo.valor_regla };
+                break;
 
-     
+            case 'PRODUCTO':
+                filter = { name: promo.valor_regla };
+                break;
+            case 'GLOBAL':
+                filter = {}; // Todos los productos
+                break;
+            case 'CANTIDAD':
+                filter = {};
+                break;
+            case 'PRECIO':
+                filter = { price: { $gte: parseFloat(promo.valor_regla) } };
+                break;
+            default:
+                filter = {};
+        }
+
+
         const descuentoData = {
             tipo_descuento: promo.tipo_descuento,  // 'PORCENTAJE' o 'MONTO'
             valor: promo.valor,           // cantidad numérica
@@ -836,12 +836,12 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
             case 'GLOBAL':
                 filter = {}; // Todos los productos
                 break;
-            
+
             case 'PRECIO':
                 filter = { price: { $gte: parseFloat(promocion.valor_regla) } };
                 break;
             case 'CANTIDAD':
-                
+
                 filter = {};
                 break;
             default:
@@ -1576,7 +1576,7 @@ app.post('/api/caja/calcular_reporte', getUserIdFromToken, async (req, res) => {
     if (!id_corte || monto_declarado === undefined || typeof monto_declarado !== 'number') {
         return res.status(400).json({ message: 'Faltan o son inválidos los parámetros de corte.' });
     }
-    
+
     // NOTA: Se asume que el rol Cajero ya fue verificado antes de llegar al PDV.
 
     try {
@@ -1621,7 +1621,7 @@ app.post('/api/caja/cerrar_definitivo', getUserIdFromToken, async (req, res) => 
     if (!id_corte || monto_declarado === undefined || monto_calculado === undefined) {
         return res.status(400).json({ message: 'Faltan parámetros de cierre definitivo.' });
     }
-    
+
     try {
         // Llama a la función PL/pgSQL para el CIERRE FINAL
         const { data, error } = await supabase
@@ -1867,7 +1867,164 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 });
 
 
+// ===============================================
+// PROCESAMIENTO DE LA COMPRA ONLINE
+// ===============================================
 
+// Verificar si el cliente ya tiene datos registrados
+app.get('/api/cliente/data', getUserIdFromToken, async (req, res) => {
+    // El middleware getUserIdFromToken ya validó el token y puso req.userId
+    const userId = req.userId; 
+    
+    try {
+        // Consultar la tabla cliente_Online usando el userId (que es el id_usuario)
+        const { data, error } = await supabase
+            .from('cliente_online')
+            .select('correo, direccion, telefono')
+            .eq('id_usuario', userId)
+            .maybeSingle(); // Esperamos 0 o 1 resultado
+
+        if (error) {
+            console.error('[DB ERROR - Cliente]:', error.message);
+            return res.status(500).json({ message: 'Error al consultar datos del cliente.', details: error.message });
+        }
+        
+        // Si data es null, es la primera compra. Devolvemos 404 (Not Found)
+        if (!data) {
+            return res.status(404).json({ message: 'Cliente no registrado (Primera compra).' });
+        }
+
+        // Si se encuentran datos, los devolvemos
+        return res.status(200).json(data);
+
+    } catch (e) {
+        console.error('[SERVER ERROR]: Fallo al obtener datos del cliente.', e);
+        return res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
+// --- ENDPOINT RPC PARA PROCESAR LA COMPRA ---
+app.post('/api/rpc/procesar_compra_online', async (req, res) => {
+    // 1. Extracción y Verificación de Token (Identidad del Cliente)
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
+
+    if (!token) {
+        return res.status(401).json({ error: 'TOKEN_REQUIRED', message: 'Se requiere un token de autenticación para esta operación.' });
+    }
+
+    // 2. Extracción de Parámetros
+    const {
+        p_correo,
+        p_direccion,
+        p_telefono,
+        p_total_final,
+        p_metodo_pago,
+        p_detalles // Array con id_producto_mongo, cantidad, etc.
+    } = req.body;
+
+    // 3. Crear un cliente Supabase con el token del usuario
+    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+
+    try {
+        console.log(`[RPC] Iniciando proceso de compra para usuario...`);
+
+        // ==========================================================
+        // ⭐️ ETAPA 1: VERIFICAR Y DEDUCIR STOCK EN MONGO ATLAS (CRÍTICO)
+        // Esto debe ser ATÓMICO y ocurre ANTES de registrar la venta.
+        // ==========================================================
+
+        if (!p_detalles || p_detalles.length === 0) {
+             return res.status(400).json({ error: 'CART_EMPTY', message: 'Los detalles de la venta están vacíos.' });
+        }
+
+        const bulkOps = p_detalles.map(d => ({
+            updateOne: {
+                filter: { 
+                    _id: d.id_producto_mongo,
+                    stockQty: { $gte: d.cantidad }
+                },
+                update: { $inc: { stockQty: -d.cantidad } }
+            }
+        }));
+
+        console.log('🧩 Ejecutando bulkWrite condicional para deducción de stock...');
+
+        let mongoResult;
+        try {
+            // La variable 'Product' es el modelo de Mongoose
+            mongoResult = await Product.bulkWrite(bulkOps);
+        } catch (mongoError) {
+            console.error('[MONGO STOCK ERROR]: Falló la ejecución de bulkWrite.', mongoError.message);
+            return res.status(500).json({ error: 'STOCK_CHECK_FAILED', message: 'Error al intentar verificar y deducir inventario.' });
+        }
+
+        // 🚨 VERIFICACIÓN DE ATOMICIDAD Y SOBREVENTA 🚨
+        if (mongoResult.modifiedCount !== p_detalles.length) {
+            // Si modifiedCount < p_detalles.length, significa que hubo insuficiencia de stock.
+            console.warn('[STOCK FAILURE]: Se intentaron modificar %s productos, pero solo %s tuvieron stock suficiente. Abortando PG.', p_detalles.length, mongoResult.modifiedCount);
+            
+            // 🛑 CRÍTICO: Si modifiedCount > 0, necesitamos compensar los productos que SÍ se descontaron.
+            if (mongoResult.modifiedCount > 0) {
+                 const compensationOps = p_detalles.filter(d => d.cantidad <= d.cantidad).map(d => ({ 
+                    updateOne: {
+                        filter: { _id: d.id_producto_mongo },
+                        update: { $inc: { stockQty: d.cantidad } } 
+                    }
+                }));
+            }
+            
+            return res.status(409).json({ error: 'INSUFFICIENT_STOCK', message: 'Algunos productos ya no tienen stock suficiente. Por favor, revisa tu carrito.' });
+        }
+
+        console.log('✅ Stock verificado y deducido en Mongo. Productos modificados:', mongoResult.modifiedCount);
+
+        // ==========================================================
+        // ⭐️ ETAPA 2: REGISTRAR VENTA EN POSTGRESQL (SOLO si Mongo fue exitoso)
+        // ==========================================================
+
+        // 5. EJECUCIÓN: PostgreSQL (Registro de Cliente, Venta, Detalle)
+        const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
+            p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles
+        });
+
+        if (error) {
+            console.error('[DB ERROR - PG]:', error.message);
+            
+            // 🛑 LÓGICA DE COMPENSACIÓN (NECESARIA) 🛑
+            // Si PG falla, el stock en Mongo YA FUE DEDUCIDO. Debemos revertirlo.
+            
+            const compensationOps = p_detalles.map(d => ({
+                updateOne: {
+                    filter: { _id: d.id_producto_mongo },
+                    update: { $inc: { stockQty: d.cantidad } } // Reponer stock
+                }
+            }));
+
+            try {
+                await Product.bulkWrite(compensationOps);
+                console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a fallo en PG.');
+            } catch (compensationError) {
+                console.error('❌ FALLO CRÍTICO DE COMPENSACIÓN: No se pudo revertir el stock en Mongo.', compensationError);
+                // Aquí, el sistema está en un estado inconsistente (venta fallida, stock deducido).
+                // Se requiere una alerta manual o un sistema de reintentos.
+                return res.status(500).json({ error: 'CRITICAL_COMPENSATION_FAILURE', message: 'La venta falló y no se pudo revertir el stock. Se requiere intervención manual.' });
+            }
+
+            // Devolvemos el error de PG después de intentar la compensación.
+            return res.status(500).json({ error: 'DB_TRANSACTION_FAILED_POST_STOCK_DEDUCTION', message: 'Fallo al registrar la venta en la base de datos.' });
+        }
+
+        // 6. Respuesta Final (Si Mongo y PG fueron exitosos)
+        res.status(200).json(data);
+
+    } catch (e) {
+        console.error('[SERVER ERROR]:', e);
+        res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: 'Ocurrió un error inesperado en el servidor.' });
+    }
+});
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
 // ===============================================
