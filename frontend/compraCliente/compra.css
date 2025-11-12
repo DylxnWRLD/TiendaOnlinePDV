@@ -291,14 +291,14 @@ body {
 
 .top-left-btn {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 5px; /* Ajustado: 10px -> 5px */
+  left: 5px; /* Ajustado: 10px -> 5px */
   width: auto;
   padding: 5px 10px; 
   font-size: 0.8rem;
-  background: #56565a;
+  background: #eb0808;
   color: white;
-  z-index: 10; /* Asegura que esté por encima de cualquier otro elemento */
+  z-index: 10;
 }
 
 .top-left-btn:hover {
