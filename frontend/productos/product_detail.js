@@ -55,6 +55,23 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+function formatDate(isoString) {
+    if (!isoString) return 'Fecha desconocida';
+    try {
+        const date = new Date(isoString);
+        // Formato: 12 de noviembre de 2025, 08:30
+        return date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return 'Fecha inválida';
+    }
+}
+
 function setupHeader() {
     const loginBtn = $("loginBtn");
 
@@ -287,13 +304,17 @@ function renderComments(comments) {
     }
 
     comments.forEach(comment => {
-        // Formateamos el correo para que sea más amigable
-        const author = comment.cliente_online?.correo ? comment.cliente_online.correo.split('@')[0] : 'Anónimo';
+        const author = comment.cliente_online?.correo || 'Usuario verificado';
+        
+        const date = formatDate(comment.created_at); 
 
         reviewsContainer.innerHTML += `
             <div class="review-item">
+                <div class="review-header">
+                    <span class="review-author">Publicado por: ${author}</span>
+                    <small class="review-date">${date}</small>
+                </div>
                 <p>${comment.comentario}</p>
-                <span class="review-author">Publicado por: ${author}</span>
             </div>
         `;
     });
