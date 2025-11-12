@@ -405,7 +405,6 @@ document.getElementById("cancelPayment").addEventListener("click", () => {
 document.getElementById("yesCancel").addEventListener("click", () => {
     document.getElementById("cancelModal").classList.add("hidden");
     alert("Compra cancelada.");
-    location.href = "../../index.html";
 });
 
 document.getElementById("noCancel").addEventListener("click", () => {
