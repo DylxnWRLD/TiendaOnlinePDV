@@ -1723,46 +1723,95 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
     });
 
     try {
-        console.log(`[RPC] Llamando a procesar_compra_online para usuario...`);
+        console.log(`[RPC] Iniciando proceso de compra para usuario...`);
 
-        // 4. EJECUCIÓN 1: PostgreSQL (Registro de Cliente, Venta, Detalle)
+        // ==========================================================
+        // ⭐️ ETAPA 1: VERIFICAR Y DEDUCIR STOCK EN MONGO ATLAS (CRÍTICO)
+        // Esto debe ser ATÓMICO y ocurre ANTES de registrar la venta.
+        // ==========================================================
+
+        if (!p_detalles || p_detalles.length === 0) {
+             return res.status(400).json({ error: 'CART_EMPTY', message: 'Los detalles de la venta están vacíos.' });
+        }
+
+        const bulkOps = p_detalles.map(d => ({
+            updateOne: {
+                filter: { 
+                    _id: d.id_producto_mongo,
+                    stockQty: { $gte: d.cantidad }
+                },
+                update: { $inc: { stockQty: -d.cantidad } }
+            }
+        }));
+
+        console.log('🧩 Ejecutando bulkWrite condicional para deducción de stock...');
+
+        let mongoResult;
+        try {
+            // La variable 'Product' es el modelo de Mongoose
+            mongoResult = await Product.bulkWrite(bulkOps);
+        } catch (mongoError) {
+            console.error('[MONGO STOCK ERROR]: Falló la ejecución de bulkWrite.', mongoError.message);
+            return res.status(500).json({ error: 'STOCK_CHECK_FAILED', message: 'Error al intentar verificar y deducir inventario.' });
+        }
+
+        // 🚨 VERIFICACIÓN DE ATOMICIDAD Y SOBREVENTA 🚨
+        if (mongoResult.modifiedCount !== p_detalles.length) {
+            // Si modifiedCount < p_detalles.length, significa que hubo insuficiencia de stock.
+            console.warn('[STOCK FAILURE]: Se intentaron modificar %s productos, pero solo %s tuvieron stock suficiente. Abortando PG.', p_detalles.length, mongoResult.modifiedCount);
+            
+            // 🛑 CRÍTICO: Si modifiedCount > 0, necesitamos compensar los productos que SÍ se descontaron.
+            if (mongoResult.modifiedCount > 0) {
+                 const compensationOps = p_detalles.filter(d => d.cantidad <= d.cantidad).map(d => ({ 
+                    updateOne: {
+                        filter: { _id: d.id_producto_mongo },
+                        update: { $inc: { stockQty: d.cantidad } } 
+                    }
+                }));
+            }
+            
+            return res.status(409).json({ error: 'INSUFFICIENT_STOCK', message: 'Algunos productos ya no tienen stock suficiente. Por favor, revisa tu carrito.' });
+        }
+
+        console.log('✅ Stock verificado y deducido en Mongo. Productos modificados:', mongoResult.modifiedCount);
+
+        // ==========================================================
+        // ⭐️ ETAPA 2: REGISTRAR VENTA EN POSTGRESQL (SOLO si Mongo fue exitoso)
+        // ==========================================================
+
+        // 5. EJECUCIÓN: PostgreSQL (Registro de Cliente, Venta, Detalle)
         const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
             p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles
         });
 
         if (error) {
             console.error('[DB ERROR - PG]:', error.message);
-            // Si PG falla, devolvemos el error (la transacción de PG se revierte automáticamente)
-            return res.status(400).json({ error: 'DB_TRANSACTION_FAILED', message: error.message });
-        }
-
-        // 5. EJECUCIÓN 2: MongoDB (Disminución de Stock) ⭐️ NUEVO ⭐️
-
-        if (p_detalles && p_detalles.length > 0) {
-            const bulkOps = p_detalles.map(d => ({
+            
+            // 🛑 LÓGICA DE COMPENSACIÓN (NECESARIA) 🛑
+            // Si PG falla, el stock en Mongo YA FUE DEDUCIDO. Debemos revertirlo.
+            
+            const compensationOps = p_detalles.map(d => ({
                 updateOne: {
-                    // Utilizamos el _id de Mongo y el operador $inc
                     filter: { _id: d.id_producto_mongo },
-                    update: { $inc: { stockQty: -d.cantidad } }
+                    update: { $inc: { stockQty: d.cantidad } } // Reponer stock
                 }
             }));
 
-            console.log('🧩 Ejecutando bulkWrite para disminución de stock...');
-
             try {
-                // La variable 'Product' es el modelo de Mongoose
-                const resultMongo = await Product.bulkWrite(bulkOps);
-                console.log('✅ Stock actualizado en Mongo. Productos modificados:', resultMongo.modifiedCount);
-            } catch (mongoError) {
-                console.error('[MONGO STOCK ERROR]: Falló la actualización de stock.', mongoError.message);
-
-                // Decisión: La venta está registrada, pero el inventario está inconsistente.
-                // Devolvemos 500 para notificar un error crítico, pero la venta existe.
-                return res.status(500).json({ error: 'STOCK_UPDATE_FAILED', message: 'Venta registrada, pero falló la actualización de stock en el inventario. Se requiere revisión manual.' });
+                await Product.bulkWrite(compensationOps);
+                console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a fallo en PG.');
+            } catch (compensationError) {
+                console.error('❌ FALLO CRÍTICO DE COMPENSACIÓN: No se pudo revertir el stock en Mongo.', compensationError);
+                // Aquí, el sistema está en un estado inconsistente (venta fallida, stock deducido).
+                // Se requiere una alerta manual o un sistema de reintentos.
+                return res.status(500).json({ error: 'CRITICAL_COMPENSATION_FAILURE', message: 'La venta falló y no se pudo revertir el stock. Se requiere intervención manual.' });
             }
+
+            // Devolvemos el error de PG después de intentar la compensación.
+            return res.status(500).json({ error: 'DB_TRANSACTION_FAILED_POST_STOCK_DEDUCTION', message: 'Fallo al registrar la venta en la base de datos.' });
         }
 
-        // 6. Respuesta Final (Si PG y Mongo fueron exitosos)
+        // 6. Respuesta Final (Si Mongo y PG fueron exitosos)
         res.status(200).json(data);
 
     } catch (e) {
@@ -1770,7 +1819,6 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
         res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: 'Ocurrió un error inesperado en el servidor.' });
     }
 });
-
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
 // ===============================================
