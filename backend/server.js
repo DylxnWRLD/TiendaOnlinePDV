@@ -741,7 +741,6 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
         const promo = data[0];
         //let resultadoAplicacion = null;
 
-
         let filter = {};
         switch (promo.tipo_regla) {
             case 'MARCA':
@@ -769,7 +768,8 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             tipo_descuento: promo.tipo_descuento,  // 'PORCENTAJE' o 'MONTO'
             valor: promo.valor,           // cantidad numérica
             nombre_promo: promo.nombre,
-            activa: promo.activa
+            activa: promo.activa,
+            id_promocion_supabase: promo.id
         };
 
         const result = await Product.updateMany(filter, {
@@ -966,9 +966,6 @@ app.put("/api/promociones/:id", authenticateAdmin, async (req, res) => {
 
     try {
 
-
-
-
         const { data: promocionAnterior, error: fetchError } = await supabase
             .from('promociones')
             .select('*')
@@ -978,11 +975,6 @@ app.put("/api/promociones/:id", authenticateAdmin, async (req, res) => {
         if (fetchError || !promocionAnterior) {
             return res.status(404).json({ message: 'Promoción no encontrada.' });
         }
-
-
-
-
-
 
         const { data, error } = await supabase
             .from("promociones")
@@ -1045,10 +1037,6 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
 
     try {
 
-
-
-
-
         const { data: promocion, error: fetchError } = await supabase
             .from('promociones')
             .select('*')
@@ -1058,9 +1046,6 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
         if (fetchError || !promocion) {
             return res.status(404).json({ message: 'Promoción no encontrada.' });
         }
-
-
-
 
 
         const { error } = await supabase
@@ -1088,14 +1073,6 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
         res.status(500).json({ error: "Error al eliminar promoción" });
     }
 });
-
-
-
-
-
-
-
-
 
 
 // Función para sincronizar promoción con MongoDB
@@ -1137,8 +1114,8 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
             nombre_promo: promocionActualizada.nombre,
             activa: promocionActualizada.activa,
             id_promocion_supabase: promocionActualizada.id,
-            tipo_regla: promocionActualizada.tipo_regla,
-            valor_regla: promocionActualizada.valor_regla
+            //tipo_regla: promocionActualizada.tipo_regla,
+            //valor_regla: promocionActualizada.valor_regla
         };
 
         // Primero, remover la promoción anterior de los productos que ya no califican
@@ -1165,7 +1142,7 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
             await Product.updateMany(
                 { 
                     ...oldFilter,
-                    'descuento.nombre_promo': promocionActualizada.nombre 
+                    'descuento.id_promocion_supabase': promocionActualizada.id 
                 },
                 { $set: { descuento: null } }
             );
@@ -1185,10 +1162,10 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
 }
 
 // Función para remover promoción de MongoDB
-async function removePromocionFromMongoDB(nombreDescuento) {
+async function removePromocionFromMongoDB(idPromocion) {
     try {
         const result = await Product.updateMany(
-            { 'descuento.nombre_promo': nombreDescuento },
+            { 'descuento.id_promocion_supabase': idPromocion },
             { $set: { descuento: null } }
         );
 
