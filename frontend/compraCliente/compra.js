@@ -3,9 +3,7 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv.onrender.com';
 
-// Endpoint RPC a tu servidor que llamará a PostgreSQL
 const RPC_ENDPOINT_URL = `${API_BASE_URL}/api/rpc/procesar_compra_online`;
-// ⭐️ NUEVO ENDPOINT PARA CONSULTAR DATOS DEL CLIENTE ⭐️
 const CLIENTE_DATA_URL = `${API_BASE_URL}/api/cliente/data`;
 
 // -------------------------------------------------------------------------
