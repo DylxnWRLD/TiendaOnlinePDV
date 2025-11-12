@@ -960,11 +960,30 @@ app.get('/api/productos/con-promociones', async (req, res) => {
  * Objetivo: Editar una promoción en la tabla "promociones".
  * Creado para: Panel de Administración
  */
-app.put("/api/promociones/:id", async (req, res) => {
+app.put("/api/promociones/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     const { nombre, descripcion, tipo_descuento, valor, tipo_regla, valor_regla, fecha_inicio, fecha_fin, activa } = req.body;
 
     try {
+
+
+
+
+        const { data: promocionAnterior, error: fetchError } = await supabase
+            .from('promociones')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !promocionAnterior) {
+            return res.status(404).json({ message: 'Promoción no encontrada.' });
+        }
+
+
+
+
+
+
         const { data, error } = await supabase
             .from("promociones")
             .update({
@@ -982,18 +1001,68 @@ app.put("/api/promociones/:id", async (req, res) => {
             .select();
 
         if (error) throw error;
+
         res.status(200).json({ mensaje: "Promoción actualizada", data });
+
+        const promocionActualizada = data[0];
+
+        try {
+            await syncPromocionToMongoDB(promocionActualizada, promocionAnterior);
+        } catch (mongoError) {
+            console.error('Error al sincronizar con MongoDB:', mongoError);
+            // No retornamos error aquí para no afectar la respuesta principal
+        }
+
+        res.status(200).json({ 
+            mensaje: "Promoción actualizada exitosamente", 
+            data: promocionActualizada
+        });
+
+
     } catch (err) {
-        console.error(err);
+        console.error('Error general al editar promoción', err);
         res.status(500).json({ error: "Error al editar promoción" });
     }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Eliminar una promoción
-app.delete("/api/promociones/:id", async (req, res) => {
+app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
 
     try {
+
+
+
+
+
+        const { data: promocion, error: fetchError } = await supabase
+            .from('promociones')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !promocion) {
+            return res.status(404).json({ message: 'Promoción no encontrada.' });
+        }
+
+
+
+
+
         const { error } = await supabase
             .from("promociones")
             .delete()
@@ -1001,11 +1070,148 @@ app.delete("/api/promociones/:id", async (req, res) => {
 
         if (error) throw error;
         res.status(200).json({ mensaje: "Promoción eliminada" });
+
+        try {
+            await removePromocionFromMongoDB(id);
+        } catch (mongoError) {
+            console.error('Error al remover promoción de MongoDB:', mongoError);
+           
+        }
+
+        res.status(200).json({ 
+            mensaje: "Promoción eliminada exitosamente",
+            promocionEliminada: promocion 
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Error al eliminar promoción" });
     }
 });
+
+
+
+
+
+
+
+
+
+
+// Función para sincronizar promoción con MongoDB
+async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
+    try {
+        // Si la promoción está inactiva, remover de todos los productos
+        if (!promocionActualizada.activa) {
+            await removePromocionFromMongoDB(promocionActualizada.id);
+            return;
+        }
+
+        // Si la promoción está activa, aplicar a los productos correspondientes
+        let filter = {};
+        
+        switch (promocionActualizada.tipo_regla) {
+            case 'MARCA':
+                filter = { brand: promocionActualizada.valor_regla };
+                break;
+            case 'PRODUCTO':
+                filter = { name: promocionActualizada.valor_regla };
+                break;
+            case 'GLOBAL':
+                filter = {}; // Todos los productos
+                break;
+            case 'CANTIDAD':
+                filter = {};
+                break;
+            case 'PRECIO':
+                filter = { price: { $gte: parseFloat(promocionActualizada.valor_regla) } };
+                break;
+            default:
+                filter = {};
+        }
+
+        // Preparar datos del descuento
+        const descuentoData = {
+            tipo_descuento: promocionActualizada.tipo_descuento,
+            valor: promocionActualizada.valor,
+            nombre_promo: promocionActualizada.nombre,
+            activa: promocionActualizada.activa,
+            id_promocion_supabase: promocionActualizada.id,
+            tipo_regla: promocionActualizada.tipo_regla,
+            valor_regla: promocionActualizada.valor_regla
+        };
+
+        // Primero, remover la promoción anterior de los productos que ya no califican
+        if (promocionAnterior) {
+            let oldFilter = {};
+            switch (promocionAnterior.tipo_regla) {
+                case 'MARCA':
+                    oldFilter = { brand: promocionAnterior.valor_regla };
+                    break;
+                case 'PRODUCTO':
+                    oldFilter = { name: promocionAnterior.valor_regla };
+                    break;
+                case 'GLOBAL':
+                    oldFilter = {};
+                    break;
+                case 'PRECIO':
+                    oldFilter = { price: { $gte: parseFloat(promocionAnterior.valor_regla) } };
+                    break;
+                default:
+                    oldFilter = {};
+            }
+
+            // Remover promoción anterior de productos que ya no califican
+            await Product.updateMany(
+                { 
+                    ...oldFilter,
+                    'descuento.nombre_promo': promocionActualizada.nombre 
+                },
+                { $set: { descuento: null } }
+            );
+        }
+
+        // Aplicar la promoción actualizada a los productos que califican
+        const result = await Product.updateMany(filter, {
+            $set: { descuento: descuentoData }
+        });
+
+        console.log(`🔄 Promoción "${promocionActualizada.nombre}" sincronizada con ${result.modifiedCount} productos en MongoDB`);
+
+    } catch (error) {
+        console.error('❌ Error en syncPromocionToMongoDB:', error.message);
+        throw error;
+    }
+}
+
+// Función para remover promoción de MongoDB
+async function removePromocionFromMongoDB(nombreDescuento) {
+    try {
+        const result = await Product.updateMany(
+            { 'descuento.nombre_promo': nombreDescuento },
+            { $set: { descuento: null } }
+        );
+
+        console.log(`🗑️ Promoción ${idPromocion} removida de ${result.modifiedCount} productos en MongoDB`);
+
+        return result;
+    } catch (error) {
+        console.error('❌ Error en removePromocionFromMongoDB:', error.message);
+        throw error;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ===============================================
 // NUEVO: RUTA DE REPORTE DE VENTAS (DINÁMICO)

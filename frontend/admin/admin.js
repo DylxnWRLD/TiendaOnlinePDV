@@ -773,6 +773,8 @@ async function deleteUser(userId) {
     }
 }
 
+
+
 // Inicializador principal
 document.addEventListener('DOMContentLoaded', () => {
     adminPanel = new AdminPanel();
