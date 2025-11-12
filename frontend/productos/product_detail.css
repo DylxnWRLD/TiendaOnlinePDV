@@ -601,3 +601,72 @@ main {
     background-color: #dc3545;
     /* Rojo error */
 }
+
+/* ======================================= */
+/* ⭐️ ESTILOS PARA SECCIÓN DE COMENTARIOS ⭐️ */
+/* ======================================= */
+
+.comment-form {
+    background-color: var(--color-fondo);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    border: 1px solid #eee;
+}
+
+.comment-form h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--color-primario-oscuro);
+}
+
+.comment-form textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    resize: vertical;
+}
+
+/* Reutiliza tu botón personalizado, pero asegúrate de que ocupe todo el ancho */
+.comment-form .btn-custom {
+    width: 100%;
+}
+
+/* Estilo para cada comentario cargado */
+.review-item {
+    background-color: var(--color-superficie);
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 20px; /* Más espacio */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+
+.review-item p {
+    font-size: 1rem;
+    color: var(--color-texto-principal);
+    margin: 0;
+}
+
+.review-item .review-author {
+    font-size: 0.95rem; /* Un poco más grande */
+    font-weight: 700;   /* Más grueso */
+    color: var(--color-primario-oscuro); /* Color más oscuro */
+}
+
+.review-item .review-date {
+    font-size: 0.8rem;
+    color: var(--color-texto-secundario);
+    font-style: italic;
+}

@@ -7,8 +7,8 @@
     <title id="productTitlePage">Detalle del Producto - LEVEL ONE</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <link rel="stylesheet" href="./product_detail.css"> 
+
+    <link rel="stylesheet" href="./product_detail.css">
 </head>
 
 <body>
@@ -17,7 +17,7 @@
         <a href="../../index.html" class="logo">LEVEL_ONE</a>
         <div class="user-actions">
             <button id="loginBtn" class="login-btn">Iniciar sesión</button>
-            
+
             <button id="cartBtn" class="cart-btn">
                 🛒 (<span id="cart-count">0</span>)
             </button>
@@ -29,7 +29,7 @@
             <div class="product-gallery">
                 <img id="productImage" src="https://via.placeholder.com/400" alt="Imagen del producto">
                 <div id="productThumbnails">
-                    </div>
+                </div>
             </div>
 
             <div class="product-info">
@@ -76,8 +76,20 @@
 
         <section class="reviews-section">
             <h2>Reseñas de Clientes</h2>
+
+            <form id="commentForm" class="comment-form" style="display: none;">
+                <h3>Escribe tu reseña</h3>
+                <textarea id="commentText" placeholder="¿Qué te pareció el producto?" rows="4" required></textarea>
+                <button type="submit" id="submitCommentBtn" class="btn-custom btn-custom-primary">Publicar</button>
+            </form>
+
+            <p id="commentLoginPrompt" style="display: none;">
+                <a href="../login/login.html" style="color: var(--color-acento-vibrante);">Inicia sesión</a> para dejar
+                una reseña.
+            </p>
+
             <div id="productReviews">
-                <p>No hay reseñas aún para este producto. ¡Sé el primero en escribir una!</p>
+                <p>Cargando reseñas...</p>
             </div>
         </section>
     </main>
@@ -87,7 +99,7 @@
     </footer>
 
     <div id="toastContainer" class="toast-container">
-        </div>
+    </div>
 
     <div id="cartModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
@@ -95,13 +107,13 @@
                 <h2 class="modal-title">Tu Carrito de Compras</h2>
                 <button id="closeCartModal" class="modal-close-btn">&times;</button>
             </div>
-            
+
             <div class="modal-body">
                 <div id="cartItemsContainer">
                     <p id="emptyCartMessage" class="empty-cart-msg">Tu carrito está vacío.</p>
                 </div>
             </div>
-            
+
             <div class="modal-footer">
                 <div class="total-price-section">
                     <strong>Total:</strong>

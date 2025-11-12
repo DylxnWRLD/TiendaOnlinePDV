@@ -17,15 +17,15 @@ function getProductIdFromUrl() {
 function getCurrentUserId() {
     const token = sessionStorage.getItem('supabase-token');
     if (!token) return null;
-    
+
     try {
         // Decodificamos el token para sacar el ID del usuario (campo 'sub')
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => 
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
             '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
         ).join(''));
-        
+
         return JSON.parse(jsonPayload).sub;
     } catch (e) {
         console.error("Token inválido:", e);
@@ -44,7 +44,7 @@ function showToast(message, type = 'info') {
     toastElement.textContent = message;
 
     toastContainer.appendChild(toastElement);
-    
+
     // Pequeña pausa para que la animación CSS funcione
     setTimeout(() => toastElement.classList.add('toast-show'), 10);
 
@@ -53,6 +53,23 @@ function showToast(message, type = 'info') {
         toastElement.classList.remove('toast-show');
         toastElement.addEventListener('transitionend', () => toastElement.remove());
     }, 3000);
+}
+
+function formatDate(isoString) {
+    if (!isoString) return 'Fecha desconocida';
+    try {
+        const date = new Date(isoString);
+        // Formato: 12 de noviembre de 2025, 08:30
+        return date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return 'Fecha inválida';
+    }
 }
 
 function setupHeader() {
@@ -68,7 +85,7 @@ function setupHeader() {
             loginBtn.textContent = "Mi Cuenta";
             loginBtn.addEventListener("click", () => {
                 // Ajustamos la ruta porque estamos en /productos/
-                window.location.href = "../cliente/cliente.html"; 
+                window.location.href = "../cliente/cliente.html";
             });
         }
 
@@ -97,7 +114,7 @@ function getCartKey() {
 function loadCart() {
     const key = getCartKey();
     if (!key) return []; // 🔒 Si no está logueado, el carrito siempre está vacío
-    
+
     const cartJson = localStorage.getItem(key);
     return cartJson ? JSON.parse(cartJson) : [];
 }
@@ -197,7 +214,7 @@ function updateCartItemQuantity(id, newQuantity) {
 function removeFromCart(id) {
     let cart = loadCart();
     cart = cart.filter(item => item.id !== id);
-    
+
     saveCart(cart);
     showToast("Producto eliminado del carrito", 'info');
     renderCartModal();
@@ -227,7 +244,7 @@ function renderCartModal() {
         cart.forEach(item => {
             const lineTotal = item.precio * item.quantity;
             total += lineTotal;
-            
+
             // Plantilla HTML para cada item del carrito
             container.innerHTML += `
                 <div class="cart-item-row">
@@ -253,6 +270,127 @@ function renderCartModal() {
 }
 
 // #################################################
+// ⭐️ NUEVO: LÓGICA DE COMENTARIOS
+// #################################################
+
+/**
+ * Carga los comentarios desde el servidor para el ID de producto dado.
+ */
+async function fetchComments(productId) {
+    const reviewsContainer = $('productReviews');
+    try {
+        const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}/comments`);
+        if (!response.ok) throw new Error('No se pudieron cargar las reseñas.');
+
+        const comments = await response.json();
+        renderComments(comments);
+
+    } catch (error) {
+        console.error(error);
+        reviewsContainer.innerHTML = '<p>Error al cargar reseñas.</p>';
+    }
+}
+
+/**
+ * Muestra los comentarios en el HTML.
+ */
+function renderComments(comments) {
+    const reviewsContainer = $('productReviews');
+    reviewsContainer.innerHTML = ''; // Limpiar "Cargando..."
+
+    if (comments.length === 0) {
+        reviewsContainer.innerHTML = '<p>No hay reseñas aún para este producto. ¡Sé el primero en escribir una!</p>';
+        return;
+    }
+
+    comments.forEach(comment => {
+        const author = comment.cliente_online?.correo;
+        
+        const date = formatDate(comment.created_at); 
+
+        reviewsContainer.innerHTML += `
+            <div class="review-item">
+                <div class="review-header">
+                    <span class="review-author">Publicado por: ${author}</span>
+                    <small class="review-date">${date}</small>
+                </div>
+                <p>${comment.comentario}</p>
+            </div>
+        `;
+    });
+}
+
+/**
+ * Maneja el envío del nuevo comentario al servidor.
+ */
+async function handleCommentSubmit(event) {
+    event.preventDefault(); // Evita que la página se recargue
+    const commentText = $('commentText').value.trim();
+    const productId = getProductIdFromUrl();
+    const token = sessionStorage.getItem('supabase-token');
+
+    if (!commentText) {
+        showToast("Por favor, escribe un comentario.", 'err');
+        return;
+    }
+    if (!productId || !token) {
+        showToast("Error de autenticación o producto.", 'err');
+        return;
+    }
+
+    $('submitCommentBtn').disabled = true;
+    $('submitCommentBtn').textContent = 'Publicando...';
+
+    try {
+        const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // ⭐️ IMPORTANTE: Enviar el token
+            },
+            body: JSON.stringify({ comentario: commentText })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            // Mostramos el mensaje de error del servidor (ej. "Debes ser cliente")
+            throw new Error(result.message || 'Error al publicar.');
+        }
+
+        showToast("Comentario publicado con éxito", 'ok');
+        $('commentText').value = ''; // Limpiar el campo
+        fetchComments(productId); // Recargar la lista de comentarios
+
+    } catch (error) {
+        console.error(error);
+        showToast(error.message, 'err');
+    } finally {
+        $('submitCommentBtn').disabled = false;
+        $('submitCommentBtn').textContent = 'Publicar';
+    }
+}
+
+/**
+ * Configura la visibilidad del formulario de comentarios.
+ */
+function setupCommentSection() {
+    const userId = getCurrentUserId();
+    if (userId) {
+        // Logueado: Muestra el formulario, oculta el prompt
+        $('commentForm').style.display = 'block';
+        $('commentLoginPrompt').style.display = 'none';
+
+        // Añadir el listener de envío
+        $('commentForm').addEventListener('submit', handleCommentSubmit);
+    } else {
+        // No logueado: Oculta el formulario, muestra el prompt
+        $('commentForm').style.display = 'none';
+        $('commentLoginPrompt').style.display = 'block';
+    }
+}
+
+// #################################################
 // 🔹 CARGA DEL PRODUCTO DESDE EL SERVIDOR
 // #################################################
 
@@ -260,7 +398,7 @@ async function fetchProductDetails(productId) {
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}`);
         if (!response.ok) throw new Error("Producto no encontrado");
-        
+
         currentProduct = await response.json();
         currentStockQty = currentProduct.stockQty || 0;
 
@@ -271,7 +409,7 @@ async function fetchProductDetails(productId) {
         $('productBrand').textContent = `Marca: ${currentProduct.brand || 'Genérico'}`;
         $('productDescription').textContent = currentProduct.description || 'Sin descripción.';
         $('productPrice').textContent = `$${currentProduct.price.toFixed(2)}`;
-        
+
         // Manejo de precio anterior y descuento (si aplica)
         if (currentProduct.oldPrice && currentProduct.oldPrice > currentProduct.price) {
             $('productOldPrice').textContent = `$${currentProduct.oldPrice.toFixed(2)}`;
@@ -285,10 +423,10 @@ async function fetchProductDetails(productId) {
         // Manejo de stock y botones
         const stockLabel = $('productStock');
         const canBuy = currentProduct.active && currentStockQty > 0;
-        
+
         $('addToCartBtn').disabled = !canBuy;
         $('buyNowBtn').disabled = !canBuy;
-        
+
         if (canBuy) {
             stockLabel.textContent = `En Stock (${currentStockQty} disponibles)`;
             stockLabel.style.color = '#198754'; // Verde
@@ -300,7 +438,7 @@ async function fetchProductDetails(productId) {
         // Imagen principal
         if (currentProduct.images && currentProduct.images.length > 0) {
             $('productImage').src = currentProduct.images[0];
-            
+
             // Generar miniaturas (Thumbnails)
             const thumbnailsContainer = $('productThumbnails');
             thumbnailsContainer.innerHTML = '';
@@ -315,7 +453,7 @@ async function fetchProductDetails(productId) {
                 thumbnailsContainer.appendChild(thumb);
             });
         }
-        
+
         // Rellenar detalles específicos (Material, Color)
         $('detailMaterial').textContent = currentProduct.details?.material || 'No especificado';
         $('detailColor').textContent = currentProduct.details?.color || 'No especificado';
@@ -336,14 +474,17 @@ async function fetchProductDetails(productId) {
 // #################################################
 
 document.addEventListener('DOMContentLoaded', () => {
-    setupHeader(); // Esto arreglará el botón "Iniciar sesión"
+    setupHeader();
     const productId = getProductIdFromUrl();
     if (productId) {
         fetchProductDetails(productId);
+        fetchComments(productId);
     } else {
         // Si no hay ID en la URL, volver al inicio
         window.location.href = '../../index.html';
     }
+
+    setupCommentSection();
 
     // --- Botones de Cantidad ---
     const qtyInput = $('productQuantity');
@@ -382,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- MODAL DEL CARRITO ---
     const cartModal = $('cartModal');
-    
+
     // Abrir modal
     $('cartBtn')?.addEventListener('click', () => {
         // Si no está logueado, no abre el modal, manda al login
@@ -393,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCartModal();
         cartModal.style.display = 'flex';
     });
-    
+
     // Cerrar modal
     $('closeCartModal')?.addEventListener('click', () => cartModal.style.display = 'none');
     cartModal?.addEventListener('click', (e) => {
