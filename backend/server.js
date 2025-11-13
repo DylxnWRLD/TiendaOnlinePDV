@@ -11,6 +11,7 @@ const multer = require('multer');
 const storage = multer.memoryStorage(); // Guarda el archivo en la RAM temporalmente
 const upload = multer({ storage: storage });
 
+
 // ⭐️ SE ELIMINÓ: const cajeroRoutes = require('./routes/cajeroRoutes');
 // Importar dotenv y cargar las variables de entorno
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -816,7 +817,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
                     tipo_descuento: tipo_descuento,
                     valor: valor,
                     tipo_regla: tipo_regla,
-                    valor_regla: (tipo_regla === 'GLOBAL' || tipo_regla === 'MARCA' || tipo_regla === 'PRODUCTO' || tipo_regla === 'PRECIO' || tipo_regla === 'CANTIDAD') ? null : valor_regla,
+                    valor_regla: (tipo_regla === 'GLOBAL') ? null : valor_regla,
                     fecha_inicio: fecha_inicio,
                     fecha_fin: fecha_fin || null,
                     activa: activa
@@ -840,9 +841,15 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             case 'MARCA':
                 filter = { brand: promo.valor_regla };
                 break;
-
+            case 'CATEGORIA':
+                filter = { category: promo.valor_regla };
+                break;
             case 'PRODUCTO':
-                filter = { name: promo.valor_regla };
+                if (mongoose.Types.ObjectId.isValid(promo.valor_regla)) {
+                    filter = { _id: promo.valor_regla };
+                } else {
+                    filter = { $or: [ { sku: promo.valor_regla }, { name: promo.valor_regla } ] };
+                }
                 break;
             case 'GLOBAL':
                 filter = {}; // Todos los productos
@@ -863,7 +870,9 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             valor: promo.valor,           // cantidad numérica
             nombre_promo: promo.nombre,
             activa: promo.activa,
-            id_promocion_supabase: promo.id
+            id_promocion_supabase: promo.id,
+            tipo_regla: promo.tipo_regla,
+            valor_regla: promo.valor_regla
         };
 
         const result = await Product.updateMany(filter, {
@@ -881,17 +890,6 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
     }
 
 });
-
-
-
-
-
-
-
-
-
-
-
 
 // ===============================================
 // RUTA PARA APLICAR PROMOCIONES A PRODUCTOS (SOLO MongoDB)
@@ -925,7 +923,11 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
                 filter = { category: promocion.valor_regla };
                 break;
             case 'PRODUCTO':
-                filter = { name: promocion.valor_regla };
+                if (mongoose.Types.ObjectId.isValid(promocion.valor_regla)) {
+                    filter = { _id: promocion.valor_regla };
+                } else {
+                    filter = { $or: [ { sku: promocion.valor_regla }, { name: promocion.valor_regla } ] };
+                }
                 break;
             case 'GLOBAL':
                 filter = {}; // Todos los productos
@@ -1004,11 +1006,6 @@ app.post('/api/promociones/remover/:idPromocion', authenticateAdmin, async (req,
     }
 });
 
-
-
-
-
-
 // ===============================================
 // RUTA PARA OBTENER PRODUCTOS CON PROMOCIONES ACTIVAS
 // ===============================================
@@ -1028,17 +1025,6 @@ app.get('/api/productos/con-promociones', async (req, res) => {
         });
     }
 });
-
-
-
-
-
-
-
-
-
-
-
 
 
 /**
@@ -1105,19 +1091,6 @@ app.put("/api/promociones/:id", authenticateAdmin, async (req, res) => {
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Eliminar una promoción
 app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
@@ -1135,6 +1108,17 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
         }
 
 
+        try {
+            await removePromocionFromMongoDB(id);
+            console.log(`Promoción ${id} removida de MongoDB exitosamente.`);
+        } catch (mongoError) {
+            console.error('Error al remover promoción de MongoDB:', mongoError);
+            return res.status(500).json({ 
+                error: "Error al eliminar la promoción de los productos"
+            });
+        }
+
+
         const { error } = await supabase
             .from("promociones")
             .delete()
@@ -1143,12 +1127,7 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
         if (error) throw error;
         res.status(200).json({ mensaje: "Promoción eliminada" });
 
-        try {
-            await removePromocionFromMongoDB(id);
-        } catch (mongoError) {
-            console.error('Error al remover promoción de MongoDB:', mongoError);
-           
-        }
+        
 
         res.status(200).json({ 
             mensaje: "Promoción eliminada exitosamente",
@@ -1179,7 +1158,11 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
                 filter = { brand: promocionActualizada.valor_regla };
                 break;
             case 'PRODUCTO':
-                filter = { name: promocionActualizada.valor_regla };
+                if (mongoose.Types.ObjectId.isValid(promocionActualizada.valor_regla)) {
+                    filter = { _id: promocionActualizada.valor_regla };
+                } else {
+                    filter = { $or: [ { sku: promocionActualizada.valor_regla }, { name: promocionActualizada.valor_regla } ] };
+                }
                 break;
             case 'GLOBAL':
                 filter = {}; // Todos los productos
@@ -1213,7 +1196,11 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
                     oldFilter = { brand: promocionAnterior.valor_regla };
                     break;
                 case 'PRODUCTO':
-                    oldFilter = { name: promocionAnterior.valor_regla };
+                    if (mongoose.Types.ObjectId.isValid(promocionAnterior.valor_regla)) {
+                        oldFilter = { _id: promocionAnterior.valor_regla };
+                    } else {
+                        oldFilter = { $or: [ { sku: promocionAnterior.valor_regla }, { name: promocionAnterior.valor_regla } ] };
+                    }
                     break;
                 case 'GLOBAL':
                     oldFilter = {};
@@ -1270,6 +1257,41 @@ async function removePromocionFromMongoDB(idPromocion) {
 
 
 
+// ===============================================
+// Catálogos y búsqueda para UI de promociones
+// ===============================================
+app.get('/api/products/distinct/brands', authenticateAdmin, async (req, res) => {
+    try {
+        const brands = await Product.distinct('brand', { brand: { $ne: null, $ne: '' } });
+        res.status(200).json(brands.sort());
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener marcas', details: error.message });
+    }
+});
+
+app.get('/api/products/distinct/categories', authenticateAdmin, async (req, res) => {
+    try {
+        const categories = await Product.distinct('category', { category: { $ne: null, $ne: '' } });
+        res.status(200).json(categories.sort());
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener categorías', details: error.message });
+    }
+});
+
+app.get('/api/products/search', authenticateAdmin, async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        if (!q) return res.status(200).json([]);
+        const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        const items = await Product.find({ $or: [ { name: { $regex: regex } }, { sku: { $regex: regex } } ] })
+            .limit(20)
+            .select('name sku');
+        const results = items.map(p => ({ id: p._id.toString(), name: p.name, sku: p.sku }));
+        res.status(200).json(results);
+    } catch (error) {
+        res.status(500).json({ message: 'Error al buscar productos', details: error.message });
+    }
+});
 
 
 

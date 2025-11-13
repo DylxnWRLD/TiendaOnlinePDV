@@ -75,6 +75,7 @@ class AdminPanel {
         const ruleTypeSelect = document.getElementById('promotionRuleType');
         const ruleValueGroup = document.getElementById('promotionRuleValueGroup');
         const ruleValueInput = document.getElementById('promotionRuleValue');
+        const ruleOptions = document.getElementById('ruleOptions');
 
         if (ruleTypeSelect) {
             const toggleRuleValueField = () => {
@@ -90,6 +91,9 @@ class AdminPanel {
             };
             ruleTypeSelect.addEventListener('change', toggleRuleValueField);
             toggleRuleValueField();
+            // Vincular catálogos/búsqueda dinámica
+            this.bindRuleFieldDataSources(ruleTypeSelect, ruleValueInput, ruleOptions);
+            ruleTypeSelect.addEventListener('change', () => this.bindRuleFieldDataSources(ruleTypeSelect, ruleValueInput, ruleOptions));
         }
     }
 
@@ -235,8 +239,6 @@ class AdminPanel {
         }
     }
 
-
-
     renderRecentActivity() {
         const tbody = document.getElementById('recentActivityBody');
         if (this.activity.length === 0) {
@@ -246,11 +248,11 @@ class AdminPanel {
             this.activity.forEach(activity => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${activity.user}</td>
-                    <td>${activity.action}</td>
-                    <td>${new Date(activity.date).toLocaleString()}</td>
-                    <td>${activity.details}</td>
-                `;
+                <td>${activity.user}</td>
+                <td>${activity.action}</td>
+                <td>${new Date(activity.date).toLocaleString()}</td>
+                <td>${activity.details}</td>
+            `;
                 tbody.appendChild(row);
             });
         }
@@ -404,7 +406,7 @@ class AdminPanel {
             }
         } catch (error) {
             console.error('Error de red al agregar usuario:', error);
-            alert('Error de red. Inténtalo de nuevo.');
+            alert('Error de red. No se pudo crear el usuario.');
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = 'Crear Usuario';
@@ -436,7 +438,7 @@ class AdminPanel {
             }
         } catch (error) {
             console.error('Error de red al editar usuario:', error);
-            alert('Error de red. Inténtalo de nuevo.');
+            alert('Error de red. No se pudo actualizar el usuario.');
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = 'Actualizar Rol';

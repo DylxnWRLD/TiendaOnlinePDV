@@ -18,7 +18,7 @@ const productSchema = new mongoose.Schema({
         valor: { type: Number, default: null },
         nombre_promo: { type: String, default: null },
         activa: { type: Boolean, default: false },
-        id_promocion_supabase: { type: Number, default: null}
+        id_promocion_supabase: { type: String, default: null}
     },
 
     
