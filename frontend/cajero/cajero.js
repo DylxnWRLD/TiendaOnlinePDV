@@ -756,3 +756,9 @@ function setupEventListeners() {
     });
 }
 
+// ===========================================
+// FUNCION PARA MANDAR AL HISTORIAL DE COMPRA
+// ===========================================
+$('btn-buscar-ventas').addEventListener('click', () => {
+  window.location.href = 'historialCompras.html'; 
+});
