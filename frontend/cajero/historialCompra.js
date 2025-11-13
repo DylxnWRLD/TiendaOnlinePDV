@@ -164,3 +164,8 @@ $('busquedaFecha').addEventListener('change', filtrarHistorial);
 // 🔹 Ejecutar al cargar
 // --------------------------------
 cargarHistorial();
+
+// 🔹 Botón para regresar al cajero
+$('btnRegresar').addEventListener('click', () => {
+  window.location.href = 'cajero.html'; 
+});
