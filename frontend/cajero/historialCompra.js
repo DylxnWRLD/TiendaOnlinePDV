@@ -22,7 +22,7 @@ async function cargarHistorial() {
     tbody.innerHTML = '<tr><td colspan="10">Cargando historial de compras...</td></tr>';
 
     try {
-        const respuesta = await fetch(URL_API);
+        const respuesta = await fetch(CLIENTE_DATA_URL);
         if (!respuesta.ok) throw new Error(`Error al cargar datos del servidor: ${respuesta.status}`);
 
         const compras = await respuesta.json();
