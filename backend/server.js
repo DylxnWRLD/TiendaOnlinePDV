@@ -841,15 +841,8 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             case 'MARCA':
                 filter = { brand: promo.valor_regla };
                 break;
-            case 'CATEGORIA':
-                filter = { category: promo.valor_regla };
-                break;
             case 'PRODUCTO':
-                if (mongoose.Types.ObjectId.isValid(promo.valor_regla)) {
-                    filter = { _id: promo.valor_regla };
-                } else {
-                    filter = { $or: [ { sku: promo.valor_regla }, { name: promo.valor_regla } ] };
-                }
+                filter = { name: promo.valor_regla };
                 break;
             case 'GLOBAL':
                 filter = {}; // Todos los productos
@@ -870,9 +863,7 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
             valor: promo.valor,           // cantidad numérica
             nombre_promo: promo.nombre,
             activa: promo.activa,
-            id_promocion_supabase: promo.id,
-            tipo_regla: promo.tipo_regla,
-            valor_regla: promo.valor_regla
+            id_promocion_supabase: promo.id
         };
 
         const result = await Product.updateMany(filter, {
@@ -919,15 +910,8 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
             case 'MARCA':
                 filter = { brand: promocion.valor_regla };
                 break;
-            case 'CATEGORIA':
-                filter = { category: promocion.valor_regla };
-                break;
             case 'PRODUCTO':
-                if (mongoose.Types.ObjectId.isValid(promocion.valor_regla)) {
-                    filter = { _id: promocion.valor_regla };
-                } else {
-                    filter = { $or: [ { sku: promocion.valor_regla }, { name: promocion.valor_regla } ] };
-                }
+                filter = { name: promocion.valor_regla };
                 break;
             case 'GLOBAL':
                 filter = {}; // Todos los productos
@@ -950,9 +934,7 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
             valor: promocion.valor,
             nombre_promo: promocion.nombre,
             activa: promocion.activa,
-            id_promocion_supabase: promocion.id,
-            tipo_regla: promocion.tipo_regla,
-            valor_regla: promocion.valor_regla
+            id_promocion_supabase: promocion.id
         };
 
         // 4. Aplicar descuento a los productos
@@ -1158,11 +1140,7 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
                 filter = { brand: promocionActualizada.valor_regla };
                 break;
             case 'PRODUCTO':
-                if (mongoose.Types.ObjectId.isValid(promocionActualizada.valor_regla)) {
-                    filter = { _id: promocionActualizada.valor_regla };
-                } else {
-                    filter = { $or: [ { sku: promocionActualizada.valor_regla }, { name: promocionActualizada.valor_regla } ] };
-                }
+                filter = { name: promocionActualizada.valor_regla };
                 break;
             case 'GLOBAL':
                 filter = {}; // Todos los productos
@@ -1183,9 +1161,7 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
             valor: promocionActualizada.valor,
             nombre_promo: promocionActualizada.nombre,
             activa: promocionActualizada.activa,
-            id_promocion_supabase: promocionActualizada.id,
-            //tipo_regla: promocionActualizada.tipo_regla,
-            //valor_regla: promocionActualizada.valor_regla
+            id_promocion_supabase: promocionActualizada.id
         };
 
         // Primero, remover la promoción anterior de los productos que ya no califican
@@ -1196,11 +1172,7 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
                     oldFilter = { brand: promocionAnterior.valor_regla };
                     break;
                 case 'PRODUCTO':
-                    if (mongoose.Types.ObjectId.isValid(promocionAnterior.valor_regla)) {
-                        oldFilter = { _id: promocionAnterior.valor_regla };
-                    } else {
-                        oldFilter = { $or: [ { sku: promocionAnterior.valor_regla }, { name: promocionAnterior.valor_regla } ] };
-                    }
+                    oldFilter = { name: promocionAnterior.valor_regla };
                     break;
                 case 'GLOBAL':
                     oldFilter = {};
@@ -1251,53 +1223,6 @@ async function removePromocionFromMongoDB(idPromocion) {
         throw error;
     }
 }
-
-
-
-
-
-
-// ===============================================
-// Catálogos y búsqueda para UI de promociones
-// ===============================================
-app.get('/api/products/distinct/brands', authenticateAdmin, async (req, res) => {
-    try {
-        const brands = await Product.distinct('brand', { brand: { $ne: null, $ne: '' } });
-        res.status(200).json(brands.sort());
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener marcas', details: error.message });
-    }
-});
-
-app.get('/api/products/distinct/categories', authenticateAdmin, async (req, res) => {
-    try {
-        const categories = await Product.distinct('category', { category: { $ne: null, $ne: '' } });
-        res.status(200).json(categories.sort());
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener categorías', details: error.message });
-    }
-});
-
-app.get('/api/products/search', authenticateAdmin, async (req, res) => {
-    try {
-        const q = (req.query.q || '').trim();
-        if (!q) return res.status(200).json([]);
-        const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        const items = await Product.find({ $or: [ { name: { $regex: regex } }, { sku: { $regex: regex } } ] })
-            .limit(20)
-            .select('name sku');
-        const results = items.map(p => ({ id: p._id.toString(), name: p.name, sku: p.sku }));
-        res.status(200).json(results);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al buscar productos', details: error.message });
-    }
-});
-
-
-
-
-
-
 
 // ===============================================
 // NUEVO: RUTA DE REPORTE DE VENTAS (DINÁMICO)

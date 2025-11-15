@@ -75,7 +75,6 @@ class AdminPanel {
         const ruleTypeSelect = document.getElementById('promotionRuleType');
         const ruleValueGroup = document.getElementById('promotionRuleValueGroup');
         const ruleValueInput = document.getElementById('promotionRuleValue');
-        const ruleOptions = document.getElementById('ruleOptions');
 
         if (ruleTypeSelect) {
             const toggleRuleValueField = () => {
@@ -91,9 +90,7 @@ class AdminPanel {
             };
             ruleTypeSelect.addEventListener('change', toggleRuleValueField);
             toggleRuleValueField();
-            // Vincular catálogos/búsqueda dinámica
-            this.bindRuleFieldDataSources(ruleTypeSelect, ruleValueInput, ruleOptions);
-            ruleTypeSelect.addEventListener('change', () => this.bindRuleFieldDataSources(ruleTypeSelect, ruleValueInput, ruleOptions));
+            // (Sin binding dinámico)
         }
     }
 
@@ -774,8 +771,6 @@ async function deleteUser(userId) {
         }
     }
 }
-
-
 
 // Inicializador principal
 document.addEventListener('DOMContentLoaded', () => {
