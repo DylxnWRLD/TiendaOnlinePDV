@@ -31,3 +31,92 @@ body {
     margin-bottom: 10px;
     font-size: 1.5em;
 }
+
+.filtros-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.filtros-container input,
+.filtros-container button {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  color: var(--color-text-light);
+  font-size: 0.9em;
+}
+
+.filtros-container input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary);
+}
+
+.filtros-container button {
+  background-color: var(--color-primary);
+  color: black;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filtros-container button:hover {
+  background-color: #00acc1;
+  transform: scale(1.05);
+}
+
+.tabla-historial {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #2b2b2b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tabla-historial th,
+.tabla-historial td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #444;
+}
+
+.tabla-historial th {
+  background-color: #333;
+  color: var(--color-primary);
+}
+
+.tabla-historial tr:nth-child(even) {
+  background-color: #252525;
+}
+
+.tabla-historial tr:hover {
+  background-color: #3a3a3a;
+}
+
+.col-venta-principal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.btn-regresar {
+  background-color: var(--color-danger);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.5);
+}
+
+.btn-regresar:hover {
+  background-color: #ff6659;
+  transform: scale(1.05);
+}

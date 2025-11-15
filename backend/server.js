@@ -2036,6 +2036,40 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
         res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: 'Ocurrió un error inesperado en el servidor.' });
     }
 });
+
+// ===============================================
+// Historial de compras
+// ===============================================
+app.get('/api/historial_compras', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        v1.nombre_producto, 
+        v2.ticket_numero, 
+        v1.cantidad, 
+        v2.fecha_hora, 
+        v1.precio_unitario_venta, 
+        v2.total_descuento, 
+        v1.monto_descuento, 
+        v2.total_final, 
+        v1.total_linea, 
+        v2.metodo_pago
+      FROM detalle_venta AS v1
+      INNER JOIN ventas AS v2 
+      ON v1.id_venta = v2.id_venta
+      ORDER BY v2.fecha_hora DESC;
+    `;
+    
+    const result = await pool.query(query);
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error("❌ Error obteniendo historial:", error);
+    res.status(500).json({ error: "Error obteniendo historial" });
+  }
+});
+
+
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
 // ===============================================
@@ -2058,5 +2092,3 @@ app.listen(port, '0.0.0.0', () => {
 
 // Exportaciones
 module.exports = { app, supabase, traducirErrorSupabase, authenticateAdmin, getUserIdFromToken };
-
-//

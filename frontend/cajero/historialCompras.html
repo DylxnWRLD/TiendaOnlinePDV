@@ -2,35 +2,48 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de ventas - LEVEL_ONE</title>
-    <link rel="stylesheet" href="historialCompra.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial de ventas - LEVEL_ONE</title>
+  <link rel="stylesheet" href="historialCompra.css">
 </head>
 
 <body>
-    <main class="col-venta-principal">
-        <h3 class="cyber-glow title-venta-actual">Historial de la venta</h3>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Ticket</th>
-                    <th>Cantidad</th>
-                    <th>Fecha</th>
-                    <th>Precio Unitario</th>
-                    <th>Descuento Total</th>
-                    <th>Descuento Línea</th>
-                    <th>Total Final</th>
-                    <th>Total Línea</th>
-                    <th>Método de Pago</th>
-                </tr>
-            </thead>
-            <tbody id="tablaHistorial"></tbody>
-        </table>
+  <main class="col-venta-principal">
+    <h3 class="cyber-glow title-venta-actual">Historial de la venta</h3>
 
-        <script src="historialCompra.js"></script>
-    </main>
+    <!-- 🔍 Filtros de búsqueda -->
+    <div class="filtros-container">
+      <input type="text" id="busquedaProducto" placeholder="Buscar por producto...">
+      <input type="date" id="busquedaFecha">
+      <button id="btnBuscar">Buscar</button>
+      <button id="btnLimpiar">Limpiar</button>
+    </div>
+
+    <div class="acciones-superiores">
+        <button id="btnRegresar" class="btn-regresar">← Regresar al cajero</button>
+    </div>
+
+    <table border="1" class="tabla-historial">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Ticket</th>
+          <th>Cantidad</th>
+          <th>Fecha</th>
+          <th>Precio Unitario</th>
+          <th>Descuento Total</th>
+          <th>Descuento Línea</th>
+          <th>Total Final</th>
+          <th>Total Línea</th>
+          <th>Método de Pago</th>
+        </tr>
+      </thead>
+      <tbody id="tablaHistorial"></tbody>
+    </table>
+
+    <script src="historialCompra.js"></script>
+  </main>
 </body>
 
 </html>
