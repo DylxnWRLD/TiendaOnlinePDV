@@ -52,6 +52,7 @@ function mostrarPagina(numPagina) {
     const inicio = (numPagina - 1) * registrosPorPagina;
     const fin = inicio + registrosPorPagina;
     const datosPagina = datosOriginales.slice(inicio, fin);
+    const safeFixed = (value) => Number(value || 0).toFixed(2);
 
     datosPagina.forEach((compra) => {
         const row = tbody.insertRow();
@@ -59,11 +60,11 @@ function mostrarPagina(numPagina) {
         row.insertCell().textContent = compra.ticket_numero;
         row.insertCell().textContent = compra.cantidad;
         row.insertCell().textContent = new Date(compra.fecha_hora).toLocaleString();
-        row.insertCell().textContent = `$${Number(compra.precio_unitario_venta).toFixed(2)}`;
-        row.insertCell().textContent = `$${Number(compra.total_descuento).toFixed(2)}`;
-        row.insertCell().textContent = `$${Number(compra.monto_descuento).toFixed(2)}`;
-        row.insertCell().textContent = `$${Number(compra.total_final).toFixed(2)}`;
-        row.insertCell().textContent = `$${Number(compra.total_linea).toFixed(2)}`;
+        row.insertCell().textContent = `$${safeFixed(compra.precio_unitario_venta)}`;
+        row.insertCell().textContent = `$${safeFixed(compra.total_descuento)}`;
+        row.insertCell().textContent = `$${safeFixed(compra.monto_descuento)}`;
+        row.insertCell().textContent = `$${safeFixed(compra.total_final)}`;
+        row.insertCell().textContent = `$${safeFixed(compra.total_linea)}`; // ⭐️ Ajustado
         row.insertCell().textContent = compra.metodo_pago;
     });
 
