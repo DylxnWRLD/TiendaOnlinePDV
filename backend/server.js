@@ -2046,32 +2046,94 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 // ===============================================
 // Historial de compras
 // ===============================================
+//app.get('/api/historial_compras', async (req, res) => {
+//  try {
+//    const query = `
+//      SELECT 
+//        v1.nombre_producto, 
+//        v2.ticket_numero, 
+//        v1.cantidad, 
+//        v2.fecha_hora, 
+//        v1.precio_unitario_venta, 
+//        v2.total_descuento, 
+//        v1.monto_descuento, 
+//        v2.total_final, 
+//        v1.total_linea, 
+//        v2.metodo_pago
+//      FROM detalle_venta AS v1
+//      INNER JOIN ventas AS v2 
+//      ON v1.id_venta = v2.id_venta
+//      ORDER BY v2.fecha_hora DESC;
+//    `;
+    
+//    const result = await pool.query(query);
+//    res.json(result.rows);
+
+//  } catch (error) {
+//    console.error("❌ Error obteniendo historial:", error);
+//    res.status(500).json({ error: "Error obteniendo historial" });
+//  }
+//});
+
+// ===============================================
+// Historial de compras (Alternativa con .select())
+// ===============================================
 app.get('/api/historial_compras', async (req, res) => {
   try {
-    const query = `
-      SELECT 
-        v1.nombre_producto, 
-        v2.ticket_numero, 
-        v1.cantidad, 
-        v2.fecha_hora, 
-        v1.precio_unitario_venta, 
-        v2.total_descuento, 
-        v1.monto_descuento, 
-        v2.total_final, 
-        v1.total_linea, 
-        v2.metodo_pago
-      FROM detalle_venta AS v1
-      INNER JOIN ventas AS v2 
-      ON v1.id_venta = v2.id_venta
-      ORDER BY v2.fecha_hora DESC;
-    `;
+    // Intenta obtener los detalles de venta y hacer un JOIN implícito 
+    // con la tabla 'ventas' (v2) usando la columna 'id_venta' como referencia.
+    // El 'ventas!inner(*)' asume que 'detalle_venta' tiene una Foreign Key a 'ventas'.
+    const { data, error } = await supabase
+        .from('detalle_venta')
+        .select(`
+            nombre_producto, 
+            cantidad, 
+            precio_unitario_venta, 
+            monto_descuento,
+            
+            // ⭐️ Realiza el JOIN a la tabla 'ventas' (asume que la FK está bien definida)
+            ventas!inner (
+                ticket_numero, 
+                fecha_hora, 
+                total_descuento, 
+                total_final, 
+                metodo_pago
+            )
+        `)
+        .order('ventas.fecha_hora', { ascending: false });
+
+    if (error) {
+      console.error("❌ Error de Supabase obteniendo historial:", error.message);
+      throw new Error(error.message);
+    }
     
-    const result = await pool.query(query);
-    res.json(result.rows);
+    // El resultado necesita aplanarse para que coincida con el frontend:
+    const historialAplanado = data.map(detalle => {
+        // La información de 'ventas' viene anidada, la extraemos y la combinamos
+        const venta = detalle.ventas; 
+        
+        // Calculamos el total de la línea (necesario para el frontend)
+        const total_linea = (detalle.precio_unitario_venta * detalle.cantidad) - (detalle.monto_descuento * detalle.cantidad);
+        
+        return {
+            nombre_producto: detalle.nombre_producto,
+            ticket_numero: venta.ticket_numero,
+            cantidad: detalle.cantidad,
+            fecha_hora: venta.fecha_hora,
+            precio_unitario_venta: detalle.precio_unitario_venta,
+            total_descuento: venta.total_descuento,
+            monto_descuento: detalle.monto_descuento,
+            total_final: venta.total_final,
+            total_linea: total_linea, // Calculado en el backend de Express
+            metodo_pago: venta.metodo_pago,
+        };
+    });
+
+    res.json(historialAplanado); 
 
   } catch (error) {
-    console.error("❌ Error obteniendo historial:", error);
-    res.status(500).json({ error: "Error obteniendo historial" });
+    console.error("❌ Error en /api/historial_compras:", error.message);
+    res.status(500).json({ error: "Error al obtener historial de ventas con select(). Verifique las relaciones de FK en Supabase." });
   }
 });
 
