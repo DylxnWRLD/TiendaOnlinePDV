@@ -166,6 +166,6 @@ $('busquedaFecha').addEventListener('change', filtrarHistorial);
 cargarHistorial();
 
 // 🔹 Botón para regresar al cajero
-$('btnRegresar').addEventListener('click', () => {
+document.getElementById('btnRegresar').addEventListener('click', () => {
   window.location.href = 'cajero.html'; 
 });
