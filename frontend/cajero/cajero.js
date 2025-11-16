@@ -760,5 +760,5 @@ function setupEventListeners() {
 // FUNCION PARA MANDAR AL HISTORIAL DE COMPRA
 // ===========================================
 document.getElementById('btn-buscar-ventas').addEventListener('click', () => {
-  window.location.href = 'frontend/cajero/historialCompra.html';
+  window.location.href = 'historialCompras.html';
 });
