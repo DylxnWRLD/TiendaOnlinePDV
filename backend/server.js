@@ -2097,22 +2097,8 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor al procesar la petición.' });
     }
 });
-
 // ===============================================
-// Prueba para ver si funciona el historial
-// ====================================
 // Historial de compras
-// ===============================================
-
-// ===============================================
-// CONEXIÓN A POSTGRES — ESTA PARTE DEBE IR ARRIBA
-// ===============================================
-// Verificar la conexión
-pool.connect()
-    .then(() => console.log("🟢 PostgreSQL conectado correctamente (POOL READY)"))
-    .catch((err) => console.error("❌ Error conectando a PostgreSQL:", err.message));
-
-
 // ===============================================
 // RUTA: HISTORIAL DE COMPRAS DEL CAJERO
 // ===============================================
