@@ -233,8 +233,8 @@ function handleClientMenuAction(action) {
             // Aquí iría la lógica de redirección a la página de favoritos
             break;
         case 'historial':
-            alert("Historial de Compra: Función no implementada aún.");
-            // Aquí iría la lógica de redirección a la página de historial
+            // Redirigir a la nueva página de historial
+            window.location.href = "frontend/compraCliente/historialcliente.html";
             break;
         case 'logout':
             if (confirm("¿Seguro que deseas cerrar sesión?")) {

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LevelOne - Mi Historial</title>
+  
+  <!-- 1. Importamos los estilos de tu index.css para la base (opcional pero recomendado) -->
+  <link rel="stylesheet" href="../../index.css">
+  
+  <!-- 2. Importamos los estilos PROPIOS de esta página -->
+  <link rel="stylesheet" href="historialcliente.css">
+
+  <!-- 3. Importamos el cliente de Supabase (necesario para el auth) -->
+  <!-- Asegúrate que la ruta sea correcta según tu proyecto -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <!-- 
+    Reutilizamos la estructura exacta de tu index.html para el header y el menú
+    para mantener la consistencia visual de la aplicación.
+  -->
+
+  <!-- Menú lateral del Cliente (copiado de index.html) -->
+  <div id="clientSideMenu" style="
+    position: fixed; 
+    top: 0; 
+    left: -250px; 
+    width: 250px; 
+    height: 100%; 
+    background-color: #211949; 
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5); 
+    z-index: 2000; 
+    transition: left 0.3s;
+    padding-top: 60px;
+    color: white;
+    box-sizing: border-box;
+  ">
+    <h3 style="padding: 15px 20px; border-bottom: 1px solid #4a69ff; margin: 0; color: #4a69ff;">Menú Cliente</h3>
+    <ul id="clientMenuLinks" style="list-style: none; padding: 0;">
+      <li
+        style="padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #332a68; transition: background-color 0.2s;"
+        data-action="rastreo">Rastreo de Pedidos</li>
+      <li
+        style="padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #332a68; transition: background-color 0.2s;"
+        data-action="favoritos">Favoritos</li>
+      <li
+        style="padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #332a68; transition: background-color 0.2s; background-color: #332a68;"
+        data-action="historial">Historial de Compra</li>
+      <li id="logoutMenuItem"
+        style="padding: 15px 20px; cursor: pointer; border-top: 1px solid #4a69ff; margin-top: 10px; background-color: #e74c3c; transition: opacity 0.2s;"
+        data-action="logout">Cerrar Sesión</li>
+    </ul>
+  </div>
+
+  <!-- Overlay (copiado de index.html) -->
+  <div id="menuOverlay" style="
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0,0,0,0.6); 
+    z-index: 1999; 
+    display: none;
+  "></div>
+
+  <!-- Header (copiado de index.html) -->
+  <header class="header">
+    <div class="menu-icon" id="menuToggle">
+      ☰
+    </div>
+    <h1 class="logo">LevelOne</h1>
+    <div class="search-bar">
+      <!-- El buscador puede estar deshabilitado o redirigir al index -->
+      <input type="text" id="search" placeholder="Buscar productos..." disabled>
+      <button id="searchBtn" disabled>Buscar</button>
+    </div>
+    <div class="user-actions">
+      <button id="loginBtn" class="login-btn">Mi Cuenta</button>
+      <button id="cartBtn" class="cart-btn">Comprar</button>
+    </div>
+  </header>
+
+  <!-- 
+    AQUÍ COMIENZA EL CONTENIDO PRINCIPAL DE LA PÁGINA DE HISTORIAL
+  -->
+  <main class="history-main-container">
+    <section class="history-content-box">
+      <h2 class="history-title">Mi Historial de Compras</h2>
+      
+      <!-- El JS inyectará las tarjetas de compra aquí -->
+      <div class="history-container" id="history-container">
+        
+        <!-- Estado de Carga Inicial -->
+        <div class="loading-message" id="loading-message">
+          <p>Cargando tu historial...</p>
+        </div>
+
+        <!-- 
+          Ejemplo de cómo se verá una tarjeta de orden (plantilla):
+          
+          <div class="order-card">
+            <div class="order-header">
+              <span class="order-id">Pedido: #PED-001</span>
+              <span class="order-date">Fecha: 15/11/2025</span>
+              <span class="order-total">Total: $500.00</span>
+              <span class="order-toggle-icon">+</span>
+            </div>
+            <div class="order-details">
+              <h4>Detalles del Pedido:</h4>
+              <ul class="product-list">
+                <li class="product-item">
+                  <span>(2x) Producto A</span>
+                  <span>$300.00</span>
+                </li>
+                <li class="product-item">
+                  <span>(1x) Producto B</span>
+                  <span>$200.00</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        -->
+
+      </div>
+    </section>
+  </main>
+
+  <!-- 4. Importamos el JS de esta página -->
+  <script src="historialcliente.js"></script>
+</body>
+
+</html>
