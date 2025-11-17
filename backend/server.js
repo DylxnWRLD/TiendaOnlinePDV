@@ -2100,45 +2100,56 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 
 // ===============================================
 // Prueba para ver si funciona el historial
-// ===============================================
-const { Pool } = require('pg');
-
-const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-// ===============================================
+// ====================================
 // Historial de compras
 // ===============================================
 app.get('/api/historial_compras', async (req, res) => {
   try {
-    const query = `
-      SELECT 
-        v1.nombre_producto, 
-        v2.ticket_numero, 
-        v1.cantidad, 
-        v2.fecha_hora, 
-        v1.precio_unitario_venta, 
-        v2.total_descuento, 
-        v1.monto_descuento, 
-        v2.total_final, 
-        v1.total_linea, 
-        v2.metodo_pago
-      FROM detalle_venta AS v1
-      INNER JOIN ventas AS v2 
-      ON v1.id_venta = v2.id_venta
-      ORDER BY v2.fecha_hora DESC;
-    `;
-    
-    const result = await pool.query(query);
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('detalle_venta')
+      .select(`
+        nombre_producto,
+        cantidad,
+        monto_descuento,
+        precio_unitario_venta,
+        total_linea,
+        ventas!inner (
+          ticket_numero,
+          fecha_hora,
+          total_descuento,
+          total_final,
+          metodo_pago
+        )
+      `)
+      .order('fecha_hora', { ascending: false });
+
+    if (error) {
+      console.error("Error Supabase:", error);
+      return res.status(500).json({ error: "Error Supabase" });
+    }
+
+    // Adaptamos los datos para que coincidan con el frontend
+    const ventas = data.map(v => ({
+      nombre_producto: v.nombre_producto,
+      ticket_numero: v.ventas.ticket_numero,
+      cantidad: v.cantidad,
+      fecha_hora: v.ventas.fecha_hora,
+      precio_unitario_venta: v.precio_unitario_venta,
+      total_descuento: v.ventas.total_descuento,
+      monto_descuento: v.monto_descuento,
+      total_final: v.ventas.total_final,
+      total_linea: v.total_linea,
+      metodo_pago: v.ventas.metodo_pago
+    }));
+
+    res.json(ventas);
 
   } catch (error) {
-    console.error("❌ Error obteniendo historial:", error);
-    res.status(500).json({ error: "Error obteniendo historial" });
+    console.error("Error general:", error);
+    res.status(500).json({ error: "Error backend" });
   }
 });
+
 
 
 // ===============================================
