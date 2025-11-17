@@ -2107,14 +2107,6 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 // ===============================================
 // CONEXIÓN A POSTGRES — ESTA PARTE DEBE IR ARRIBA
 // ===============================================
-
-const { Pool } = require('pg');
-
-const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
 // Verificar la conexión
 pool.connect()
     .then(() => console.log("🟢 PostgreSQL conectado correctamente (POOL READY)"))
