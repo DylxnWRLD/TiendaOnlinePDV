@@ -2045,7 +2045,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
 
 // ===============================================
-// ⭐️ NUEVO: HISTORIAL DE COMPRAS DEL CLIENTE (ONLINE)
+// ⭐️ NUEVO: HISTORIAL DE COMPRAS DEL CLIENTE (ONLINE) [CORREGIDO]
 // ===============================================
 // Esta ruta es para que el cliente vea SU PROPIO historial de compras online
 app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
@@ -2059,7 +2059,6 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
             .from('cliente_online')
             .select(`
                 id_cliente,
-                nombre,
                 correo,
                 ventasonline (
                     id_ventaonline,
@@ -2079,15 +2078,15 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
             .maybeSingle(); // Usamos maybeSingle() por si es un cliente sin compras
 
         if (error) {
+            // ⭐️ MEJORA: Enviar el error real de Supabase al frontend
             console.error('Error de Supabase al obtener historial del cliente:', error.message);
-            throw error;
+            // Enviamos el error real en el JSON de respuesta
+            return res.status(500).json({ message: `Error de Base de Datos: ${error.message}` });
         }
 
         // 2. Manejar el caso de que no se encuentre el cliente
-        // (Ej. se registró pero nunca ha completado una compra online)
         if (!data) {
             console.log(`[Historial Cliente] No se encontró perfil 'cliente_online' para el usuario: ${id_usuario_auth}`);
-            // Devolvemos 404 para que el frontend sepa que no hay datos
             return res.status(404).json({ message: 'No se encontró historial para este cliente.' });
         }
 
@@ -2095,8 +2094,9 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
         res.status(200).json(data);
 
     } catch (error) {
+        // Catch para errores inesperados del middleware o de la lógica
         console.error('Error fatal en /api/cliente/historial:', error.message);
-        res.status(500).json({ message: 'Error interno del servidor al obtener el historial.' });
+        res.status(500).json({ message: 'Error interno del servidor al procesar la petición.' });
     }
 });
 
