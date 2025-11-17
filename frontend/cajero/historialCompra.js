@@ -1,6 +1,3 @@
-// ==========================================
-// 🔹 CONFIGURACIÓN
-// ==========================================
 const $ = (id) => document.getElementById(id);
 
 const API_BASE_URL =
@@ -10,18 +7,10 @@ const API_BASE_URL =
 
 const CLIENTE_DATA_URL = `${API_BASE_URL}/api/historial_compras`;
 
-
-// ==========================================
-// 🔹 VARIABLES GLOBALES
-// ==========================================
 let datosOriginales = [];
 let paginaActual = 1;
 const registrosPorPagina = 10;
 
-
-// ==========================================
-// 🔹 CARGAR HISTORIAL COMPLETO
-// ==========================================
 async function cargarHistorial() {
     const tbody = $('tablaHistorial');
     const message = $('loading-message');
@@ -52,10 +41,6 @@ async function cargarHistorial() {
     }
 }
 
-
-// ==========================================
-// 🔹 MOSTRAR TABLA POR PÁGINA
-// ==========================================
 function mostrarPagina(numPagina) {
     const tbody = $('tablaHistorial');
     tbody.innerHTML = '';
@@ -83,10 +68,6 @@ function mostrarPagina(numPagina) {
     actualizarEstadoBotones();
 }
 
-
-// ==========================================
-// 🔹 PAGINACIÓN
-// ==========================================
 function generarControlesPaginacion() {
     const totalPaginas = Math.ceil(datosOriginales.length / registrosPorPagina);
     const contenedor = $('paginacion');
@@ -129,10 +110,6 @@ function actualizarEstadoBotones() {
     if (indicador) indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
 }
 
-
-// ==========================================
-// 🔹 FILTRO DE BÚSQUEDA
-// ==========================================
 function filtrarHistorial() {
     const texto = $('busquedaProducto').value.toLowerCase();
     const fecha = $('busquedaFecha').value;
@@ -155,10 +132,6 @@ function filtrarHistorial() {
     generarControlesPaginacion();
 }
 
-
-// ==========================================
-// 🔹 EVENTOS
-// ==========================================
 $('btnBuscar').addEventListener('click', filtrarHistorial);
 
 $('btnLimpiar').addEventListener('click', () => {
@@ -170,16 +143,8 @@ $('btnLimpiar').addEventListener('click', () => {
 $('busquedaProducto').addEventListener('input', filtrarHistorial);
 $('busquedaFecha').addEventListener('change', filtrarHistorial);
 
-
-// ==========================================
-// 🔹 BOTÓN REGRESAR
-// ==========================================
 document.getElementById('btnRegresar').addEventListener('click', () => {
     window.location.href = 'cajero.html';
 });
 
-
-// ==========================================
-// 🔹 INICIAR
-// ==========================================
 cargarHistorial();

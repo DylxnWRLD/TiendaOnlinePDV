@@ -2103,51 +2103,73 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 // ====================================
 // Historial de compras
 // ===============================================
+
+// ===============================================
+// CONEXIÓN A POSTGRES — ESTA PARTE DEBE IR ARRIBA
+// ===============================================
+
+const { Pool } = require('pg');
+
+const pool = new Pool({
+    connectionString: process.env.POSTGRES_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
+// Verificar la conexión
+pool.connect()
+    .then(() => console.log("🟢 PostgreSQL conectado correctamente (POOL READY)"))
+    .catch((err) => console.error("❌ Error conectando a PostgreSQL:", err.message));
+
+
+// ===============================================
+// RUTA: HISTORIAL DE COMPRAS DEL CAJERO
+// ===============================================
 app.get('/api/historial_compras', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('detalle_venta')
-      .select(`
-        nombre_producto,
-        cantidad,
-        monto_descuento,
-        precio_unitario_venta,
-        total_linea,
-        ventas!inner (
-          ticket_numero,
-          fecha_hora,
-          total_descuento,
-          total_final,
-          metodo_pago
-        )
-      `)
-      .order('fecha_hora', { ascending: false });
+    try {
+        const query = `
+            SELECT 
+                v1.nombre_producto, 
+                v2.ticket_numero, 
+                v1.cantidad, 
+                v2.fecha_hora, 
+                v1.precio_unitario_venta, 
+                v2.total_descuento, 
+                v1.monto_descuento, 
+                v2.total_final, 
+                v1.total_linea, 
+                v2.metodo_pago
+            FROM detalle_venta AS v1
+            INNER JOIN ventas AS v2 
+                ON v1.id_venta = v2.id_venta
+            ORDER BY v2.fecha_hora DESC;
+        `;
 
-    if (error) {
-      console.error("Error Supabase:", error);
-      return res.status(500).json({ error: "Error Supabase" });
+        const result = await pool.query(query);
+
+        res.status(200).json(result.rows);
+
+    } catch (error) {
+        console.error("❌ Error obteniendo historial:", error);
+        res.status(500).json({ 
+            error: "Error obteniendo historial",
+            detalles: error.message
+        });
     }
+});
 
-    // Adaptamos los datos para que coincidan con el frontend
-    const ventas = data.map(v => ({
-      nombre_producto: v.nombre_producto,
-      ticket_numero: v.ventas.ticket_numero,
-      cantidad: v.cantidad,
-      fecha_hora: v.ventas.fecha_hora,
-      precio_unitario_venta: v.precio_unitario_venta,
-      total_descuento: v.ventas.total_descuento,
-      monto_descuento: v.monto_descuento,
-      total_final: v.ventas.total_final,
-      total_linea: v.total_linea,
-      metodo_pago: v.ventas.metodo_pago
-    }));
 
-    res.json(ventas);
+// ===============================================
+// SERVIR ARCHIVOS ESTÁTICOS (DEBE ESTAR AL FINAL)
+// ===============================================
+app.use('/cajero', express.static(path.join(__dirname, 'cajero')));
+app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
+app.use(express.static(path.join(__dirname, '..')));
 
-  } catch (error) {
-    console.error("Error general:", error);
-    res.status(500).json({ error: "Error backend" });
-  }
+// ===============================================
+// INICIAR SERVIDOR
+// ===============================================
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
 });
 
 
