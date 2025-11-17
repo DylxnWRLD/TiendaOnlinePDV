@@ -1,14 +1,11 @@
 // ==========================================
-// 🔹 CONFIGURACIÓN
+// CONFIGURACIÓN
 // ==========================================
-
-// 1. Configuración del Backend (copiado de tu index.js)
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:3000'
     : 'https://tiendaonlinepdv.onrender.com';
 
 // 2. Configuración del Cliente de Supabase
-// (Necesitas tus propias claves de Supabase aquí)
 const SUPABASE_URL = 'https://TU_SUPABASE_URL.supabase.co';
 const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
 
@@ -20,11 +17,10 @@ try {
 }
 
 // ==========================================
-// 🔸 INICIALIZACIÓN (DOM Ready)
+// INICIALIZACIÓN (DOM)
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Configura el header y menú (función reutilizada de index.js)
     setupHeaderAndMenu();
 
     // 2. Carga el historial de compras (la nueva función)
@@ -32,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// 🔹 LÓGICA DEL HISTORIAL (NUEVO)
+// LÓGICA DEL HISTORIAL
 // ==========================================
 
 async function loadPurchaseHistory() {
@@ -151,11 +147,9 @@ function createOrderCard(venta) {
 
 
 // ==========================================
-// 🔹 LÓGICA DEL HEADER (REUTILIZADA)
+// LÓGICA DEL HEADER
 // ==========================================
 
-// Esta función es una copia de la de tu index.js,
-// pero adaptada para esta página (ej. sin carrusel)
 function setupHeaderAndMenu() {
   const loginBtn = document.getElementById("loginBtn");
   const cartBtn = document.getElementById("cartBtn");
@@ -166,7 +160,7 @@ function setupHeaderAndMenu() {
   const searchInput = document.getElementById("search");
   const searchBtn = document.getElementById("searchBtn");
 
-  // --- Lógica de Sesión (de tu compañero) ---
+  // --- Lógica de Sesión ---
   const token = sessionStorage.getItem('supabase-token');
   const role = sessionStorage.getItem('user-role');
 
@@ -174,7 +168,6 @@ function setupHeaderAndMenu() {
     // --- Usuario LOGUEADO ---
     if (loginBtn) {
       loginBtn.textContent = "Mi Cuenta";
-      // (No le añadimos evento, ya está en su cuenta)
     }
     if (cartBtn) {
       cartBtn.addEventListener("click", () => {

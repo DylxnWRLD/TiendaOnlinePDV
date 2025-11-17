@@ -2045,11 +2045,10 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
 
 // ===============================================
-// ⭐️ NUEVO: HISTORIAL DE COMPRAS DEL CLIENTE (ONLINE) [CORREGIDO]
+// HISTORIAL DE COMPRAS DEL CLIENTE
 // ===============================================
 // Esta ruta es para que el cliente vea SU PROPIO historial de compras online
 app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
-    // El middleware 'getUserIdFromToken' ya nos da el ID del usuario (de auth.users)
     const id_usuario_auth = req.userId;
     console.log(`[Historial Cliente] Petición recibida para usuario: ${id_usuario_auth}`);
 
@@ -2078,7 +2077,6 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
             .maybeSingle(); // Usamos maybeSingle() por si es un cliente sin compras
 
         if (error) {
-            // ⭐️ MEJORA: Enviar el error real de Supabase al frontend
             console.error('Error de Supabase al obtener historial del cliente:', error.message);
             // Enviamos el error real en el JSON de respuesta
             return res.status(500).json({ message: `Error de Base de Datos: ${error.message}` });

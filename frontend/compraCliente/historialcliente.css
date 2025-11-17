@@ -1,7 +1,4 @@
-/* Reutilizamos las variables de tu index.css para consistencia.
-  No es necesario @importar index.css si ya lo linkeaste en el HTML,
-  pero sí necesitamos las variables aquí si no lo hiciste.
-*/
+
 :root {
   --color-primario-oscuro: #211949;
   --color-acento-vibrante: #4a69ff;
@@ -14,9 +11,6 @@
   --sombra-elevada: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Aseguramos que el fondo de esta página sea el mismo
-  que el del index (el degradado).
-*/
 body {
   background-color: var(--color-superficie);
   background-image: linear-gradient(
