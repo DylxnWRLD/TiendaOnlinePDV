@@ -2104,49 +2104,21 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 // ===============================================
 app.get('/api/historial_compras', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('detalle_venta')
-      .select(`
-        nombre_producto,
-        cantidad,
-        monto_descuento,
-        total_linea,
-        precio_unitario_venta,
-        ventas (
-          ticket_numero,
-          fecha_hora,
-          total_descuento,
-          total_final,
-          metodo_pago
-        )
-      `);
+    // Ejecuta la función que ya sabes que sí funciona
+    const { data, error } = await supabase.rpc('get_historial_ventas');
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error("❌ Error RPC:", error);
       return res.status(500).json({ error: error.message });
     }
 
-    const historial = data.map(item => ({
-      nombre_producto: item.nombre_producto,
-      cantidad: item.cantidad,
-      monto_descuento: item.monto_descuento,
-      total_linea: item.total_linea,
-      precio_unitario_venta: item.precio_unitario_venta,
-      ticket_numero: item.ventas.ticket_numero,
-      fecha_hora: item.ventas.fecha_hora,
-      total_descuento: item.ventas.total_descuento,
-      total_final: item.ventas.total_final,
-      metodo_pago: item.ventas.metodo_pago
-    }));
-
-    res.json(historial);
+    res.json(data ?? []);
 
   } catch (error) {
-    console.error("Error interno:", error);
+    console.error("❌ Error interno:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
-
 
 
 // ===============================================
