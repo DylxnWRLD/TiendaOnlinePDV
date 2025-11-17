@@ -49,7 +49,6 @@ const port = process.env.PORT || 3000;
 // ===============================================
 // Conexiona para el historial 
 // ===============================================
-const path = require('path');
 app.use('/cajero', express.static(path.join(__dirname, 'cajero')));
 
 // ===============================================
