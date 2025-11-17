@@ -2117,37 +2117,50 @@ pool.connect()
 // RUTA: HISTORIAL DE COMPRAS DEL CAJERO
 // ===============================================
 app.get('/api/historial_compras', async (req, res) => {
-    try {
-        const query = `
-            SELECT 
-                v1.nombre_producto, 
-                v2.ticket_numero, 
-                v1.cantidad, 
-                v2.fecha_hora, 
-                v1.precio_unitario_venta, 
-                v2.total_descuento, 
-                v1.monto_descuento, 
-                v2.total_final, 
-                v1.total_linea, 
-                v2.metodo_pago
-            FROM detalle_venta AS v1
-            INNER JOIN ventas AS v2 
-                ON v1.id_venta = v2.id_venta
-            ORDER BY v2.fecha_hora DESC;
-        `;
+  try {
+    const { data, error } = await supabase
+      .from('detalle_venta')
+      .select(`
+        nombre_producto,
+        cantidad,
+        monto_descuento,
+        total_linea,
+        precio_unitario_venta,
+        ventas (
+          ticket_numero,
+          fecha_hora,
+          total_descuento,
+          total_final,
+          metodo_pago
+        )
+      `);
 
-        const result = await pool.query(query);
-
-        res.status(200).json(result.rows);
-
-    } catch (error) {
-        console.error("❌ Error obteniendo historial:", error);
-        res.status(500).json({ 
-            error: "Error obteniendo historial",
-            detalles: error.message
-        });
+    if (error) {
+      console.error("Supabase error:", error);
+      return res.status(500).json({ error: error.message });
     }
+
+    const historial = data.map(item => ({
+      nombre_producto: item.nombre_producto,
+      cantidad: item.cantidad,
+      monto_descuento: item.monto_descuento,
+      total_linea: item.total_linea,
+      precio_unitario_venta: item.precio_unitario_venta,
+      ticket_numero: item.ventas.ticket_numero,
+      fecha_hora: item.ventas.fecha_hora,
+      total_descuento: item.ventas.total_descuento,
+      total_final: item.ventas.total_final,
+      metodo_pago: item.ventas.metodo_pago
+    }));
+
+    res.json(historial);
+
+  } catch (error) {
+    console.error("Error interno:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
+
 
 
 // ===============================================
