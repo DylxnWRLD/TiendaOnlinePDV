@@ -1,32 +1,42 @@
+// ==========================================
+// 🔹 CONFIGURACIÓN
+// ==========================================
 const $ = (id) => document.getElementById(id);
+
 const API_BASE_URL =
     window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://127.0.0.1:3000'
         : 'https://tiendaonlinepdv.onrender.com';
 
-const RPC_ENDPOINT_URL = `${API_BASE_URL}/api/rpc/procesar_compra_online`;
 const CLIENTE_DATA_URL = `${API_BASE_URL}/api/historial_compras`;
 
-// --------------------------------
-// 🔹 Variables globales
-// --------------------------------
+
+// ==========================================
+// 🔹 VARIABLES GLOBALES
+// ==========================================
 let datosOriginales = [];
 let paginaActual = 1;
 const registrosPorPagina = 10;
 
-// --------------------------------
-// 🔹 Cargar historial completo
-// --------------------------------
+
+// ==========================================
+// 🔹 CARGAR HISTORIAL COMPLETO
+// ==========================================
 async function cargarHistorial() {
     const tbody = $('tablaHistorial');
-    tbody.innerHTML = '<tr><td colspan="10">Cargando historial de compras...</td></tr>';
+    const message = $('loading-message');
+
+    tbody.innerHTML = '';
+    message.textContent = "Cargando historial...";
 
     try {
         const respuesta = await fetch(CLIENTE_DATA_URL);
-        if (!respuesta.ok) throw new Error(`Error al cargar datos del servidor: ${respuesta.status}`);
+        if (!respuesta.ok) throw new Error(`Error ${respuesta.status}`);
 
         const compras = await respuesta.json();
         datosOriginales = compras;
+
+        message.style.display = "none";
 
         if (compras.length === 0) {
             tbody.innerHTML = '<tr><td colspan="10">No hay registros de ventas.</td></tr>';
@@ -37,14 +47,15 @@ async function cargarHistorial() {
         generarControlesPaginacion();
 
     } catch (error) {
-        console.error('Error en el frontend:', error);
-        tbody.innerHTML = `<tr><td colspan="10" style="color: red;">Error al conectar con el servidor: ${error.message}</td></tr>`;
+        console.error('Error en historial frontend:', error);
+        message.textContent = `Error al conectar con el servidor: ${error.message}`;
     }
 }
 
-// --------------------------------
-// 🔹 Mostrar tabla por página
-// --------------------------------
+
+// ==========================================
+// 🔹 MOSTRAR TABLA POR PÁGINA
+// ==========================================
 function mostrarPagina(numPagina) {
     const tbody = $('tablaHistorial');
     tbody.innerHTML = '';
@@ -52,6 +63,7 @@ function mostrarPagina(numPagina) {
     const inicio = (numPagina - 1) * registrosPorPagina;
     const fin = inicio + registrosPorPagina;
     const datosPagina = datosOriginales.slice(inicio, fin);
+
     const safeFixed = (value) => Number(value || 0).toFixed(2);
 
     datosPagina.forEach((compra) => {
@@ -64,16 +76,17 @@ function mostrarPagina(numPagina) {
         row.insertCell().textContent = `$${safeFixed(compra.total_descuento)}`;
         row.insertCell().textContent = `$${safeFixed(compra.monto_descuento)}`;
         row.insertCell().textContent = `$${safeFixed(compra.total_final)}`;
-        row.insertCell().textContent = `$${safeFixed(compra.total_linea)}`; // ⭐️ Ajustado
+        row.insertCell().textContent = `$${safeFixed(compra.total_linea)}`;
         row.insertCell().textContent = compra.metodo_pago;
     });
 
     actualizarEstadoBotones();
 }
 
-// --------------------------------
-// 🔹 Generar controles de paginación
-// --------------------------------
+
+// ==========================================
+// 🔹 PAGINACIÓN
+// ==========================================
 function generarControlesPaginacion() {
     const totalPaginas = Math.ceil(datosOriginales.length / registrosPorPagina);
     const contenedor = $('paginacion');
@@ -83,26 +96,22 @@ function generarControlesPaginacion() {
     btnAnterior.textContent = '← Anterior';
     btnAnterior.classList.add('btn-paginacion');
     btnAnterior.addEventListener('click', () => cambiarPagina(-1));
-    contenedor.appendChild(btnAnterior);
 
     const indicador = document.createElement('span');
     indicador.id = 'indicadorPagina';
     indicador.style.margin = '0 10px';
     indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
-    contenedor.appendChild(indicador);
 
     const btnSiguiente = document.createElement('button');
     btnSiguiente.textContent = 'Siguiente →';
     btnSiguiente.classList.add('btn-paginacion');
     btnSiguiente.addEventListener('click', () => cambiarPagina(1));
-    contenedor.appendChild(btnSiguiente);
 
-    actualizarEstadoBotones();
+    contenedor.appendChild(btnAnterior);
+    contenedor.appendChild(indicador);
+    contenedor.appendChild(btnSiguiente);
 }
 
-// --------------------------------
-// 🔹 Cambiar de página
-// --------------------------------
 function cambiarPagina(direccion) {
     const totalPaginas = Math.ceil(datosOriginales.length / registrosPorPagina);
     paginaActual += direccion;
@@ -114,18 +123,16 @@ function cambiarPagina(direccion) {
     actualizarEstadoBotones();
 }
 
-// --------------------------------
-// 🔹 Actualizar botones
-// --------------------------------
 function actualizarEstadoBotones() {
     const totalPaginas = Math.ceil(datosOriginales.length / registrosPorPagina);
     const indicador = $('indicadorPagina');
     if (indicador) indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
 }
 
-// --------------------------------
-// 🔹 Filtro de búsqueda
-// --------------------------------
+
+// ==========================================
+// 🔹 FILTRO DE BÚSQUEDA
+// ==========================================
 function filtrarHistorial() {
     const texto = $('busquedaProducto').value.toLowerCase();
     const fecha = $('busquedaFecha').value;
@@ -148,25 +155,31 @@ function filtrarHistorial() {
     generarControlesPaginacion();
 }
 
-// --------------------------------
-// 🔹 Eventos
-// --------------------------------
+
+// ==========================================
+// 🔹 EVENTOS
+// ==========================================
 $('btnBuscar').addEventListener('click', filtrarHistorial);
+
 $('btnLimpiar').addEventListener('click', () => {
     $('busquedaProducto').value = '';
     $('busquedaFecha').value = '';
-    cargarHistorial(); // vuelve a cargar todo
+    cargarHistorial();
 });
 
 $('busquedaProducto').addEventListener('input', filtrarHistorial);
 $('busquedaFecha').addEventListener('change', filtrarHistorial);
 
-// --------------------------------
-// 🔹 Ejecutar al cargar
-// --------------------------------
-cargarHistorial();
 
-// 🔹 Botón para regresar al cajero
+// ==========================================
+// 🔹 BOTÓN REGRESAR
+// ==========================================
 document.getElementById('btnRegresar').addEventListener('click', () => {
-  window.location.href = 'cajero.html'; 
+    window.location.href = 'cajero.html';
 });
+
+
+// ==========================================
+// 🔹 INICIAR
+// ==========================================
+cargarHistorial();
