@@ -2099,6 +2099,16 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 });
 
 // ===============================================
+// Prueba para ver si funciona el historial
+// ===============================================
+const { Pool } = require('pg');
+
+const pool = new Pool({
+    connectionString: process.env.POSTGRES_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
+// ===============================================
 // Historial de compras
 // ===============================================
 app.get('/api/historial_compras', async (req, res) => {
