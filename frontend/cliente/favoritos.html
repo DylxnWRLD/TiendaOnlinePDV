@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="../../index.css">
     <link rel="stylesheet" href="../productos/product_detail.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .product-grid-container {
+            display: grid;
+            /* Crea columnas automáticas de 250px, 1fr = responsive */
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px; /* Espacio entre productos */
+            padding: 20px;
+            max-width: 1200px; /* Centra la cuadrícula */
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body>
 
@@ -22,7 +33,7 @@
     <main>
         <h2 style="text-align: center; margin-top: 2rem; color: #333;">Mis Productos Favoritos</h2>
 
-        <section classsection="product-grid-container" id="favorites-grid" style="margin-top: 1rem;">
+        <section class="product-grid-container" id="favorites-grid" style="margin-top: 1rem;">
             <p style="text-align: center; color: #555;">Cargando tus favoritos...</p>
         </section>
     </main>
