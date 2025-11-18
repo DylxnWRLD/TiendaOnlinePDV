@@ -2332,7 +2332,7 @@ app.get('/api/historial_compras', async (req, res) => {
 });
 
 // ===============================================
-// ⭐️ NUEVO: RUTA PARA LISTAR PAQUETES DE REPARTIDOR ⭐️
+// ⭐️ RUTA PARA LISTAR PAQUETES DE REPARTIDOR ⭐️
 // ===============================================
 
 /**
@@ -2351,13 +2351,11 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
                 direccion, 
                 telefono,
                 estado_envio, 
-                fecha_estimada, 
-                -- Relación anidada: pedidos -> ventasOnline -> cliente_Online
-                ventasOnline!inner(cliente_Online(correo))
+                fecha_estimada 
+                -- ⭐️ IMPORTANTE: Se eliminó la relación anidada para resolver el Error 500 ⭐️
             `)
             .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
-            // ⭐️ CORRECCIÓN CLAVE: Se usa el operador 'in' y un array JS ⭐️
-            .not('estado_envio', 'in', ['ENTREGADO', 'CANCELADO'])
+            .not('estado_envio', 'in', ['ENTREGADO', 'CANCELADO']) 
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
@@ -2365,7 +2363,7 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             // Devolver un error 500 JSON que el frontend pueda manejar.
             return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
         }
-
+        
         // Formatear para facilitar el renderizado en el frontend:
         const paquetes = data.map(p => ({
             id: p.id,
@@ -2373,7 +2371,8 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             telefono: p.telefono,
             estado_envio: p.estado_envio,
             fecha_estimada: p.fecha_estimada,
-            cliente_correo: p.ventasOnline?.cliente_Online?.correo || 'N/A'
+            // ⭐️ Se usa un placeholder ya que el correo no se consultó ⭐️
+            cliente_correo: 'Contacto disponible en detalle' 
         }));
 
         res.status(200).json(paquetes);
