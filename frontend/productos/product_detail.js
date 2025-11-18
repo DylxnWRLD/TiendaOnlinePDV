@@ -2,7 +2,9 @@
 // 🔹 CONFIGURACIÓN Y UTILIDADES
 // #################################################
 const $ = (id) => document.getElementById(id);
-const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
+const RENDER_SERVER_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:3000'
+    : 'https://tiendaonlinepdv.onrender.com';
 
 let currentProduct = null;
 let currentStockQty = 0;

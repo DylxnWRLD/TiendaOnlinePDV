@@ -1,8 +1,3 @@
-// Define la URL base de tu API (como en index.js)
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:3000'
-    : 'https://tiendaonlinepdv.onrender.com';
-
 document.addEventListener("DOMContentLoaded", () => {
     // La función setupHeaderAndMenu() de index.js (que ya se cargó)
     // debería manejar el header.
