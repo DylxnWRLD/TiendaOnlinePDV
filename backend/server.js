@@ -610,7 +610,7 @@ app.post('/api/favorites', getUserIdFromToken, async (req, res) => {
 
         if (error) {
             // Manejar error de duplicado (si se añade dos veces)
-            if (error.code === '23505') { 
+            if (error.code === '23505') {
                 return res.status(409).json({ message: 'Este producto ya está en tus favoritos.' });
             }
             throw error;
@@ -1206,8 +1206,8 @@ app.put("/api/promociones/:id", authenticateAdmin, async (req, res) => {
             // No retornamos error aquí para no afectar la respuesta principal
         }
 
-        res.status(200).json({ 
-            mensaje: "Promoción actualizada exitosamente", 
+        res.status(200).json({
+            mensaje: "Promoción actualizada exitosamente",
             data: promocionActualizada
         });
 
@@ -1244,7 +1244,7 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
             console.log(`Promoción ${id} removida de MongoDB exitosamente.`);
         } catch (mongoError) {
             console.error('Error al remover promoción de MongoDB:', mongoError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 error: "Error al eliminar la promoción de los productos"
             });
         }
@@ -1258,11 +1258,11 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
         if (error) throw error;
         res.status(200).json({ mensaje: "Promoción eliminada" });
 
-        
 
-        res.status(200).json({ 
+
+        res.status(200).json({
             mensaje: "Promoción eliminada exitosamente",
-            promocionEliminada: promocion 
+            promocionEliminada: promocion
         });
 
     } catch (err) {
@@ -1288,7 +1288,7 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
 
         // Si la promoción está activa, aplicar a los productos correspondientes
         let filter = {};
-        
+
         switch (promocionActualizada.tipo_regla) {
             case 'MARCA':
                 filter = { brand: promocionActualizada.valor_regla };
@@ -1340,9 +1340,9 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
 
             // Remover promoción anterior de productos que ya no califican
             await Product.updateMany(
-                { 
+                {
                     ...oldFilter,
-                    'descuento.id_promocion_supabase': promocionActualizada.id 
+                    'descuento.id_promocion_supabase': promocionActualizada.id
                 },
                 { $set: { descuento: null } }
             );
@@ -2044,8 +2044,8 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 // Verificar si el cliente ya tiene datos registrados
 app.get('/api/cliente/data', getUserIdFromToken, async (req, res) => {
     // El middleware getUserIdFromToken ya validó el token y puso req.userId
-    const userId = req.userId; 
-    
+    const userId = req.userId;
+
     try {
         // Consultar la tabla cliente_Online usando el userId (que es el id_usuario)
         const { data, error } = await supabase
@@ -2058,7 +2058,7 @@ app.get('/api/cliente/data', getUserIdFromToken, async (req, res) => {
             console.error('[DB ERROR - Cliente]:', error.message);
             return res.status(500).json({ message: 'Error al consultar datos del cliente.', details: error.message });
         }
-        
+
         // Si data es null, es la primera compra. Devolvemos 404 (Not Found)
         if (!data) {
             return res.status(404).json({ message: 'Cliente no registrado (Primera compra).' });
@@ -2107,12 +2107,12 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
         // ==========================================================
 
         if (!p_detalles || p_detalles.length === 0) {
-             return res.status(400).json({ error: 'CART_EMPTY', message: 'Los detalles de la venta están vacíos.' });
+            return res.status(400).json({ error: 'CART_EMPTY', message: 'Los detalles de la venta están vacíos.' });
         }
 
         const bulkOps = p_detalles.map(d => ({
             updateOne: {
-                filter: { 
+                filter: {
                     _id: d.id_producto_mongo,
                     stockQty: { $gte: d.cantidad }
                 },
@@ -2135,17 +2135,17 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
         if (mongoResult.modifiedCount !== p_detalles.length) {
             // Si modifiedCount < p_detalles.length, significa que hubo insuficiencia de stock.
             console.warn('[STOCK FAILURE]: Se intentaron modificar %s productos, pero solo %s tuvieron stock suficiente. Abortando PG.', p_detalles.length, mongoResult.modifiedCount);
-            
+
             // 🛑 CRÍTICO: Si modifiedCount > 0, necesitamos compensar los productos que SÍ se descontaron.
             if (mongoResult.modifiedCount > 0) {
-                 const compensationOps = p_detalles.filter(d => d.cantidad <= d.cantidad).map(d => ({ 
+                const compensationOps = p_detalles.filter(d => d.cantidad <= d.cantidad).map(d => ({
                     updateOne: {
                         filter: { _id: d.id_producto_mongo },
-                        update: { $inc: { stockQty: d.cantidad } } 
+                        update: { $inc: { stockQty: d.cantidad } }
                     }
                 }));
             }
-            
+
             return res.status(409).json({ error: 'INSUFFICIENT_STOCK', message: 'Algunos productos ya no tienen stock suficiente. Por favor, revisa tu carrito.' });
         }
 
@@ -2162,10 +2162,10 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
         if (error) {
             console.error('[DB ERROR - PG]:', error.message);
-            
+
             // 🛑 LÓGICA DE COMPENSACIÓN (NECESARIA) 🛑
             // Si PG falla, el stock en Mongo YA FUE DEDUCIDO. Debemos revertirlo.
-            
+
             const compensationOps = p_detalles.map(d => ({
                 updateOne: {
                     filter: { _id: d.id_producto_mongo },
@@ -2275,9 +2275,9 @@ app.get('/api/historial_compras', async (req, res) => {
             console.error("Supabase error (detalle):", detalleError);
             return res.status(500).json({ error: detalleError.message });
         }
-        
+
         if (detalles.length === 0) {
-             return res.json([]);
+            return res.json([]);
         }
 
         // 2. Obtener TODAS las ventas relacionadas con esos IDs
@@ -2286,7 +2286,7 @@ app.get('/api/historial_compras', async (req, res) => {
             .from('ventas')
             .select('id_venta, ticket_numero, fecha_hora, total_descuento, total_final, metodo_pago') // CLAVE: Seleccionamos la PK id_venta
             .in('id_venta', ventaIds); // CLAVE: Filtramos usando la PK id_venta
-            
+
         if (ventasError) {
             console.error("Supabase error (ventas):", ventasError);
             return res.status(500).json({ error: ventasError.message });
@@ -2308,7 +2308,7 @@ app.get('/api/historial_compras', async (req, res) => {
                     nombre_producto: item.nombre_producto,
                     cantidad: item.cantidad,
                     precio_unitario_venta: item.precio_unitario_venta,
-                    
+
                     ticket_numero: venta.ticket_numero,
                     fecha_hora: venta.fecha_hora,
                     total_descuento: venta.total_descuento,
@@ -2318,7 +2318,7 @@ app.get('/api/historial_compras', async (req, res) => {
                     metodo_pago: venta.metodo_pago,
                 };
             })
-            .filter(item => item !== null); 
+            .filter(item => item !== null);
 
         // Opcional: Ordenar por fecha_hora si no se hizo en la primera consulta
         historial.sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora));
@@ -2331,7 +2331,58 @@ app.get('/api/historial_compras', async (req, res) => {
     }
 });
 
+// ===============================================
+// ⭐️ NUEVO: RUTA PARA LISTAR PAQUETES DE REPARTIDOR ⭐️
+// ===============================================
 
+/**
+ * RUTA: GET /api/paquetes/repartidor
+ * Objetivo: Obtener la lista de pedidos ASIGNADOS al repartidor logueado.
+ * Panel: Repartidor/repartidor.html (Lista de paquetes)
+ */
+app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
+    const id_repartidor = req.userId; // ID del repartidor (de auth.users)
+
+    try {
+        const { data, error } = await supabase
+            .from('pedidos')
+            .select(`
+                id, 
+                direccion, 
+                telefono,
+                estado_envio, 
+                fecha_estimada, 
+                -- Relación anidada: pedidos -> ventasOnline -> cliente_Online
+                ventasOnline!inner(cliente_Online(correo))
+            `)
+            .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
+            // ⭐️ CORRECCIÓN CLAVE: Se usa el operador 'in' y un array JS ⭐️
+            .not('estado_envio', 'in', ['ENTREGADO', 'CANCELADO'])
+            .order('fecha_actualizacion', { ascending: false });
+
+        if (error) {
+            console.error('Error al obtener lista de paquetes (Supabase):', error.message);
+            // Devolver un error 500 JSON que el frontend pueda manejar.
+            return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
+        }
+
+        // Formatear para facilitar el renderizado en el frontend:
+        const paquetes = data.map(p => ({
+            id: p.id,
+            direccion: p.direccion,
+            telefono: p.telefono,
+            estado_envio: p.estado_envio,
+            fecha_estimada: p.fecha_estimada,
+            cliente_correo: p.ventasOnline?.cliente_Online?.correo || 'N/A'
+        }));
+
+        res.status(200).json(paquetes);
+
+    } catch (error) {
+        console.error('Error fatal en /api/paquetes/repartidor:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
 
 // ===============================================
 // 4. RUTAS ESTÁTICAS Y ARRANQUE DEL SERVIDOR
