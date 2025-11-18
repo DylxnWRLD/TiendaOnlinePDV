@@ -2242,79 +2242,61 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 // RUTA: HISTORIAL DE COMPRAS DEL CAJERO
 // ===============================================
 app.get('/api/historial_compras', async (req, res) => {
-    try {
-        // 1. Obtener los detalles de la venta (incluyendo la FK id_venta)
-        const { data: detalles, error: detalleError } = await supabase
-            .from('detalle_venta')
-            .select(`
-              id_venta,
-              nombre_producto,
-              cantidad,
-              monto_descuento,
-              precio_unitario_venta,
-              total_linea
-            `)
-            .order('id_venta', { ascending: false }); // Ordenar por la venta más reciente
+  try {
+    const { data, error } = await supabase
+      .from('detalle_venta')
+      .select(`
+        nombre_producto,
+        cantidad,
+        monto_descuento,
+        precio_unitario_venta,
+        ventas!inner (
+          ticket_numero,
+          fecha_hora,
+          total_descuento,
+          total_final,
+          metodo_pago
+        )
+      `)
+      // 👇 Agregamos el ordenamiento para igualar tu SQL (ORDER BY fecha_hora DESC)
+      .order('fecha_hora', { foreignTable: 'ventas', ascending: false });
 
-        if (detalleError) {
-            console.error("Supabase error (detalle):", detalleError);
-            return res.status(500).json({ error: detalleError.message });
-        }
-        
-        if (detalles.length === 0) {
-             return res.json([]);
-        }
-
-        // 2. Obtener TODAS las ventas relacionadas con esos IDs
-        const ventaIds = [...new Set(detalles.map(d => d.id_venta))];
-        const { data: ventas, error: ventasError } = await supabase
-            .from('ventas')
-            .select('id_venta, ticket_numero, fecha_hora, total_descuento, total_final, metodo_pago') // 🔑 CLAVE: Seleccionamos id_venta
-            .in('id_venta', ventaIds); // 🔑 CLAVE: Filtramos usando id_venta
-            
-        if (ventasError) {
-            console.error("Supabase error (ventas):", ventasError);
-            return res.status(500).json({ error: ventasError.message });
-        }
-
-        // 3. Crear un mapa para unir los datos rápidamente
-        const ventaMap = new Map(ventas.map(v => [v.id_venta, v])); // 🔑 CLAVE: La llave del mapa es id_venta
-
-        // 4. Aplanar la respuesta al formato del historial
-        const historial = detalles
-            .map(item => {
-                const venta = ventaMap.get(item.id_venta);
-
-                if (!venta) return null; // Saltar si la venta no se encuentra (debería existir)
-
-                // Calcular total_linea como en el SQL, o usar el valor si existe
-                let totalLineaCalculada = item.total_linea || ((item.precio_unitario_venta * item.cantidad) - (item.monto_descuento * item.cantidad));
-
-                return {
-                    nombre_producto: item.nombre_producto,
-                    cantidad: item.cantidad,
-                    precio_unitario_venta: item.precio_unitario_venta,
-                    
-                    ticket_numero: venta.ticket_numero,
-                    fecha_hora: venta.fecha_hora,
-                    total_descuento: venta.total_descuento,
-                    monto_descuento: item.monto_descuento, // El descuento de la línea es independiente del total
-                    total_linea: totalLineaCalculada,
-                    total_final: venta.total_final,
-                    metodo_pago: venta.metodo_pago,
-                };
-            })
-            .filter(item => item !== null); // Eliminar posibles nulos
-
-        // Opcional: Ordenar por fecha_hora si no se hizo en la primera consulta
-        historial.sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora));
-
-        res.json(historial);
-
-    } catch (error) {
-        console.error("Error al cargar historial de compras:", error);
-        res.status(500).json({ error: "Error interno del servidor al procesar el historial" });
+    if (error) {
+      console.error("Supabase error:", error);
+      return res.status(500).json({ error: error.message });
     }
+
+    const historial = data.map(item => {
+        const venta = item.ventas; // Acceso al objeto anidado
+
+        // 👇 Cálculo seguro en JS (igual que tu SQL: precio * cant - desc * cant)
+        // Nota: asegúrate que monto_descuento sea por unidad. Si es total, ajusta la fórmula.
+        const precioTotal = item.precio_unitario_venta * item.cantidad;
+        const descuentoTotal = item.monto_descuento * item.cantidad; 
+        const totalLinea = precioTotal - descuentoTotal;
+
+        return {
+          nombre_producto: item.nombre_producto,
+          cantidad: item.cantidad,
+          monto_descuento: item.monto_descuento,
+          precio_unitario_venta: item.precio_unitario_venta,
+          
+          ticket_numero: venta.ticket_numero,
+          fecha_hora: venta.fecha_hora,
+          total_descuento: venta.total_descuento,
+          total_final: venta.total_final,
+          metodo_pago: venta.metodo_pago,
+          
+          total_linea: totalLinea, 
+        };
+    });
+
+    res.json(historial);
+
+  } catch (error) {
+    console.error("Error interno:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
 
