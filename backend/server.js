@@ -2252,7 +2252,7 @@ app.get('/api/historial_compras', async (req, res) => {
         monto_descuento,
         precio_unitario_venta,
         total_linea, 
-        ventas!inner ( // ⬅️ Utilizamos el JOIN implícito a la tabla 'ventas'
+        ventas!inner (
           ticket_numero,
           fecha_hora,
           total_descuento,
