@@ -934,7 +934,9 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
             valor: promocion.valor,
             nombre_promo: promocion.nombre,
             activa: promocion.activa,
-            id_promocion_supabase: promocion.id
+            id_promocion_supabase: promocion.id,
+            //tipo_regla: promocion.tipo_regla,
+            //valor_regla: promocion.valor_regla
         };
 
         // 4. Aplicar descuento a los productos
