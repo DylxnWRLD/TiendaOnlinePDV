@@ -28,7 +28,7 @@ async function cargarHistorial() {
         const respuesta = await fetch(CLIENTE_DATA_URL);
         
         if (!respuesta.ok) {
-            throw new Error(Error del servidor: ${respuesta.status});
+            throw new Error("Error del servidor:" ${respuesta.status});
         }
 
         const rawData = await respuesta.json();
