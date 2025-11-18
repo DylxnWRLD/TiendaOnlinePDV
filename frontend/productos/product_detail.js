@@ -168,13 +168,29 @@ function addToCart(quantityToAdd, silent = false) {
     }
 
     // 3. Guardar en el carrito
+
+
+    // Calculamos aquí el precio final por unidad igual que en fetchProductDetails
+    const precioBase = currentProduct.price || 0;
+    let precioFinal = precioBase;
+
+    if (currentProduct.descuento && currentProduct.descuento.activa) {
+        const { tipo_descuento, valor } = currentProduct.descuento;
+        if (tipo_descuento === 'PORCENTAJE') {
+            precioFinal = precioBase * (1 - (valor / 100));
+        } else if (tipo_descuento === 'MONTO') {
+            precioFinal = Math.max(precioBase - valor, 0);
+        }
+    }
+
     if (existingItem) {
         existingItem.quantity = newQuantity;
     } else {
         cart.push({
             id: currentProduct._id,
             nombre: currentProduct.name,
-            precio: currentProduct.price,
+            precio: precioFinal,
+            descuento: currentProduct.descuento && currentProduct.descuento.activa? currentProduct.descuento : null,
             // Usa la primera imagen o un placeholder si no tiene
             imagen: currentProduct.images?.[0] || 'https://via.placeholder.com/50',
             quantity: quantityToAdd,
@@ -413,17 +429,40 @@ async function fetchProductDetails(productId) {
         $('productSku').textContent = `SKU: ${currentProduct.sku}`;
         $('productBrand').textContent = `Marca: ${currentProduct.brand || 'Genérico'}`;
         $('productDescription').textContent = currentProduct.description || 'Sin descripción.';
-        $('productPrice').textContent = `$${currentProduct.price.toFixed(2)}`;
+        //$('productPrice').textContent = `$${currentProduct.price.toFixed(2)}`;
+
+        const precioBase = currentProduct.price || 0;
+        let precioFinal = precioBase;
+        let tienePromo = currentProduct.descuento && currentProduct.descuento.activa;
 
         // Manejo de precio anterior y descuento (si aplica)
-        if (currentProduct.oldPrice && currentProduct.oldPrice > currentProduct.price) {
-            $('productOldPrice').textContent = `$${currentProduct.oldPrice.toFixed(2)}`;
-            const discount = ((currentProduct.oldPrice - currentProduct.price) / currentProduct.oldPrice) * 100;
-            $('productDiscount').textContent = `Ahorro ${discount.toFixed(0)}%`;
+        if (tienePromo) {
+            const { tipo_descuento, valor, nombre_promo } = currentProduct.descuento;
+
+            if (tipo_descuento === 'PORCENTAJE') {
+                precioFinal = precioBase * (1 - (valor / 100));
+            } else if (tipo_descuento === 'MONTO') {
+                precioFinal = Math.max(precioBase - valor, 0);
+            }
+            // Mostrar precio final y precio anterior
+            $('productPrice').textContent = `$${precioFinal.toFixed(2)}`;
+            $('productOldPrice').textContent = `$${precioBase.toFixed(2)}`;
+
+            // Texto de la promoción
+            let textoPromo = nombre_promo || 'Promoción aplicada';
+            if (tipo_descuento === 'PORCENTAJE') {
+                textoPromo += ` (-${valor}% )`;
+            } else if (tipo_descuento === 'MONTO') {
+                textoPromo += ` (-$${valor.toFixed(2)})`;
+            }
+            $('productDiscount').textContent = textoPromo;
         } else {
+            // Sin promo
+            $('productPrice').textContent = `$${precioBase.toFixed(2)}`;
             $('productOldPrice').textContent = '';
             $('productDiscount').textContent = '';
         }
+
 
         // Manejo de stock y botones
         const stockLabel = $('productStock');

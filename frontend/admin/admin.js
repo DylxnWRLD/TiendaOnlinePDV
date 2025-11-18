@@ -656,6 +656,10 @@ class AdminPanel {
         }
     }
 
+    /**
+     * 
+     * @returns 
+     */
     async loadPromotions() {
         console.log('Cargando promociones desde la API...');
         const token = sessionStorage.getItem('supabase-token');

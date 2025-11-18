@@ -862,12 +862,14 @@ app.delete('/api/users/:id', authenticateAdmin, async (req, res) => {
     }
 });
 
-
-
-
 // ===============================================
 // RUTA PARA OBTENER TODAS LAS PROMOCIONES
 // ===============================================
+
+/**
+ * RUTA: GET /api/promociones
+ * Objetivo: Obtener todas las promociones (Admin).
+ */
 app.get('/api/promociones', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para OBTENER promociones (Admin) recibida!');
 
@@ -893,11 +895,10 @@ app.get('/api/promociones', authenticateAdmin, async (req, res) => {
     }
 });
 
-
-
-
-
-
+/**
+ * RUTA: GET /api/promociones/producto/:idProducto
+ * Objetivo: Obtener la promoción activa para un producto específico.
+ */
 app.get('/api/promociones/producto/:idProducto', async (req, res) => {
     try {
         const { idProducto } = req.params;
@@ -923,10 +924,10 @@ app.get('/api/promociones/producto/:idProducto', async (req, res) => {
     }
 });
 
-// ===============================================
-// RUTA PARA CREAR PROMOCIONES (ADMIN)
-// ===============================================
-
+/**
+ * RUTA: POST /api/promociones
+ * Objetivo: Crear una nueva promoción (Admin).
+ */
 app.post('/api/promociones', authenticateAdmin, async (req, res) => {
     console.log('¡Petición para crear promoción (Admin) recibida!');
 
@@ -1024,9 +1025,10 @@ app.post('/api/promociones', authenticateAdmin, async (req, res) => {
 
 });
 
-// ===============================================
-// RUTA PARA APLICAR PROMOCIONES A PRODUCTOS (SOLO MongoDB)
-// ===============================================
+/**
+ * RUTA: POST /api/promociones/aplicar/:idPromocion
+ * Objetivo: Aplicar una promoción existente a los productos correspondientes.
+ */
 app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req, res) => {
     const { idPromocion } = req.params;
 
@@ -1103,9 +1105,10 @@ app.post('/api/promociones/aplicar/:idPromocion', authenticateAdmin, async (req,
     }
 });
 
-// ===============================================
-// RUTA PARA REMOVER PROMOCIONES DE PRODUCTOS
-// ===============================================
+/**
+ * RUTA: POST /api/promociones/remover/:idPromocion
+ * Objetivo: Remover una promoción existente de los productos correspondientes.
+ */
 app.post('/api/promociones/remover/:idPromocion', authenticateAdmin, async (req, res) => {
     const { idPromocion } = req.params;
 
@@ -1132,9 +1135,10 @@ app.post('/api/promociones/remover/:idPromocion', authenticateAdmin, async (req,
     }
 });
 
-// ===============================================
-// RUTA PARA OBTENER PRODUCTOS CON PROMOCIONES ACTIVAS
-// ===============================================
+/**
+ * RUTA: GET /api/productos/con-promociones
+ * Objetivo: Obtener todos los productos que tienen promociones activas.
+ */
 app.get('/api/productos/con-promociones', async (req, res) => {
     try {
         const productos = await Product.find({
@@ -1154,10 +1158,8 @@ app.get('/api/productos/con-promociones', async (req, res) => {
 
 
 /**
- * RUTA: Editar una promoción existente
- * PUT /promociones/:id
+ * RUTA: PUT /promociones/:id
  * Objetivo: Editar una promoción en la tabla "promociones".
- * Creado para: Panel de Administración
  */
 app.put("/api/promociones/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
@@ -1216,8 +1218,11 @@ app.put("/api/promociones/:id", authenticateAdmin, async (req, res) => {
     }
 });
 
-
-// Eliminar una promoción
+/**
+ * RUTA: DELETE /api/promociones/:id
+ * Objetivo: Eliminar una promoción de la tabla "promociones".
+ * También remueve la promoción de los productos en MongoDB.
+ */
 app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
 
@@ -1266,8 +1271,13 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
     }
 });
 
-
-// Función para sincronizar promoción con MongoDB
+/**
+ * Objetivo: Sincronizar una promoción actualizada con MongoDB.
+ * 
+ * @param {object} promocionActualizada 
+ * @param {object} promocionAnterior 
+ * @returns 
+ */
 async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
     try {
         // Si la promoción está inactiva, remover de todos los productos
@@ -1351,7 +1361,12 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
     }
 }
 
-// Función para remover promoción de MongoDB
+/**
+ * Objetivo: Eliminar una promoción de todos los productos en MongoDB.
+ * 
+ * @param {String} idPromocion 
+ * @returns 
+ */
 async function removePromocionFromMongoDB(idPromocion) {
     try {
         const result = await Product.updateMany(

@@ -128,11 +128,20 @@ function renderCarrito() {
         carrito.forEach(item => {
             const itemQuantity = item.quantity || item.cantidad || 1;
             const itemPrice = item.price || item.precio || 0;
-            const itemDiscountPercent = item.descuento?.valor || item.descuento || 0;
+            //const itemDiscountPercent = item.descuento?.valor || item.descuento || 0;
 
             let totalProducto = itemPrice * itemQuantity;
-            let descuentoProducto = totalProducto * (itemDiscountPercent / 100);
+            let descuentoProducto = 0;          //totalProducto * (itemDiscountPercent / 100);
 
+
+            if (item.descuento && item.descuento.activa) {
+                const { tipo_descuento, valor } = item.descuento;
+                if (tipo_descuento === 'PORCENTAJE') {
+                    descuentoProducto = totalProducto * (valor / 100);
+                } else if (tipo_descuento === 'MONTO') {
+                    descuentoProducto = valor * itemQuantity;
+                }
+            }
             subtotal += totalProducto;
             descuento += descuentoProducto;
 
@@ -208,13 +217,33 @@ async function procesarCompraFinal() {
     // ... (El cuerpo de procesarCompraFinal se mantiene igual) ...
     const totalFinal = parseFloat(totalEl.textContent) || 0;
 
-    const detallesVenta = carrito.map(item => ({
-        id_producto_mongo: item._id || item.id || 'N/A',
-        nombre_producto: item.name || item.nombre || 'Producto Desconocido',
-        cantidad: item.quantity || item.cantidad || 1,
-        precio_unitario_venta: item.price || item.precio || 0,
-        total_linea: (item.price || item.precio) * (item.quantity || 1) * (1 - (item.descuento?.valor || 0) / 100)
-    }));
+    const detallesVenta = carrito.map(item => {
+        const cantidad = item.quantity || item.cantidad || 1;
+        const precioUnitario = item.price || item.precio || 0;
+
+        let totalLineaBruto = precioUnitario * cantidad;
+        let descuentoLinea = 0;
+
+        if (item.descuento && item.descuento.activa) {
+            const { tipo_descuento, valor } = item.descuento;
+
+            if (tipo_descuento === 'PORCENTAJE') {
+                descuentoLinea = totalLineaBruto * (valor / 100);
+            } else if (tipo_descuento === 'MONTO') {
+                descuentoLinea = valor * cantidad;
+            }
+        }
+
+        const totalLineaNeto = totalLineaBruto - descuentoLinea;
+
+        return {
+            id_producto_mongo: item._id || item.id || 'N/A',
+            nombre_producto: item.name || item.nombre || 'Producto Desconocido',
+            cantidad: cantidad,
+            precio_unitario_venta: precioUnitario,
+            total_linea: totalLineaNeto
+        };
+    });
 
     const payload = {
         p_correo: datosCliente.correo,
