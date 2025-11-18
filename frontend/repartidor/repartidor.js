@@ -47,7 +47,7 @@ function getEstadoClass(estado) {
 
 async function loadPaquetes() {
     const paqueteList = document.getElementById('paqueteList');
-    const token = sessionStorage.getItem('supabase-token');
+    const token = sessionStorage.getItem('5');
 
     if (!token) {
         paqueteList.innerHTML = '<p style="text-align: center; color: red;">Sesión expirada. Por favor, inicia sesión.</p>';
