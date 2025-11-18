@@ -12,7 +12,6 @@
   <main class="col-venta-principal">
     <h3 class="cyber-glow title-venta-actual">Historial de la venta</h3>
 
-    <!-- 🔍 Filtros de búsqueda -->
     <div class="filtros-container">
       <input type="text" id="busquedaProducto" placeholder="Buscar por producto...">
       <input type="date" id="busquedaFecha">
@@ -21,8 +20,14 @@
     </div>
 
     <div class="acciones-superiores">
-        <button id="btnRegresar" class="btn-regresar">← Regresar al cajero</button>
+      <button id="btnRegresar" class="btn-regresar">← Regresar al cajero</button>
     </div>
+
+    <div id="loading-message" style="color: var(--color-primary); margin-bottom: 10px;">
+      Cargando historial...
+    </div>
+
+    <div id="paginacion" style="margin: 10px 0; text-align:center;"></div>
 
     <table border="1" class="tabla-historial">
       <thead>

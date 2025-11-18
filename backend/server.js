@@ -47,6 +47,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // ===============================================
+// Conexiona para el historial 
+// ===============================================
+app.use('/cajero', express.static(path.join(__dirname, 'cajero')));
+
+// ===============================================
 // Configuración de Supabase (Inicialización Local)
 // ===============================================
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -2039,37 +2044,125 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
     }
 });
 
+
+
+// ===============================================
+// HISTORIAL DE COMPRAS DEL CLIENTE
+// ===============================================
+// Esta ruta es para que el cliente vea SU PROPIO historial de compras online
+app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
+    const id_usuario_auth = req.userId;
+    console.log(`[Historial Cliente] Petición recibida para usuario: ${id_usuario_auth}`);
+
+    try {
+        // 1. Usamos el id_usuario para buscar en 'cliente_online'
+        const { data, error } = await supabase
+            .from('cliente_online')
+            .select(`
+                id_cliente,
+                correo,
+                ventasonline (
+                    id_ventaonline,
+                    codigo_pedido,
+                    fecha_hora,
+                    total_final,
+                    metodo_pago,
+                    detalle_ventaonline (
+                        nombre_producto,
+                        cantidad,
+                        precio_unitario_venta,
+                        total_linea
+                    )
+                )
+            `)
+            .eq('id_usuario', id_usuario_auth) // Filtramos por el ID del usuario logueado
+            .maybeSingle(); // Usamos maybeSingle() por si es un cliente sin compras
+
+        if (error) {
+            console.error('Error de Supabase al obtener historial del cliente:', error.message);
+            // Enviamos el error real en el JSON de respuesta
+            return res.status(500).json({ message: `Error de Base de Datos: ${error.message}` });
+        }
+
+        // 2. Manejar el caso de que no se encuentre el cliente
+        if (!data) {
+            console.log(`[Historial Cliente] No se encontró perfil 'cliente_online' para el usuario: ${id_usuario_auth}`);
+            return res.status(404).json({ message: 'No se encontró historial para este cliente.' });
+        }
+
+        // 3. Enviar los datos
+        res.status(200).json(data);
+
+    } catch (error) {
+        // Catch para errores inesperados del middleware o de la lógica
+        console.error('Error fatal en /api/cliente/historial:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor al procesar la petición.' });
+    }
+});
 // ===============================================
 // Historial de compras
 // ===============================================
+// RUTA: HISTORIAL DE COMPRAS DEL CAJERO
+// ===============================================
 app.get('/api/historial_compras', async (req, res) => {
   try {
-    const query = `
-      SELECT 
-        v1.nombre_producto, 
-        v2.ticket_numero, 
-        v1.cantidad, 
-        v2.fecha_hora, 
-        v1.precio_unitario_venta, 
-        v2.total_descuento, 
-        v1.monto_descuento, 
-        v2.total_final, 
-        v1.total_linea, 
-        v2.metodo_pago
-      FROM detalle_venta AS v1
-      INNER JOIN ventas AS v2 
-      ON v1.id_venta = v2.id_venta
-      ORDER BY v2.fecha_hora DESC;
-    `;
-    
-    const result = await pool.query(query);
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('detalle_venta')
+      .select(`
+        nombre_producto,
+        cantidad,
+        monto_descuento,
+        total_linea,
+        precio_unitario_venta,
+        ventas (
+          ticket_numero,
+          fecha_hora,
+          total_descuento,
+          total_final,
+          metodo_pago
+        )
+      `);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    const historial = data.map(item => ({
+      nombre_producto: item.nombre_producto,
+      cantidad: item.cantidad,
+      monto_descuento: item.monto_descuento,
+      total_linea: item.total_linea,
+      precio_unitario_venta: item.precio_unitario_venta,
+      ticket_numero: item.ventas.ticket_numero,
+      fecha_hora: item.ventas.fecha_hora,
+      total_descuento: item.ventas.total_descuento,
+      total_final: item.ventas.total_final,
+      metodo_pago: item.ventas.metodo_pago
+    }));
+
+    res.json(historial);
 
   } catch (error) {
-    console.error("❌ Error obteniendo historial:", error);
-    res.status(500).json({ error: "Error obteniendo historial" });
+    console.error("Error interno:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+
+// ===============================================
+// SERVIR ARCHIVOS ESTÁTICOS (DEBE ESTAR AL FINAL)
+// ===============================================
+app.use('/cajero', express.static(path.join(__dirname, 'cajero')));
+app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
+app.use(express.static(path.join(__dirname, '..')));
+
+// ===============================================
+// INICIAR SERVIDOR
+// ===============================================
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
+});
+
 
 
 // ===============================================

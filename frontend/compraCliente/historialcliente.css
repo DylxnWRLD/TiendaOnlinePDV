@@ -1,0 +1,169 @@
+
+:root {
+  --color-primario-oscuro: #211949;
+  --color-acento-vibrante: #4a69ff;
+  --color-acento-hover: #6e48ff;
+  --color-fondo: #f4f5f7;
+  --color-superficie: #ffffff;
+  --color-texto-principal: #333;
+  --color-texto-secundario: #666;
+  --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --sombra-elevada: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+body {
+  background-color: var(--color-superficie);
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-primario-oscuro),
+    var(--color-superficie) 80vh
+  );
+  background-repeat: no-repeat;
+  color: var(--color-texto-principal);
+  font-family: 'Poppins', sans-serif; /* Asegúrate de importar la fuente */
+}
+
+/* Contenedor principal de la página de historial */
+.history-main-container {
+  display: flex;
+  justify-content: center;
+  padding: 30px;
+  /* El padding-top se ajusta para dejar espacio al header fijo */
+  padding-top: 100px; /* Ajusta esto si tu header mide más/menos */
+}
+
+/* Tarjeta blanca que contiene el historial */
+.history-content-box {
+  width: 90%;
+  max-width: 1000px;
+  background-color: var(--color-superficie);
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: var(--sombra-suave);
+  min-height: 50vh;
+}
+
+.history-title {
+  color: var(--color-primario-oscuro);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--color-fondo);
+}
+
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Espacio entre cada tarjeta de pedido */
+}
+
+/* --- Estilos del Acordeón de Pedidos --- */
+
+.order-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.order-card.active {
+  box-shadow: var(--sombra-suave);
+  border-color: var(--color-acento-vibrante);
+}
+
+.order-header {
+  display: flex;
+  flex-wrap: wrap; /* Para móviles */
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.order-header:hover {
+  background-color: #f0f0f0;
+}
+
+.order-header span {
+  font-size: 0.9rem;
+  color: var(--color-texto-secundario);
+  margin: 5px;
+}
+
+.order-header .order-id {
+  font-weight: 600;
+  color: var(--color-primario-oscuro);
+}
+
+.order-header .order-total {
+  font-weight: 600;
+  color: #27ae60; /* Verde para el total */
+  font-size: 1rem;
+}
+
+.order-toggle-icon {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-acento-vibrante);
+  transition: transform 0.3s;
+}
+
+.order-card.active .order-toggle-icon {
+  transform: rotate(45deg);
+}
+
+/* Contenido colapsable */
+.order-details {
+  display: none; /* Oculto por defecto */
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #ffffff;
+}
+
+.order-details h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-texto-principal);
+  margin-bottom: 15px;
+}
+
+.product-list {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.product-item:last-child {
+  border-bottom: none;
+}
+
+.product-item span:first-child {
+  color: var(--color-texto-principal);
+}
+
+.product-item span:last-child {
+  color: var(--color-texto-secundario);
+  font-weight: 500;
+}
+
+/* Mensajes de estado */
+.loading-message,
+.empty-message {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1rem;
+  color: var(--color-texto-secundario);
+}
