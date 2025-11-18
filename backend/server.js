@@ -2242,77 +2242,79 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 // RUTA: HISTORIAL DE COMPRAS DEL CAJERO
 // ===============================================
 app.get('/api/historial_compras', async (req, res) => {
-  try {
-    // ⭐️ Nueva consulta usando JOIN implícito de Supabase (.select('ventas(...)'))
-    const { data, error } = await supabase
-      .from('detalle_venta')
-      .select(`
-        nombre_producto,
-        cantidad,
-        monto_descuento,
-        precio_unitario_venta,
-        total_linea, 
-        ventas!inner (
-          ticket_numero,
-          fecha_hora,
-          total_descuento,
-          total_final,
-          metodo_pago
-        )
-      `); // La columna total_linea se asume que existe o se mapea
+    try {
+        // 1. Obtener los detalles de la venta (incluyendo la FK id_venta)
+        const { data: detalles, error: detalleError } = await supabase
+            .from('detalle_venta')
+            .select(`
+              id_venta, // 🔑 CLAVE: Usamos el nombre de la FK
+              nombre_producto,
+              cantidad,
+              monto_descuento,
+              precio_unitario_venta,
+              total_linea
+            `)
+            .order('id_venta', { ascending: false }); // Ordenar por la venta más reciente
 
-    if (error) {
-      console.error("Supabase error:", error);
-      return res.status(500).json({ error: error.message });
-    }
-
-    // ⭐️ Aplanamos la respuesta para que el frontend la reciba sin anidamiento ⭐️
-    const historial = data.map(item => {
-        // Obtenemos los campos anidados de la venta
-        const venta = item.ventas; 
-        
-        // Si total_linea no existe en la tabla detalle_venta, lo calculamos aquí
-        let totalLineaCalculada = item.total_linea;
-        if (totalLineaCalculada === null || totalLineaCalculada === undefined) {
-             totalLineaCalculada = (item.precio_unitario_venta * item.cantidad) - (item.monto_descuento * item.cantidad);
+        if (detalleError) {
+            console.error("Supabase error (detalle):", detalleError);
+            return res.status(500).json({ error: detalleError.message });
         }
         
-        return {
-          nombre_producto: item.nombre_producto,
-          cantidad: item.cantidad,
-          monto_descuento: item.monto_descuento,
-          precio_unitario_venta: item.precio_unitario_venta,
-          
-          ticket_numero: venta.ticket_numero,
-          fecha_hora: venta.fecha_hora,
-          total_descuento: venta.total_descuento,
-          total_final: venta.total_final,
-          metodo_pago: venta.metodo_pago,
-          
-          total_linea: totalLineaCalculada, // Aseguramos que este campo esté presente y calculado
-        };
-    });
+        if (detalles.length === 0) {
+             return res.json([]);
+        }
 
-    res.json(historial);
+        // 2. Obtener TODAS las ventas relacionadas con esos IDs
+        const ventaIds = [...new Set(detalles.map(d => d.id_venta))];
+        const { data: ventas, error: ventasError } = await supabase
+            .from('ventas')
+            .select('id_venta, ticket_numero, fecha_hora, total_descuento, total_final, metodo_pago') // 🔑 CLAVE: Seleccionamos id_venta
+            .in('id_venta', ventaIds); // 🔑 CLAVE: Filtramos usando id_venta
+            
+        if (ventasError) {
+            console.error("Supabase error (ventas):", ventasError);
+            return res.status(500).json({ error: ventasError.message });
+        }
 
-  } catch (error) {
-    console.error("Error interno:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
-});
+        // 3. Crear un mapa para unir los datos rápidamente
+        const ventaMap = new Map(ventas.map(v => [v.id_venta, v])); // 🔑 CLAVE: La llave del mapa es id_venta
 
-// ===============================================
-// SERVIR ARCHIVOS ESTÁTICOS (DEBE ESTAR AL FINAL)
-// ===============================================
-app.use('/cajero', express.static(path.join(__dirname, 'cajero')));
-app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
-app.use(express.static(path.join(__dirname, '..')));
+        // 4. Aplanar la respuesta al formato del historial
+        const historial = detalles
+            .map(item => {
+                const venta = ventaMap.get(item.id_venta);
 
-// ===============================================
-// INICIAR SERVIDOR
-// ===============================================
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Servidor backend corriendo en http://0.0.0.0:${port}`);
+                if (!venta) return null; // Saltar si la venta no se encuentra (debería existir)
+
+                // Calcular total_linea como en el SQL, o usar el valor si existe
+                let totalLineaCalculada = item.total_linea || ((item.precio_unitario_venta * item.cantidad) - (item.monto_descuento * item.cantidad));
+
+                return {
+                    nombre_producto: item.nombre_producto,
+                    cantidad: item.cantidad,
+                    precio_unitario_venta: item.precio_unitario_venta,
+                    
+                    ticket_numero: venta.ticket_numero,
+                    fecha_hora: venta.fecha_hora,
+                    total_descuento: venta.total_descuento,
+                    monto_descuento: item.monto_descuento, // El descuento de la línea es independiente del total
+                    total_linea: totalLineaCalculada,
+                    total_final: venta.total_final,
+                    metodo_pago: venta.metodo_pago,
+                };
+            })
+            .filter(item => item !== null); // Eliminar posibles nulos
+
+        // Opcional: Ordenar por fecha_hora si no se hizo en la primera consulta
+        historial.sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora));
+
+        res.json(historial);
+
+    } catch (error) {
+        console.error("Error al cargar historial de compras:", error);
+        res.status(500).json({ error: "Error interno del servidor al procesar el historial" });
+    }
 });
 
 
