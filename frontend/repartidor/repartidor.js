@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Determinar si estamos en la vista de lista (repartidor.html) o detalle (paquete.html)
     const paqueteList = document.getElementById('paqueteList');
     const paqueteIdElement = document.getElementById('paqueteId');
+    
+    // ⭐️ VERIFICACIÓN SIMPLE: SOLO VERIFICAR LA EXISTENCIA DEL TOKEN ⭐️
+    const token = sessionStorage.getItem('supabase-token');
+
+    if (!token) {
+        alert('Acceso denegado. Por favor, inicia sesión.');
+        sessionStorage.clear(); 
+        window.location.href = '../login/login.html';
+        return;
+    }
 
     if (paqueteList) {
         // ⭐️ VISTA: LISTA DE PAQUETES (repartidor.html) ⭐️
@@ -16,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const paqueteId = urlParams.get('id') || 'N/A';
         paqueteIdElement.textContent = paqueteId;
-
+        
         loadPaqueteDetails(paqueteId);
 
         const selectEstado = document.getElementById('nuevoEstado');
@@ -26,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnActualizar) {
             selectEstado.addEventListener('change', () => setupDetailUI(selectEstado.value, btnActualizar, pruebaDiv, mensajeExtraContainer));
-            selectEstado.dispatchEvent(new Event('change'));
+            selectEstado.dispatchEvent(new Event('change')); 
 
             btnActualizar.addEventListener('click', () => handleActualizarEstado(paqueteId));
         }
@@ -47,12 +57,7 @@ function getEstadoClass(estado) {
 
 async function loadPaquetes() {
     const paqueteList = document.getElementById('paqueteList');
-    const token = sessionStorage.getItem('5');
-
-    if (!token) {
-        paqueteList.innerHTML = '<p style="text-align: center; color: red;">Sesión expirada. Por favor, inicia sesión.</p>';
-        return;
-    }
+    const token = sessionStorage.getItem('supabase-token');
 
     paqueteList.innerHTML = '<p style="text-align: center; color: #ccc;">Cargando tus paquetes asignados...</p>';
 
@@ -62,8 +67,15 @@ async function loadPaquetes() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Error al obtener la lista de paquetes.');
+             const errorData = await response.json();
+             // Si el servidor indica que el token es inválido o expirado, redirigimos.
+             if (response.status === 401 || response.status === 403) {
+                 alert('Tu sesión ha expirado o no tienes permisos para ver esta lista. Vuelve a iniciar sesión.');
+                 sessionStorage.clear();
+                 window.location.href = '../login/login.html';
+                 return;
+             }
+             throw new Error(errorData.message || 'Error al obtener la lista de paquetes.');
         }
 
         const paquetes = await response.json();
@@ -88,7 +100,8 @@ async function loadPaquetes() {
                 <p>Cliente: ${paquete.cliente_correo}</p>
                 <p class="paquete-enlace">Ver Detalle <i class="fas fa-arrow-right"></i></p>
             `;
-
+            
+            // ⭐️ Manejo de clic: Redirecciona al detalle ⭐️
             card.addEventListener('click', () => {
                 window.location.href = `paquete.html?id=${paquete.id}`;
             });
@@ -98,7 +111,7 @@ async function loadPaquetes() {
 
     } catch (error) {
         console.error('Error cargando paquetes:', error);
-        paqueteList.innerHTML = `<p style="text-align: center; color: ${error.message.includes('Acceso denegado') ? 'red' : 'orange'};">${error.message}</p>`;
+        paqueteList.innerHTML = `<p style="text-align: center; color: red;">Error de red o servidor: ${error.message}</p>`;
     }
 }
 
@@ -116,7 +129,7 @@ async function loadPaqueteDetails(paqueteId) {
     try {
         // Nota: Reutilizamos la ruta del cliente ya que devuelve la información completa
         const response = await fetch(`${API_BASE_URL}/api/paquetes/seguimiento/${paqueteId}`, {
-            headers: { 'Authorization': `Bearer ${token}` } // Se requiere el token si está detrás de RLS
+             headers: { 'Authorization': `Bearer ${token}` } // Se requiere el token si está detrás de RLS
         });
         const data = await response.json();
 
@@ -125,26 +138,26 @@ async function loadPaqueteDetails(paqueteId) {
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
         document.getElementById('clienteEmail').textContent = data.cliente_correo || 'N/A';
-
+        
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            telefonoLink.href = `tel:${data.telefono}`;
-            telefonoLink.textContent = data.telefono || 'N/A';
+             telefonoLink.href = `tel:${data.telefono}`;
+             telefonoLink.textContent = data.telefono || 'N/A';
         }
-
+        
         // Rellenar lista de productos
         const listaProductos = document.getElementById('listaProductos');
         listaProductos.innerHTML = '';
 
         if (data.productos && data.productos.length > 0) {
             data.productos.forEach(p => {
-                // Asume que el producto tiene { nombre, cantidad }
+                 // Asume que el producto tiene { nombre, cantidad }
                 const li = document.createElement('li');
                 li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre || 'Producto sin nombre'} x${p.cantidad || 1}`;
                 listaProductos.appendChild(li);
             });
         } else {
-            listaProductos.innerHTML = '<li><i class="fas fa-info-circle" style="margin-right: 8px;"></i>Detalles del producto no disponibles.</li>';
+             listaProductos.innerHTML = '<li><i class="fas fa-info-circle" style="margin-right: 8px;"></i>Detalles del producto no disponibles.</li>';
         }
 
         // Seleccionar el estado actual en el <select>
@@ -158,7 +171,7 @@ async function loadPaqueteDetails(paqueteId) {
             const mensajeExtraContainer = document.getElementById('mensajeExtraContainer');
             setupDetailUI(estadoActual, btnActualizar, pruebaDiv, mensajeExtraContainer);
         }
-
+        
     } catch (error) {
         console.error('Error al cargar detalles del paquete:', error);
         alert(`Error al cargar detalles: ${error.message}`);
@@ -194,7 +207,7 @@ function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
  */
 async function handleActualizarEstado(paqueteId) {
     const nuevoEstado = document.getElementById('nuevoEstado').value;
-    const mensajeExtra = document.getElementById('mensajeExtra').value.trim();
+    const mensajeExtra = document.getElementById('mensajeExtra').value.trim(); 
     const fotoInput = document.getElementById('fotoPrueba');
     const token = sessionStorage.getItem('supabase-token');
 
@@ -220,7 +233,7 @@ async function handleActualizarEstado(paqueteId) {
             },
             body: JSON.stringify({
                 nuevo_estado: nuevoEstado,
-                mensaje_extra: mensajeExtra
+                mensaje_extra: mensajeExtra 
             })
         });
 
