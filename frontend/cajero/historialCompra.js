@@ -5,11 +5,11 @@ const API_BASE_URL =
         ? 'http://127.0.0.1:3000'
         : 'https://tiendaonlinepdv.onrender.com';
 
-const CLIENTE_DATA_URL = `${API_BASE_URL}/api/historial_compras`;
+const CLIENTE_DATA_URL = ${API_BASE_URL}/api/historial_compras;
 
-// ⭐️ VARIABLES MAESTRAS (NUNCA SE MODIFICAN)
+// ⭐ VARIABLES MAESTRAS
 let datosMaestros = []; 
-// ⭐️ VARIABLES DE PAGINACIÓN Y FILTRADO (SE MODIFICAN)
+// ⭐ VARIABLES DE VISTA
 let datosFiltrados = []; 
 let paginaActual = 1;
 const registrosPorPagina = 10;
@@ -18,63 +18,94 @@ async function cargarHistorial() {
     const tbody = $('tablaHistorial');
     const message = $('loading-message');
 
-    tbody.innerHTML = '';
-    message.textContent = "Cargando historial...";
-    message.style.display = "block"; // Asegurar que el mensaje de carga sea visible
+    if (tbody) tbody.innerHTML = '';
+    if (message) {
+        message.textContent = "Cargando historial...";
+        message.style.display = "block";
+    }
 
     try {
         const respuesta = await fetch(CLIENTE_DATA_URL);
-        if (!respuesta.ok) throw new Error(`Error ${respuesta.status}`);
-
-        const compras = await respuesta.json();
         
-        // 🛑 CAMBIO CLAVE: Asigna a la copia maestra
-        datosMaestros = compras; 
+        if (!respuesta.ok) {
+            throw new Error(Error del servidor: ${respuesta.status});
+        }
+
+        const rawData = await respuesta.json();
         
-        // Inicializa el arreglo filtrado con todos los datos
-        datosFiltrados = compras; 
+        // 🛑 ADAPTADOR DE DATOS (MAPPING)
+        // Aquí estandarizamos lo que llega del backend para que encaje en nuestra tabla
+        // sin importar si el backend usa "ticket" o "ticket_numero".
+        const comprasNormalizadas = rawData.map(item => ({
+            nombre_producto: item.nombre_producto || 'Desconocido',
+            // Intenta leer 'ticket', si no existe, lee 'ticket_numero'
+            ticket_numero: item.ticket || item.ticket_numero || 'S/N',
+            cantidad: item.cantidad || 0,
+            // Intenta leer 'fecha', si no existe, lee 'fecha_hora'
+            fecha_hora: item.fecha || item.fecha_hora || new Date().toISOString(),
+            // Precios y montos
+            precio_unitario_venta: item.precio_unitario || item.precio_unitario_venta || 0,
+            total_descuento: item.total_descuento || 0, // Descuento global del ticket
+            monto_descuento: item.monto_descuento_linea || item.monto_descuento || 0, // Descuento de la línea
+            total_final: item.total_venta || item.total_final || 0,
+            total_linea: item.total_linea || 0,
+            metodo_pago: item.metodo_pago || 'Efectivo'
+        }));
 
-        message.style.display = "none";
+        // Guardamos los datos ya limpios y estandarizados
+        datosMaestros = comprasNormalizadas;
+        datosFiltrados = comprasNormalizadas; 
 
-        if (compras.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10">No hay registros de ventas.</td></tr>';
+        if (message) message.style.display = "none";
+
+        if (datosMaestros.length === 0) {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding: 20px;">No hay registros de ventas disponibles.</td></tr>';
             return;
         }
 
-        // Ya no es necesario llamar a filtrarHistorial aquí,
-        // ya que datosFiltrados es una copia de todos los datos.
         mostrarPagina(paginaActual);
         generarControlesPaginacion();
 
     } catch (error) {
         console.error('Error en historial frontend:', error);
-        message.textContent = `Error al conectar con el servidor: ${error.message}`;
+        if (message) {
+            message.textContent = Error: ${error.message};
+            message.style.color = "red";
+        }
     }
 }
 
 function mostrarPagina(numPagina) {
     const tbody = $('tablaHistorial');
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
 
     const inicio = (numPagina - 1) * registrosPorPagina;
     const fin = inicio + registrosPorPagina;
-    // 🛑 USAMOS datosFiltrados
     const datosPagina = datosFiltrados.slice(inicio, fin); 
 
-    // Función de manejo seguro de números
     const safeFixed = (value) => Number(value || 0).toFixed(2);
+    const formatearFecha = (fechaISO) => {
+        try {
+            return new Date(fechaISO).toLocaleString();
+        } catch (e) {
+            return fechaISO;
+        }
+    };
 
     datosPagina.forEach((compra) => {
         const row = tbody.insertRow();
+        // Aseguramos el orden de las columnas según tu HTML
         row.insertCell().textContent = compra.nombre_producto;
         row.insertCell().textContent = compra.ticket_numero;
         row.insertCell().textContent = compra.cantidad;
-        row.insertCell().textContent = new Date(compra.fecha_hora).toLocaleString();
-        row.insertCell().textContent = `$${safeFixed(compra.precio_unitario_venta)}`; 
-        row.insertCell().textContent = `$${safeFixed(compra.total_descuento)}`;
-        row.insertCell().textContent = `$${safeFixed(compra.monto_descuento)}`;
-        row.insertCell().textContent = `$${safeFixed(compra.total_final)}`;
-        row.insertCell().textContent = `$${safeFixed(compra.total_linea)}`;
+        row.insertCell().textContent = formatearFecha(compra.fecha_hora);
+        row.insertCell().textContent = $${safeFixed(compra.precio_unitario_venta)}; 
+        row.insertCell().textContent = $${safeFixed(compra.total_descuento)}; // Descuento Ticket
+        row.insertCell().textContent = $${safeFixed(compra.monto_descuento)}; // Descuento Producto
+        row.insertCell().textContent = $${safeFixed(compra.total_final)};      // Total Ticket
+        row.insertCell().textContent = $${safeFixed(compra.total_linea)};      // Total Producto
         row.insertCell().textContent = compra.metodo_pago;
     });
 
@@ -82,28 +113,29 @@ function mostrarPagina(numPagina) {
 }
 
 function generarControlesPaginacion() {
-    // 🛑 USAMOS datosFiltrados.length
-    const totalPaginas = Math.ceil(datosFiltrados.length / registrosPorPagina);
     const contenedor = $('paginacion');
+    if (!contenedor) return;
+
+    const totalPaginas = Math.ceil(datosFiltrados.length / registrosPorPagina);
     contenedor.innerHTML = '';
     
-    // Si solo hay una página, no mostrar controles
     if (totalPaginas <= 1) return;
 
     const btnAnterior = document.createElement('button');
     btnAnterior.textContent = '← Anterior';
-    btnAnterior.classList.add('btn-paginacion');
-    btnAnterior.addEventListener('click', () => cambiarPagina(-1));
+    btnAnterior.className = 'btn-paginacion'; // Asegúrate de tener estilo para esta clase o usa bootstrap
+    btnAnterior.onclick = () => cambiarPagina(-1);
 
     const indicador = document.createElement('span');
     indicador.id = 'indicadorPagina';
-    indicador.style.margin = '0 10px';
-    indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    indicador.style.margin = '0 15px';
+    indicador.style.fontWeight = 'bold';
+    indicador.textContent = Página ${paginaActual} de ${totalPaginas};
 
     const btnSiguiente = document.createElement('button');
     btnSiguiente.textContent = 'Siguiente →';
-    btnSiguiente.classList.add('btn-paginacion');
-    btnSiguiente.addEventListener('click', () => cambiarPagina(1));
+    btnSiguiente.className = 'btn-paginacion';
+    btnSiguiente.onclick = () => cambiarPagina(1);
 
     contenedor.appendChild(btnAnterior);
     contenedor.appendChild(indicador);
@@ -111,7 +143,6 @@ function generarControlesPaginacion() {
 }
 
 function cambiarPagina(direccion) {
-    // 🛑 USAMOS datosFiltrados.length
     const totalPaginas = Math.ceil(datosFiltrados.length / registrosPorPagina);
     paginaActual += direccion;
 
@@ -123,77 +154,84 @@ function cambiarPagina(direccion) {
 }
 
 function actualizarEstadoBotones() {
-    // 🛑 USAMOS datosFiltrados.length
     const totalPaginas = Math.ceil(datosFiltrados.length / registrosPorPagina);
     const indicador = $('indicadorPagina');
+    const botones = document.querySelectorAll('#paginacion button');
     
-    if (indicador) {
-        indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    if (indicador) indicador.textContent = Página ${paginaActual} de ${totalPaginas};
 
-        const btnAnterior = document.querySelector('#paginacion button:nth-child(1)');
-        const btnSiguiente = document.querySelector('#paginacion button:nth-child(3)');
-
-        if (btnAnterior) btnAnterior.disabled = paginaActual === 1;
-        if (btnSiguiente) btnSiguiente.disabled = paginaActual === totalPaginas;
+    if (botones.length >= 2) {
+        botones[0].disabled = paginaActual === 1;            // Botón Anterior
+        botones[1].disabled = paginaActual === totalPaginas; // Botón Siguiente
     }
 }
 
 function filtrarHistorial() {
-    const texto = $('busquedaProducto').value.toLowerCase();
-    const fecha = $('busquedaFecha').value;
+    const inputProducto = $('busquedaProducto');
+    const inputFecha = $('busquedaFecha');
+    
+    if (!inputProducto || !inputFecha) return;
 
-    // 🛑 CAMBIO CLAVE: Filtra sobre la copia MAESTRA (datosMaestros)
+    const texto = inputProducto.value.toLowerCase().trim();
+    const fecha = inputFecha.value;
+
     const filtrados = datosMaestros.filter((item) => {
-        const coincideProducto = item.nombre_producto.toLowerCase().includes(texto);
-        // La fecha de item.fecha_hora es un ISO String, comparamos el inicio (YYYY-MM-DD)
-        const coincideFecha = fecha ? item.fecha_hora.startsWith(fecha) : true;
+        // Búsqueda segura (maneja nulls)
+        const prodName = (item.nombre_producto || '').toLowerCase();
+        const itemFecha = (item.fecha_hora || '').split('T')[0]; // Asume formato ISO YYYY-MM-DDTHH:mm...
+        
+        const coincideProducto = prodName.includes(texto);
+        const coincideFecha = fecha ? itemFecha === fecha : true;
+        
         return coincideProducto && coincideFecha;
     });
 
-    // 🛑 Asigna a datosFiltrados
     datosFiltrados = filtrados; 
+    paginaActual = 1;
     
     if (datosFiltrados.length === 0) {
-        $('tablaHistorial').innerHTML = '<tr><td colspan="10">Sin coincidencias.</td></tr>';
+        const tbody = $('tablaHistorial');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding: 20px;">No se encontraron coincidencias.</td></tr>';
         $('paginacion').innerHTML = '';
         return;
     }
 
-    paginaActual = 1;
     mostrarPagina(paginaActual);
     generarControlesPaginacion();
 }
 
-// ⭐️ ASIGNACIÓN DE EVENTOS ⭐️
-$('btnBuscar').addEventListener('click', () => {
-    paginaActual = 1; // Reinicia la página al buscar
-    filtrarHistorial();
-});
+// ⭐ EVENT LISTENERS
+const btnBuscar = $('btnBuscar');
+const btnLimpiar = $('btnLimpiar');
+const btnRegresar = $('btnRegresar');
 
-$('btnLimpiar').addEventListener('click', () => {
-    $('busquedaProducto').value = '';
-    $('busquedaFecha').value = '';
-    
-    // Al limpiar, volvemos a la copia maestra sin recargar del servidor
-    datosFiltrados = datosMaestros; 
-    
-    if (datosFiltrados.length === 0) {
-        $('tablaHistorial').innerHTML = '<tr><td colspan="10">No hay registros de ventas.</td></tr>';
-        $('paginacion').innerHTML = '';
-        return;
-    }
+if (btnBuscar) {
+    btnBuscar.addEventListener('click', () => {
+        paginaActual = 1;
+        filtrarHistorial();
+    });
+}
 
-    paginaActual = 1;
-    mostrarPagina(paginaActual);
-    generarControlesPaginacion();
-});
+if (btnLimpiar) {
+    btnLimpiar.addEventListener('click', () => {
+        const inputProducto = $('busquedaProducto');
+        const inputFecha = $('busquedaFecha');
+        
+        if (inputProducto) inputProducto.value = '';
+        if (inputFecha) inputFecha.value = '';
+        
+        datosFiltrados = datosMaestros; // Restaurar copia completa
+        paginaActual = 1;
+        mostrarPagina(1);
+        generarControlesPaginacion();
+    });
+}
 
-// Nota: Eliminamos los listeners 'input' y 'change' para evitar que se ejecuten inmediatamente
-// al cargar la página si el navegador persiste los valores, dejando solo el botón Buscar/Limpiar.
+if (btnRegresar) {
+    btnRegresar.addEventListener('click', () => {
+        window.location.href = 'cajero.html';
+    });
+}
 
-document.getElementById('btnRegresar').addEventListener('click', () => {
-    window.location.href = 'cajero.html';
-});
-
-// ⭐️ INICIO DE LA APLICACIÓN ⭐️
-cargarHistorial();
+// INICIALIZAR
+document.addEventListener('DOMContentLoaded', cargarHistorial);
