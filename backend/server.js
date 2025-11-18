@@ -2104,40 +2104,55 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
 // ===============================================
 app.get('/api/historial_compras', async (req, res) => {
   try {
+    // ⭐️ Nueva consulta usando JOIN implícito de Supabase (.select('ventas(...)'))
     const { data, error } = await supabase
       .from('detalle_venta')
       .select(`
         nombre_producto,
         cantidad,
         monto_descuento,
-        total_linea,
         precio_unitario_venta,
-        ventas (
+        total_linea, 
+        ventas!inner ( // ⬅️ Utilizamos el JOIN implícito a la tabla 'ventas'
           ticket_numero,
           fecha_hora,
           total_descuento,
           total_final,
           metodo_pago
         )
-      `);
+      `); // La columna total_linea se asume que existe o se mapea
 
     if (error) {
       console.error("Supabase error:", error);
       return res.status(500).json({ error: error.message });
     }
 
-    const historial = data.map(item => ({
-      nombre_producto: item.nombre_producto,
-      cantidad: item.cantidad,
-      monto_descuento: item.monto_descuento,
-      total_linea: item.total_linea,
-      precio_unitario_venta: item.precio_unitario_venta,
-      ticket_numero: item.ventas.ticket_numero,
-      fecha_hora: item.ventas.fecha_hora,
-      total_descuento: item.ventas.total_descuento,
-      total_final: item.ventas.total_final,
-      metodo_pago: item.ventas.metodo_pago
-    }));
+    // ⭐️ Aplanamos la respuesta para que el frontend la reciba sin anidamiento ⭐️
+    const historial = data.map(item => {
+        // Obtenemos los campos anidados de la venta
+        const venta = item.ventas; 
+        
+        // Si total_linea no existe en la tabla detalle_venta, lo calculamos aquí
+        let totalLineaCalculada = item.total_linea;
+        if (totalLineaCalculada === null || totalLineaCalculada === undefined) {
+             totalLineaCalculada = (item.precio_unitario_venta * item.cantidad) - (item.monto_descuento * item.cantidad);
+        }
+        
+        return {
+          nombre_producto: item.nombre_producto,
+          cantidad: item.cantidad,
+          monto_descuento: item.monto_descuento,
+          precio_unitario_venta: item.precio_unitario_venta,
+          
+          ticket_numero: venta.ticket_numero,
+          fecha_hora: venta.fecha_hora,
+          total_descuento: venta.total_descuento,
+          total_final: venta.total_final,
+          metodo_pago: venta.metodo_pago,
+          
+          total_linea: totalLineaCalculada, // Aseguramos que este campo esté presente y calculado
+        };
+    });
 
     res.json(historial);
 

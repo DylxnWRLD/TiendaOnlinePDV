@@ -49,6 +49,7 @@ function mostrarPagina(numPagina) {
     const fin = inicio + registrosPorPagina;
     const datosPagina = datosOriginales.slice(inicio, fin);
 
+    // ⭐️ FUNCIÓN DE MANEJO SEGURO DE NÚMEROS AÑADIDA ⭐️
     const safeFixed = (value) => Number(value || 0).toFixed(2);
 
     datosPagina.forEach((compra) => {
@@ -57,7 +58,8 @@ function mostrarPagina(numPagina) {
         row.insertCell().textContent = compra.ticket_numero;
         row.insertCell().textContent = compra.cantidad;
         row.insertCell().textContent = new Date(compra.fecha_hora).toLocaleString();
-        row.insertCell().textContent = `$${safeFixed(compra.precio_unitario_venta)}`;
+        // ⭐️ Uso de safeFixed para todos los valores monetarios ⭐️
+        row.insertCell().textContent = `$${safeFixed(compra.precio_unitario_venta)}`; 
         row.insertCell().textContent = `$${safeFixed(compra.total_descuento)}`;
         row.insertCell().textContent = `$${safeFixed(compra.monto_descuento)}`;
         row.insertCell().textContent = `$${safeFixed(compra.total_final)}`;
