@@ -5,7 +5,8 @@ const API_BASE_URL =
         ? 'http://127.0.0.1:3000'
         : 'https://tiendaonlinepdv.onrender.com';
 
-const CLIENTE_DATA_URL = ${API_BASE_URL}/api/historial_compras;
+// 🛑 CORRECCIÓN SINTAXIS: Usar backticks (comillas invertidas)
+const CLIENTE_DATA_URL = `${API_BASE_URL}/api/historial_compras`;
 
 // ⭐ VARIABLES MAESTRAS
 let datosMaestros = []; 
@@ -28,25 +29,21 @@ async function cargarHistorial() {
         const respuesta = await fetch(CLIENTE_DATA_URL);
         
         if (!respuesta.ok) {
-            throw new Error(Error del servidor: ${respuesta.status});
+            // 🛑 CORRECCIÓN SINTAXIS: Usar backticks (comillas invertidas)
+            throw new Error(`Error del servidor: ${respuesta.status}`);
         }
 
         const rawData = await respuesta.json();
         
         // 🛑 ADAPTADOR DE DATOS (MAPPING)
-        // Aquí estandarizamos lo que llega del backend para que encaje en nuestra tabla
-        // sin importar si el backend usa "ticket" o "ticket_numero".
         const comprasNormalizadas = rawData.map(item => ({
             nombre_producto: item.nombre_producto || 'Desconocido',
-            // Intenta leer 'ticket', si no existe, lee 'ticket_numero'
             ticket_numero: item.ticket || item.ticket_numero || 'S/N',
             cantidad: item.cantidad || 0,
-            // Intenta leer 'fecha', si no existe, lee 'fecha_hora'
             fecha_hora: item.fecha || item.fecha_hora || new Date().toISOString(),
-            // Precios y montos
             precio_unitario_venta: item.precio_unitario || item.precio_unitario_venta || 0,
-            total_descuento: item.total_descuento || 0, // Descuento global del ticket
-            monto_descuento: item.monto_descuento_linea || item.monto_descuento || 0, // Descuento de la línea
+            total_descuento: item.total_descuento || 0, 
+            monto_descuento: item.monto_descuento_linea || item.monto_descuento || 0,
             total_final: item.total_venta || item.total_final || 0,
             total_linea: item.total_linea || 0,
             metodo_pago: item.metodo_pago || 'Efectivo'
@@ -69,7 +66,8 @@ async function cargarHistorial() {
     } catch (error) {
         console.error('Error en historial frontend:', error);
         if (message) {
-            message.textContent = Error: ${error.message};
+            // 🛑 CORRECCIÓN SINTAXIS: Usar backticks (comillas invertidas)
+            message.textContent = `Error: ${error.message}`;
             message.style.color = "red";
         }
     }
@@ -96,16 +94,15 @@ function mostrarPagina(numPagina) {
 
     datosPagina.forEach((compra) => {
         const row = tbody.insertRow();
-        // Aseguramos el orden de las columnas según tu HTML
         row.insertCell().textContent = compra.nombre_producto;
         row.insertCell().textContent = compra.ticket_numero;
         row.insertCell().textContent = compra.cantidad;
         row.insertCell().textContent = formatearFecha(compra.fecha_hora);
-        row.insertCell().textContent = $${safeFixed(compra.precio_unitario_venta)}; 
-        row.insertCell().textContent = $${safeFixed(compra.total_descuento)}; // Descuento Ticket
-        row.insertCell().textContent = $${safeFixed(compra.monto_descuento)}; // Descuento Producto
-        row.insertCell().textContent = $${safeFixed(compra.total_final)};      // Total Ticket
-        row.insertCell().textContent = $${safeFixed(compra.total_linea)};      // Total Producto
+        row.insertCell().textContent = `$${safeFixed(compra.precio_unitario_venta)}`; 
+        row.insertCell().textContent = `$${safeFixed(compra.total_descuento)}`; // Descuento Ticket
+        row.insertCell().textContent = `$${safeFixed(compra.monto_descuento)}`; // Descuento Producto
+        row.insertCell().textContent = `$${safeFixed(compra.total_final)}`;      // Total Ticket
+        row.insertCell().textContent = `$${safeFixed(compra.total_linea)}`;      // Total Producto
         row.insertCell().textContent = compra.metodo_pago;
     });
 
@@ -123,14 +120,15 @@ function generarControlesPaginacion() {
 
     const btnAnterior = document.createElement('button');
     btnAnterior.textContent = '← Anterior';
-    btnAnterior.className = 'btn-paginacion'; // Asegúrate de tener estilo para esta clase o usa bootstrap
+    btnAnterior.className = 'btn-paginacion';
     btnAnterior.onclick = () => cambiarPagina(-1);
 
     const indicador = document.createElement('span');
     indicador.id = 'indicadorPagina';
     indicador.style.margin = '0 15px';
     indicador.style.fontWeight = 'bold';
-    indicador.textContent = Página ${paginaActual} de ${totalPaginas};
+    // 🛑 CORRECCIÓN SINTAXIS: Usar backticks (comillas invertidas)
+    indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
 
     const btnSiguiente = document.createElement('button');
     btnSiguiente.textContent = 'Siguiente →';
@@ -158,11 +156,12 @@ function actualizarEstadoBotones() {
     const indicador = $('indicadorPagina');
     const botones = document.querySelectorAll('#paginacion button');
     
-    if (indicador) indicador.textContent = Página ${paginaActual} de ${totalPaginas};
+    // 🛑 CORRECCIÓN SINTAXIS: Usar backticks (comillas invertidas)
+    if (indicador) indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
 
     if (botones.length >= 2) {
-        botones[0].disabled = paginaActual === 1;            // Botón Anterior
-        botones[1].disabled = paginaActual === totalPaginas; // Botón Siguiente
+        botones[0].disabled = paginaActual === 1;            
+        botones[1].disabled = paginaActual === totalPaginas;
     }
 }
 
@@ -176,9 +175,8 @@ function filtrarHistorial() {
     const fecha = inputFecha.value;
 
     const filtrados = datosMaestros.filter((item) => {
-        // Búsqueda segura (maneja nulls)
         const prodName = (item.nombre_producto || '').toLowerCase();
-        const itemFecha = (item.fecha_hora || '').split('T')[0]; // Asume formato ISO YYYY-MM-DDTHH:mm...
+        const itemFecha = (item.fecha_hora || '').split('T')[0];
         
         const coincideProducto = prodName.includes(texto);
         const coincideFecha = fecha ? itemFecha === fecha : true;
@@ -220,7 +218,7 @@ if (btnLimpiar) {
         if (inputProducto) inputProducto.value = '';
         if (inputFecha) inputFecha.value = '';
         
-        datosFiltrados = datosMaestros; // Restaurar copia completa
+        datosFiltrados = datosMaestros; 
         paginaActual = 1;
         mostrarPagina(1);
         generarControlesPaginacion();
