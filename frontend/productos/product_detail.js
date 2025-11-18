@@ -478,13 +478,14 @@ async function fetchProductDetails(productId) {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
-    // const productId = getProductIdFromUrl();
-    if (productId) {
-        fetchProductDetails(productId);
-        fetchComments(productId);
+    // Usamos la variable global 'currentProductId' que ya definiste
+    if (currentProductId) {
+        fetchProductDetails(currentProductId); // <-- Corregido
+        fetchComments(currentProductId);     // <-- Corregido
+
         if (token) {
             checkFavoriteStatus(currentProductId);
-            $('favoriteBtn').style.display = 'inline-block'; // Mostrar el botón
+            $('favoriteBtn').style.display = 'inline-block';
         }
     } else {
         // Si no hay ID en la URL, volver al inicio
@@ -497,7 +498,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const qtyInput = $('productQuantity');
     $('plusQuantity')?.addEventListener('click', () => {
         const val = parseInt(qtyInput.value) || 1;
-        // La validación de stock es solo para el producto actual, no para el carrito
         if (val < currentStockQty) qtyInput.value = val + 1;
     });
     $('minusQuantity')?.addEventListener('click', () => {
@@ -513,7 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
         qtyInput.value = val;
     });
 
-
     // --- ACCIÓN: Agregar al Carrito ---
     $('addToCartBtn')?.addEventListener('click', () => {
         addToCart(parseInt(qtyInput.value));
@@ -521,13 +520,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ACCIÓN: Comprar Ahora ---
     $('buyNowBtn')?.addEventListener('click', () => {
-        // Intenta agregar al carrito. Si tiene éxito (true), redirige.
         if (addToCart(parseInt(qtyInput.value), true)) {
-            // 🛒 REDIRECCIÓN A LA PÁGINA DE COMPRA
             window.location.href = '../compraCliente/compra.html';
         }
     });
 
+    // --- ACCIÓN: Favorito ---
     $('favoriteBtn')?.addEventListener('click', handleFavoriteToggle);
 
     // --- MODAL DEL CARRITO ---
@@ -535,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Abrir modal
     $('cartBtn')?.addEventListener('click', () => {
-        // Si no está logueado, no abre el modal, manda al login
         if (!getCurrentUserId()) {
             window.location.href = '../login/login.html';
             return;
@@ -550,9 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === cartModal) cartModal.style.display = 'none';
     });
 
-    // Delegación de eventos dentro del modal (para botones dinámicos)
+    // Delegación de eventos dentro del modal
     $('cartItemsContainer')?.addEventListener('click', (e) => {
-        // Buscar el botón más cercano (por si se hizo clic en el icono)
         const btn = e.target.closest('button');
         if (!btn) return;
         const id = btn.dataset.id;
@@ -566,18 +562,17 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCartItemQuantity(id, item.quantity + 1);
         } else if (btn.classList.contains('minus')) {
             updateCartItemQuantity(id, item.quantity - 1);
-        } else if (btn.classList.contains('btn-remove')) { // ✅ CORRECCIÓN APLICADA
+        } else if (btn.classList.contains('btn-remove')) {
             removeFromCart(id);
         }
     });
 
-    // Botón "Proceder al Pago" en el modal -> Redirige a compra.html
+    // Botón "Proceder al Pago"
     $('checkoutBtnModal')?.addEventListener('click', () => {
-        // Ajusta esta ruta si es necesario
         window.location.href = '../compraCliente/compra.html';
     });
 
-    // Inicializar el contador del header al cargar la página
+    // Inicializar el contador del header
     updateCartUI(loadCart());
 });
 
