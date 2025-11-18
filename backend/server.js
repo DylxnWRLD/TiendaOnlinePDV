@@ -554,6 +554,143 @@ app.post('/api/register', async (req, res) => {
 });
 
 // ===============================================
+// NUEVO: RUTAS DE FAVORITOS
+// ===============================================
+
+/**
+ * RUTA: GET /api/favorites/status/:productId
+ * Objetivo: Verificar si un producto YA es favorito para el usuario logueado.
+ * Panel: product_detail.js
+ */
+app.get('/api/favorites/status/:productId', getUserIdFromToken, async (req, res) => {
+    const id_producto_mongo = req.params.productId;
+    const id_usuario = req.userId;
+
+    try {
+        const { data, error } = await supabase
+            .from('favoritos')
+            .select('id')
+            .eq('id_usuario', id_usuario)
+            .eq('id_producto_mongo', id_producto_mongo)
+            .maybeSingle(); // .maybeSingle() es clave aquí
+
+        if (error) throw error;
+
+        // Si 'data' no es null, significa que lo encontró
+        res.status(200).json({ isFavorite: !!data });
+
+    } catch (error) {
+        console.error('Error al verificar estado de favorito:', error.message);
+        res.status(500).json({ message: 'Error al verificar favorito.' });
+    }
+});
+
+/**
+ * RUTA: POST /api/favorites
+ * Objetivo: Añadir un producto a favoritos.
+ * Panel: product_detail.js
+ */
+app.post('/api/favorites', getUserIdFromToken, async (req, res) => {
+    const { id_producto_mongo } = req.body;
+    const id_usuario = req.userId;
+
+    if (!id_producto_mongo) {
+        return res.status(400).json({ message: 'Falta el ID del producto.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('favoritos')
+            .insert({
+                id_usuario: id_usuario,
+                id_producto_mongo: id_producto_mongo
+            })
+            .select()
+            .single();
+
+        if (error) {
+            // Manejar error de duplicado (si se añade dos veces)
+            if (error.code === '23505') { 
+                return res.status(409).json({ message: 'Este producto ya está en tus favoritos.' });
+            }
+            throw error;
+        }
+
+        res.status(201).json({ message: 'Añadido a favoritos.', data });
+
+    } catch (error) {
+        console.error('Error al añadir favorito:', error.message);
+        res.status(500).json({ message: 'No se pudo añadir a favoritos.' });
+    }
+});
+
+/**
+ * RUTA: DELETE /api/favorites/:productId
+ * Objetivo: Quitar un producto de favoritos.
+ * Panel: product_detail.js
+ */
+app.delete('/api/favorites/:productId', getUserIdFromToken, async (req, res) => {
+    const id_producto_mongo = req.params.productId;
+    const id_usuario = req.userId;
+
+    try {
+        const { error } = await supabase
+            .from('favoritos')
+            .delete()
+            .eq('id_usuario', id_usuario)
+            .eq('id_producto_mongo', id_producto_mongo);
+
+        if (error) throw error;
+
+        res.status(200).json({ message: 'Quitado de favoritos.' });
+
+    } catch (error) {
+        console.error('Error al quitar favorito:', error.message);
+        res.status(500).json({ message: 'No se pudo quitar de favoritos.' });
+    }
+});
+
+
+/**
+ * RUTA: GET /api/favorites
+ * Objetivo: Obtener la lista de TODOS los productos favoritos del usuario.
+ * Panel: favoritos.js (Nueva página)
+ */
+app.get('/api/favorites', getUserIdFromToken, async (req, res) => {
+    const id_usuario = req.userId;
+
+    try {
+        // 1. Obtener la lista de IDs de Mongo desde Supabase
+        const { data: favoriteIds, error: supabaseError } = await supabase
+            .from('favoritos')
+            .select('id_producto_mongo')
+            .eq('id_usuario', id_usuario);
+
+        if (supabaseError) throw supabaseError;
+
+        if (!favoriteIds || favoriteIds.length === 0) {
+            return res.status(200).json([]); // Devuelve un array vacío si no hay favoritos
+        }
+
+        // Extraer solo los IDs
+        const mongoIds = favoriteIds.map(fav => fav.id_producto_mongo);
+
+        // 2. Consultar MongoDB para obtener los detalles de esos productos
+        // Usamos $in para buscar todos los productos cuyos _id estén en el array 'mongoIds'
+        const productosFavoritos = await Product.find({
+            '_id': { $in: mongoIds },
+            'active': true // Opcional: mostrar solo favoritos que sigan activos
+        });
+
+        res.status(200).json(productosFavoritos);
+
+    } catch (error) {
+        console.error('Error al obtener favoritos completos:', error.message);
+        res.status(500).json({ message: 'No se pudo obtener la lista de favoritos.' });
+    }
+});
+
+// ===============================================
 // 2.5 RUTAS DE API (ADMIN)
 // ===============================================
 

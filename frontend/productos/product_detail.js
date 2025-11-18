@@ -6,6 +6,9 @@ const RENDER_SERVER_URL = 'https://tiendaonlinepdv.onrender.com';
 
 let currentProduct = null;
 let currentStockQty = 0;
+let isCurrentlyFavorite = false;
+let currentProductId = getProductIdFromUrl();
+const token = sessionStorage.getItem('supabase-token');
 
 // Obtiene el ID del producto de la URL (ej. product_detail.html?id=123)
 function getProductIdFromUrl() {
@@ -475,10 +478,14 @@ async function fetchProductDetails(productId) {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
-    const productId = getProductIdFromUrl();
+    // const productId = getProductIdFromUrl();
     if (productId) {
         fetchProductDetails(productId);
         fetchComments(productId);
+        if (token) {
+            checkFavoriteStatus(currentProductId);
+            $('favoriteBtn').style.display = 'inline-block'; // Mostrar el botón
+        }
     } else {
         // Si no hay ID en la URL, volver al inicio
         window.location.href = '../../index.html';
@@ -520,6 +527,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '../compraCliente/compra.html';
         }
     });
+
+    $('favoriteBtn')?.addEventListener('click', handleFavoriteToggle);
 
     // --- MODAL DEL CARRITO ---
     const cartModal = $('cartModal');
@@ -571,3 +580,123 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar el contador del header al cargar la página
     updateCartUI(loadCart());
 });
+
+// #################################################
+// ⭐️ NUEVO: LÓGICA DE FAVORITOS
+// #################################################
+
+/**
+ * 1. Verifica con el backend si el producto actual ya es favorito.
+ */
+async function checkFavoriteStatus(productId) {
+    if (!token) return; // No hacer nada si no hay token
+
+    try {
+        const response = await fetch(`${RENDER_SERVER_URL}/api/favorites/status/${productId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) return; // Fallo silencioso
+
+        const { isFavorite } = await response.json();
+        isCurrentlyFavorite = isFavorite;
+        updateFavoriteButtonUI(); // Actualizar el botón con el estado correcto
+
+    } catch (error) {
+        console.error("Error al chequear favoritos:", error);
+    }
+}
+
+/**
+ * 2. Actualiza la apariencia del botón (corazón lleno o vacío).
+ */
+function updateFavoriteButtonUI() {
+    const btn = $('favoriteBtn');
+    if (!btn) return;
+    const icon = btn.querySelector('i');
+
+    if (isCurrentlyFavorite) {
+        btn.classList.add('is-favorite');
+        icon.classList.remove('far'); // Quitar corazón vacío
+        icon.classList.add('fas');    // Poner corazón lleno (requiere font-weight: 900)
+        btn.title = "Quitar de favoritos";
+        // Asegura que el ícono sea 'fas' (sólido)
+        icon.style.fontWeight = '900'; 
+    } else {
+        btn.classList.remove('is-favorite');
+        icon.classList.remove('fas');    // Quitar corazón lleno
+        icon.classList.add('far');       // Poner corazón vacío
+        btn.title = "Añadir a favoritos";
+        // Asegura que el ícono sea 'far' (regular)
+        icon.style.fontWeight = '400';
+    }
+}
+
+/**
+ * 3. Decide si añadir o quitar el favorito al hacer clic.
+ */
+function handleFavoriteToggle() {
+    // Re-chequear el login por si acaso
+    if (!token || !getCurrentUserId()) {
+        showToast("Debes iniciar sesión para añadir favoritos.", 'err');
+        setTimeout(() => window.location.href = '../login/login.html', 1500);
+        return;
+    }
+
+    if (isCurrentlyFavorite) {
+        removeFromFavorites(currentProductId);
+    } else {
+        addToFavorites(currentProductId);
+    }
+}
+
+/**
+ * 4. Llama a la API para AÑADIR un favorito.
+ */
+async function addToFavorites(productId) {
+    try {
+        const response = await fetch(`${RENDER_SERVER_URL}/api/favorites`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ id_producto_mongo: productId })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Error al añadir');
+
+        isCurrentlyFavorite = true;
+        updateFavoriteButtonUI();
+        showToast("Añadido a favoritos", "ok");
+
+    } catch (error) {
+        console.error(error);
+        showToast(error.message, 'err');
+    }
+}
+
+/**
+ * 5. Llama a la API para QUITAR un favorito.
+ */
+async function removeFromFavorites(productId) {
+    try {
+        const response = await fetch(`${RENDER_SERVER_URL}/api/favorites/${productId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Error al quitar');
+
+        isCurrentlyFavorite = false;
+        updateFavoriteButtonUI();
+        showToast("Quitado de favoritos", "info");
+
+    } catch (error) {
+        console.error(error);
+        showToast(error.message, 'err');
+    }
+}

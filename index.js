@@ -229,8 +229,7 @@ function handleClientMenuAction(action) {
             window.location.href = "frontend/cliente/buscador.html";
             break;
         case 'favoritos':
-            alert("Favoritos: Función no implementada aún.");
-            // Aquí iría la lógica de redirección a la página de favoritos
+            window.location.href = "frontend/cliente/favoritos.html";
             break;
         case 'historial':
             // Redirigir a la nueva página de historial

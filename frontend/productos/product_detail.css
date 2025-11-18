@@ -670,3 +670,28 @@ main {
     color: var(--color-texto-secundario);
     font-style: italic;
 }
+
+.btn-favorite {
+    background-color: transparent;
+    border: 2px solid var(--color-borde, #ddd);
+    color: var(--color-texto-secundario, #555);
+    font-size: 1.4rem; /* Tamaño del corazón */
+    padding: 10px 15px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-favorite:hover {
+    background-color: #f8f8f8;
+}
+
+/* ⭐️ Estilo para cuando SÍ es favorito ⭐️ */
+.btn-favorite.is-favorite {
+    color: #e74c3c; /* Rojo corazón */
+    border-color: #e74c3c;
+}
+
+.btn-favorite.is-favorite:hover {
+    background-color: #fde8e6; /* Rojo claro al pasar el mouse */
+}
