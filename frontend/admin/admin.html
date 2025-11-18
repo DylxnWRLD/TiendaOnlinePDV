@@ -328,20 +328,19 @@
                     <label class="form-label" for="promotionRuleType">Aplicar descuento a:</label>
                     <select class="form-control" id="promotionRuleType" required>
                         <option value="GLOBAL">Global (Toda la compra)</option>
-                        <option value="CATEGORIA">Categoría de Producto</option>
+                        
                         <option value="MARCA">Marca Específica</option>
                         <option value="PRODUCTO">Producto Específico (SKU o ID)</option>
                         <option value="PRECIO">Basado en Precio (Ej. Gasta $1000)</option>
                         <option value="CANTIDAD">Basado en Cantidad (Ej. Compra 3)</option>
-                        <option value="FECHA ESPECIAL">Fecha Especial (Ej. Navidad)</option>
-                        <option value="REBAJAS">Rebajas (General)</option>
+                       
                     </select>
                 </div>
 
                 <div class="form-group" id="promotionRuleValueGroup">
                     <label class="form-label" for="promotionRuleValue">Valor de la Regla</label>
                     <input type="text" class="form-control" id="promotionRuleValue"
-                        placeholder="Ej: 'videojuegos' o '500' (para precio)">
+                        placeholder="Ej:'500' (Para Precio), 'Xbox' (Para Marca), 'Switch 2' (Para Producto Específico) ...">
                 </div>
 
                 <div class="form-group">
@@ -369,14 +368,6 @@
             </form>
         </div>
     </div>
-
-
-
-
-
-
-
-
 
     <!-- 🔹 Modal para editar promoción -->
     <div id="editPromotionModal" class="modal">

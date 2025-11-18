@@ -75,11 +75,12 @@ class AdminPanel {
         const ruleTypeSelect = document.getElementById('promotionRuleType');
         const ruleValueGroup = document.getElementById('promotionRuleValueGroup');
         const ruleValueInput = document.getElementById('promotionRuleValue');
+        
 
         if (ruleTypeSelect) {
             const toggleRuleValueField = () => {
                 if (!ruleTypeSelect.value) return;
-                if (ruleTypeSelect.value === 'GLOBAL' || ruleTypeSelect.value === 'REBAJAS' || ruleTypeSelect.value === 'FECHA ESPECIAL') {
+                if (ruleTypeSelect.value === 'GLOBAL' ) {
                     ruleValueGroup.style.display = 'none';
                     ruleValueInput.required = false;
                     ruleValueInput.value = '';
