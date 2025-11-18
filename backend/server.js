@@ -2247,7 +2247,7 @@ app.get('/api/historial_compras', async (req, res) => {
         const { data: detalles, error: detalleError } = await supabase
             .from('detalle_venta')
             .select(`
-              id_venta, // 🔑 CLAVE: Usamos el nombre de la FK
+              id_venta,
               nombre_producto,
               cantidad,
               monto_descuento,
