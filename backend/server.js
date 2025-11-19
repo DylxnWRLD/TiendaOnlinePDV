@@ -2344,8 +2344,8 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
                 fecha_estimada
             `)
             .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
-            // CORRECCIÓN CLAVE: Se usa el operador 'in' y un array JS
-            .not('estado_envio', 'in', ['ENTREGADO', 'CANCELADO']) 
+            // CORRECCIÓN CLAVE: Usamos .not('columna', 'operador', 'valores')
+            .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
@@ -2353,7 +2353,7 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             // Devolver un error 500 JSON que el frontend pueda manejar.
             return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
         }
-        
+
         // Formatear para facilitar el renderizado en el frontend:
         const paquetes = data.map(p => ({
             id: p.id,
@@ -2362,7 +2362,7 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             estado_envio: p.estado_envio,
             fecha_estimada: p.fecha_estimada,
             // ⭐️ Usaremos un valor genérico o el email del token si es necesario, pero no podemos hacer join. ⭐️
-            cliente_correo: 'Contacto disponible en detalle' 
+            cliente_correo: 'Contacto disponible en detalle'
         }));
 
         res.status(200).json(paquetes);
