@@ -2143,14 +2143,45 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
         }
 
         console.log('✅ Stock verificado y deducido en Mongo. Productos modificados:', mongoResult.modifiedCount);
+        // ==========================================================
+        // ⭐️ NUEVO: ETAPA 1.5: ENCONTRAR REPARTIDOR DISPONIBLE ⭐️
+        // ==========================================================
+        const { data: repartidor, error: repError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('role_id', 5) // Rol ID para Repartidor
+            .eq('status', 'Activo') // Solo repartidores activos
+            .limit(1) // Tomamos el primero que encontremos (asignación simple)
+            .single();
+
+        if (repError || !repartidor) {
+            // Si no hay repartidores activos, debemos compensar el stock y fallar.
+            console.error('[REPARTIDOR ERROR]: No se encontró repartidor activo. Compensando stock.');
+
+            // Lógica de compensación de stock en MongoDB
+            const compensationOps = p_detalles.map(d => ({
+                updateOne: {
+                    filter: { _id: d.id_producto_mongo },
+                    update: { $inc: { stockQty: d.cantidad } } // Reponer stock
+                }
+            }));
+            await Product.bulkWrite(compensationOps);
+            console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a falta de repartidor.');
+
+            return res.status(500).json({ error: 'NO_DELIVERY_AGENT', message: 'No se pudo completar la compra: No hay repartidores activos asignables.' });
+        }
+
+        const id_repartidor_asignado = repartidor.id;
+        console.log(`✅ Repartidor asignado: ${id_repartidor_asignado}`);
 
         // ==========================================================
-        // ⭐️ ETAPA 2: REGISTRAR VENTA EN POSTGRESQL (SOLO si Mongo fue exitoso)
+        // ⭐️ ETAPA 2: REGISTRAR VENTA EN POSTGRESQL (Solo si Mongo y Repartidor fueron exitosos)
         // ==========================================================
 
-        // 5. EJECUCIÓN: PostgreSQL (Registro de Cliente, Venta, Detalle)
+        // 5. EJECUCIÓN: PostgreSQL (Registro de Cliente, Venta, Detalle, Repartidor)
         const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
-            p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles
+            p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles,
+            p_id_repartidor: id_repartidor_asignado // <-- Argumento NUEVO
         });
 
         if (error) {
