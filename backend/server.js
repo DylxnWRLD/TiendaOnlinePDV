@@ -1156,7 +1156,6 @@ app.get('/api/productos/con-promociones', async (req, res) => {
     }
 });
 
-
 /**
  * RUTA: PUT /promociones/:id
  * Objetivo: Editar una promoción en la tabla "promociones".
@@ -1525,8 +1524,6 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
     }
 });
 
-
-
 // ===============================================
 // ⭐️ NUEVO: RUTAS DE API (INVENTARIO - MONGODB) ⭐️
 // ===============================================
@@ -1602,8 +1599,6 @@ app.post('/api/products', upload.single('imageUpload'), async (req, res) => {
             });
         }
 
-
-
         const producto = new Product(newProductData);
         await producto.save();
 
@@ -1621,7 +1616,6 @@ app.post('/api/products', upload.single('imageUpload'), async (req, res) => {
         });
     }
 });
-
 
 // ===============================================
 // 3. RUTAS DE CAJERO (MOVIDAS DESDE cajeroRoutes)
@@ -2036,7 +2030,6 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     }
 });
 
-
 // ===============================================
 // PROCESAMIENTO DE LA COMPRA ONLINE
 // ===============================================
@@ -2073,7 +2066,7 @@ app.get('/api/cliente/data', getUserIdFromToken, async (req, res) => {
     }
 });
 
-// --- ENDPOINT RPC PARA PROCESAR LA COMPRA (MODIFICADO PARA CREAR PEDIDO) ---
+// --- ENDPOINT RPC PARA PROCESAR LA COMPRA ---
 app.post('/api/rpc/procesar_compra_online', async (req, res) => {
     // 1. Extracción y Verificación de Token (Identidad del Cliente)
     const authHeader = req.headers.authorization;
@@ -2103,6 +2096,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
         // ==========================================================
         // ⭐️ ETAPA 1: VERIFICAR Y DEDUCIR STOCK EN MONGO ATLAS (CRÍTICO)
+        // Esto debe ser ATÓMICO y ocurre ANTES de registrar la venta.
         // ==========================================================
 
         if (!p_detalles || p_detalles.length === 0) {
@@ -2140,10 +2134,9 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
                 const compensationOps = p_detalles.filter(d => d.cantidad <= d.cantidad).map(d => ({
                     updateOne: {
                         filter: { _id: d.id_producto_mongo },
-                        update: { $inc: { stockQty: d.cantidad } } // Reponer stock
+                        update: { $inc: { stockQty: d.cantidad } }
                     }
                 }));
-                await Product.bulkWrite(compensationOps);
             }
 
             return res.status(409).json({ error: 'INSUFFICIENT_STOCK', message: 'Algunos productos ya no tienen stock suficiente. Por favor, revisa tu carrito.' });
@@ -2156,7 +2149,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
         // ==========================================================
 
         // 5. EJECUCIÓN: PostgreSQL (Registro de Cliente, Venta, Detalle)
-        const { data: rpcResult, error } = await supabaseClient.rpc('procesar_compra_online', {
+        const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
             p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles
         });
 
@@ -2164,6 +2157,8 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
             console.error('[DB ERROR - PG]:', error.message);
 
             // 🛑 LÓGICA DE COMPENSACIÓN (NECESARIA) 🛑
+            // Si PG falla, el stock en Mongo YA FUE DEDUCIDO. Debemos revertirlo.
+
             const compensationOps = p_detalles.map(d => ({
                 updateOne: {
                     filter: { _id: d.id_producto_mongo },
@@ -2176,6 +2171,8 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
                 console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a fallo en PG.');
             } catch (compensationError) {
                 console.error('❌ FALLO CRÍTICO DE COMPENSACIÓN: No se pudo revertir el stock en Mongo.', compensationError);
+                // Aquí, el sistema está en un estado inconsistente (venta fallida, stock deducido).
+                // Se requiere una alerta manual o un sistema de reintentos.
                 return res.status(500).json({ error: 'CRITICAL_COMPENSATION_FAILURE', message: 'La venta falló y no se pudo revertir el stock. Se requiere intervención manual.' });
             }
 
@@ -2183,28 +2180,8 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
             return res.status(500).json({ error: 'DB_TRANSACTION_FAILED_POST_STOCK_DEDUCTION', message: 'Fallo al registrar la venta en la base de datos.' });
         }
 
-        // ⭐️ NUEVO PASO CRÍTICO: CREAR EL REGISTRO EN LA TABLA PEDIDOS ⭐️
-        const ventaData = rpcResult[0]; // { id_v_online: UUID, codigo_ped: 'PED-UUID' }
-
-        const { error: pedidoError } = await supabaseClient
-            .from('pedidos')
-            .insert({
-                id: ventaData.codigo_ped, // Usa el código generado como ID de seguimiento (PK)
-                id_ventaonline: ventaData.id_v_online,
-                direccion: p_direccion,
-                telefono: p_telefono,
-                fecha_estimada: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 días estimados
-                // id_repartidor se deja en NULL
-            })
-            .select('id')
-            .single();
-
-        if (pedidoError) {
-            console.error('Error al crear el registro en PEDIDOS:', pedidoError.message);
-            // La venta se completó, pero el tracking falló al inicio.
-        }
-        // 6. Respuesta Final
-        res.status(200).json(rpcResult);
+        // 6. Respuesta Final (Si Mongo y PG fueron exitosos)
+        res.status(200).json(data);
 
     } catch (e) {
         console.error('[SERVER ERROR]:', e);
@@ -2364,11 +2341,11 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
                 direccion, 
                 telefono,
                 estado_envio, 
-                fecha_estimada 
-                -- ⭐️ IMPORTANTE: Se eliminó la relación anidada para resolver el Error 500 ⭐️
+                fecha_estimada
             `)
             .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
-            .not('estado_envio', 'in', ['ENTREGADO', 'CANCELADO'])
+            // CORRECCIÓN CLAVE: Se usa el operador 'in' y un array JS
+            .not('estado_envio', 'in', ['ENTREGADO', 'CANCELADO']) 
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
@@ -2376,7 +2353,7 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             // Devolver un error 500 JSON que el frontend pueda manejar.
             return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
         }
-
+        
         // Formatear para facilitar el renderizado en el frontend:
         const paquetes = data.map(p => ({
             id: p.id,
@@ -2384,8 +2361,8 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             telefono: p.telefono,
             estado_envio: p.estado_envio,
             fecha_estimada: p.fecha_estimada,
-            // ⭐️ Se usa un placeholder ya que el correo no se consultó ⭐️
-            cliente_correo: 'Contacto disponible en detalle'
+            // ⭐️ Usaremos un valor genérico o el email del token si es necesario, pero no podemos hacer join. ⭐️
+            cliente_correo: 'Contacto disponible en detalle' 
         }));
 
         res.status(200).json(paquetes);
