@@ -12,19 +12,18 @@ let isCurrentlyFavorite = false;
 let currentProductId = getProductIdFromUrl();
 const token = sessionStorage.getItem('supabase-token');
 
-// Obtiene el ID del producto de la URL (ej. product_detail.html?id=123)
+// Obtiene el ID del producto de la URL
 function getProductIdFromUrl() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
 }
 
-// ⭐️ Obtiene el ID del usuario de forma segura ⭐️
+// Obtiene el ID del usuario de forma segura
 function getCurrentUserId() {
     const token = sessionStorage.getItem('supabase-token');
     if (!token) return null;
 
     try {
-        // Decodificamos el token para sacar el ID del usuario (campo 'sub')
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
@@ -34,7 +33,7 @@ function getCurrentUserId() {
         return JSON.parse(jsonPayload).sub;
     } catch (e) {
         console.error("Token inválido:", e);
-        return null; // Si el token está corrupto, no hay usuario
+        return null;
     }
 }
 
@@ -49,11 +48,7 @@ function showToast(message, type = 'info') {
     toastElement.textContent = message;
 
     toastContainer.appendChild(toastElement);
-
-    // Pequeña pausa para que la animación CSS funcione
     setTimeout(() => toastElement.classList.add('toast-show'), 10);
-
-    // Quitar el toast después de 3 segundos
     setTimeout(() => {
         toastElement.classList.remove('toast-show');
         toastElement.addEventListener('transitionend', () => toastElement.remove());
@@ -64,75 +59,131 @@ function formatDate(isoString) {
     if (!isoString) return 'Fecha desconocida';
     try {
         const date = new Date(isoString);
-        // Formato: 12 de noviembre de 2025, 08:30
         return date.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
         });
-    } catch (e) {
-        return 'Fecha inválida';
-    }
+    } catch (e) { return 'Fecha inválida'; }
 }
 
+// =======================================================
+// CONFIGURACIÓN DEL HEADER Y MENÚ LATERAL
+// =======================================================
 function setupHeader() {
     const loginBtn = $("loginBtn");
+    const menuToggle = $("menuToggle"); // Botón hamburguesa
+    
+    // Elementos del menú lateral
+    const sideMenu = $("clientSideMenu");
+    const menuOverlay = $("menuOverlay");
+    const clientMenuLinks = $("clientMenuLinks");
 
     // Leemos la sesión
     const token = sessionStorage.getItem('supabase-token');
-    const role = sessionStorage.getItem('user-role');
-
-    if (token && role) {
+    
+    // 1. Si hay token, asumimos que es Cliente
+    if (token) {
         // --- Usuario LOGUEADO ---
         if (loginBtn) {
             loginBtn.textContent = "Mi Cuenta";
             loginBtn.addEventListener("click", () => {
-                // Ajustamos la ruta porque estamos en /productos/
+                // Redirige directo al perfil del cliente
                 window.location.href = "../cliente/cliente.html";
             });
         }
 
+        // --- Menú Hamburguesa (Visible para quien esté logueado) ---
+        if (menuToggle) {
+            menuToggle.style.display = 'block'; 
+
+            const toggleMenu = () => {
+                if (sideMenu.style.left === '0px') {
+                    sideMenu.style.left = '-250px';
+                    menuOverlay.style.display = 'none';
+                } else {
+                    sideMenu.style.left = '0px';
+                    menuOverlay.style.display = 'block';
+                }
+            };
+
+            menuToggle.addEventListener("click", toggleMenu);
+            menuOverlay.addEventListener("click", toggleMenu);
+
+            // Click en los enlaces del menú lateral
+            if (clientMenuLinks) {
+                clientMenuLinks.addEventListener('click', (e) => {
+                    const action = e.target.getAttribute('data-action');
+                    if (action) {
+                        // Cerrar menú antes de ejecutar la acción
+                        sideMenu.style.left = '-250px';
+                        menuOverlay.style.display = 'none';
+                        handleClientMenuAction(action);
+                    }
+                });
+            }
+        }
+
     } else {
-        // --- Usuario NO LOGUEADO ---
+        // --- Usuario NO LOGUEADO (Visitante) ---
         if (loginBtn) {
             loginBtn.addEventListener("click", () => {
-                // Ajustamos la ruta
                 window.location.href = "../login/login.html";
             });
+        }
+        // Ocultar hamburguesa si no está logueado
+        if (menuToggle) {
+            menuToggle.style.display = 'none';
         }
     }
 }
 
+// ⭐️ Manejador de acciones del menú (Rutas ajustadas para /productos/) ⭐️
+function handleClientMenuAction(action) {
+    switch (action) {
+        case 'rastreo':
+            window.location.href = "../cliente/buscador.html";
+            break;
+        case 'favoritos':
+            window.location.href = "../cliente/favoritos.html";
+            break;
+        case 'historial':
+            window.location.href = "../compraCliente/historialcliente.html";
+            break;
+        case 'logout':
+            if (confirm("¿Seguro que deseas cerrar sesión?")) {
+                sessionStorage.clear();
+                window.location.href = "../login/login.html";
+            }
+            break;
+        default:
+            console.error("Acción desconocida:", action);
+    }
+}
+
 // #################################################
-// 🔸 LÓGICA DEL CARRITO (PERSONALIZADO POR USUARIO)
+// 🔸 LÓGICA DEL CARRITO
 // #################################################
 
-// Genera una clave única para el carrito de ESTE usuario
 function getCartKey() {
     const userId = getCurrentUserId();
-    if (!userId) return null; // Si no hay usuario, no hay clave
-    return `cart_${userId}`;  // Ej: "cart_abc123"
+    if (!userId) return null;
+    return `cart_${userId}`;
 }
 
 function loadCart() {
     const key = getCartKey();
-    if (!key) return []; // 🔒 Si no está logueado, el carrito siempre está vacío
-
+    if (!key) return [];
     const cartJson = localStorage.getItem(key);
     return cartJson ? JSON.parse(cartJson) : [];
 }
 
 function saveCart(cart) {
     const key = getCartKey();
-    if (key) { // Solo guardamos si hay un usuario logueado
+    if (key) {
         localStorage.setItem(key, JSON.stringify(cart));
         updateCartUI(cart);
     }
 }
 
-// Actualiza el numerito rojo del carrito en el header
 function updateCartUI(cart) {
     const countElement = $('cart-count');
     if (countElement) {
@@ -141,12 +192,9 @@ function updateCartUI(cart) {
     }
 }
 
-// Agrega el producto actual al carrito
 function addToCart(quantityToAdd, silent = false) {
-    // 🔒 1. Seguridad: ¿Está logueado?
     if (!getCurrentUserId()) {
         showToast("Debes iniciar sesión para comprar.", 'err');
-        // REDIRECCIÓN AL LOGIN (Ajusta la ruta si es diferente)
         setTimeout(() => window.location.href = '../login/login.html', 1500);
         return false;
     }
@@ -161,24 +209,19 @@ function addToCart(quantityToAdd, silent = false) {
         newQuantity = existingItem.quantity + quantityToAdd;
     }
 
-    // 2. Validar Stock
     if (newQuantity > currentStockQty) {
         showToast(`No hay suficiente stock. Máximo: ${currentStockQty}`, 'err');
         return false;
     }
 
-    // 3. Guardar en el carrito
-
-
-    // Calculamos aquí el precio final por unidad igual que en fetchProductDetails
+    // Cálculo de precio con descuento
     const precioBase = currentProduct.price || 0;
     let precioFinal = precioBase;
-
     if (currentProduct.descuento && currentProduct.descuento.activa) {
         const { tipo_descuento, valor } = currentProduct.descuento;
         if (tipo_descuento === 'PORCENTAJE') {
             precioFinal = precioBase * (1 - (valor / 100));
-        } else if (tipo_descuento === 'MONTO') {
+        } else if (tipo_descuento === 'FIJO') {
             precioFinal = Math.max(precioBase - valor, 0);
         }
     }
@@ -190,8 +233,7 @@ function addToCart(quantityToAdd, silent = false) {
             id: currentProduct._id,
             nombre: currentProduct.name,
             precio: precioFinal,
-            descuento: currentProduct.descuento && currentProduct.descuento.activa? currentProduct.descuento : null,
-            // Usa la primera imagen o un placeholder si no tiene
+            descuento: currentProduct.descuento && currentProduct.descuento.activa ? currentProduct.descuento : null,
             imagen: currentProduct.images?.[0] || 'https://via.placeholder.com/50',
             quantity: quantityToAdd,
             maxStock: currentStockQty
@@ -200,42 +242,32 @@ function addToCart(quantityToAdd, silent = false) {
 
     saveCart(cart);
     if (!silent) showToast("Producto agregado al carrito", "ok");
-    renderCartModal(); // Actualiza el modal visualmente
+    renderCartModal();
     return true;
 }
 
-// ⭐️ FUNCIÓN FALTANTE: Actualiza la cantidad de un ítem ya en el carrito ⭐️
 function updateCartItemQuantity(id, newQuantity) {
     let cart = loadCart();
     const itemIndex = cart.findIndex(i => i.id === id);
-
-    if (itemIndex === -1) return; // No encontrado
+    if (itemIndex === -1) return;
 
     const item = cart[itemIndex];
-
-    // Validación: No menos de 0
     if (newQuantity <= 0) {
-        removeFromCart(id); // Si la cantidad es 0 o menos, elimínalo
+        removeFromCart(id);
         return;
     }
-
-    // Validación: No exceder stock
     if (newQuantity > item.maxStock) {
         showToast(`No puedes agregar más. Stock máximo: ${item.maxStock}`, 'err');
         return;
     }
-
-    // Actualizar y guardar
     item.quantity = newQuantity;
     saveCart(cart);
     renderCartModal();
 }
 
-// ⭐️ FUNCIÓN FALTANTE: Elimina un ítem del carrito ⭐️
 function removeFromCart(id) {
     let cart = loadCart();
     cart = cart.filter(item => item.id !== id);
-
     saveCart(cart);
     showToast("Producto eliminado del carrito", 'info');
     renderCartModal();
@@ -266,7 +298,6 @@ function renderCartModal() {
             const lineTotal = item.precio * item.quantity;
             total += lineTotal;
 
-            // Plantilla HTML para cada item del carrito
             container.innerHTML += `
                 <div class="cart-item-row">
                     <img src="${item.imagen}" alt="${item.nombre}">
@@ -291,44 +322,32 @@ function renderCartModal() {
 }
 
 // #################################################
-// ⭐️ NUEVO: LÓGICA DE COMENTARIOS
+// ⭐️ COMENTARIOS
 // #################################################
 
-/**
- * Carga los comentarios desde el servidor para el ID de producto dado.
- */
 async function fetchComments(productId) {
     const reviewsContainer = $('productReviews');
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/products/${productId}/comments`);
         if (!response.ok) throw new Error('No se pudieron cargar las reseñas.');
-
         const comments = await response.json();
         renderComments(comments);
-
     } catch (error) {
         console.error(error);
         reviewsContainer.innerHTML = '<p>Error al cargar reseñas.</p>';
     }
 }
 
-/**
- * Muestra los comentarios en el HTML.
- */
 function renderComments(comments) {
     const reviewsContainer = $('productReviews');
-    reviewsContainer.innerHTML = ''; // Limpiar "Cargando..."
-
+    reviewsContainer.innerHTML = '';
     if (comments.length === 0) {
-        reviewsContainer.innerHTML = '<p>No hay reseñas aún para este producto. ¡Sé el primero en escribir una!</p>';
+        reviewsContainer.innerHTML = '<p>No hay reseñas aún. ¡Sé el primero!</p>';
         return;
     }
-
     comments.forEach(comment => {
         const author = comment.cliente_online?.correo;
-        
         const date = formatDate(comment.created_at); 
-
         reviewsContainer.innerHTML += `
             <div class="review-item">
                 <div class="review-header">
@@ -341,23 +360,14 @@ function renderComments(comments) {
     });
 }
 
-/**
- * Maneja el envío del nuevo comentario al servidor.
- */
 async function handleCommentSubmit(event) {
-    event.preventDefault(); // Evita que la página se recargue
+    event.preventDefault();
     const commentText = $('commentText').value.trim();
     const productId = getProductIdFromUrl();
     const token = sessionStorage.getItem('supabase-token');
 
-    if (!commentText) {
-        showToast("Por favor, escribe un comentario.", 'err');
-        return;
-    }
-    if (!productId || !token) {
-        showToast("Error de autenticación o producto.", 'err');
-        return;
-    }
+    if (!commentText) { showToast("Por favor, escribe un comentario.", 'err'); return; }
+    if (!productId || !token) { showToast("Error de autenticación.", 'err'); return; }
 
     $('submitCommentBtn').disabled = true;
     $('submitCommentBtn').textContent = 'Publicando...';
@@ -367,24 +377,17 @@ async function handleCommentSubmit(event) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // ⭐️ IMPORTANTE: Enviar el token
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ comentario: commentText })
         });
-
         const result = await response.json();
-
-        if (!response.ok) {
-            // Mostramos el mensaje de error del servidor (ej. "Debes ser cliente")
-            throw new Error(result.message || 'Error al publicar.');
-        }
+        if (!response.ok) throw new Error(result.message || 'Error al publicar.');
 
         showToast("Comentario publicado con éxito", 'ok');
-        $('commentText').value = ''; // Limpiar el campo
-        fetchComments(productId); // Recargar la lista de comentarios
-
+        $('commentText').value = '';
+        fetchComments(productId);
     } catch (error) {
-        console.error(error);
         showToast(error.message, 'err');
     } finally {
         $('submitCommentBtn').disabled = false;
@@ -392,27 +395,20 @@ async function handleCommentSubmit(event) {
     }
 }
 
-/**
- * Configura la visibilidad del formulario de comentarios.
- */
 function setupCommentSection() {
     const userId = getCurrentUserId();
     if (userId) {
-        // Logueado: Muestra el formulario, oculta el prompt
         $('commentForm').style.display = 'block';
         $('commentLoginPrompt').style.display = 'none';
-
-        // Añadir el listener de envío
         $('commentForm').addEventListener('submit', handleCommentSubmit);
     } else {
-        // No logueado: Oculta el formulario, muestra el prompt
         $('commentForm').style.display = 'none';
         $('commentLoginPrompt').style.display = 'block';
     }
 }
 
 // #################################################
-// 🔹 CARGA DEL PRODUCTO DESDE EL SERVIDOR
+// 🔹 CARGA DEL PRODUCTO
 // #################################################
 
 async function fetchProductDetails(productId) {
@@ -423,48 +419,37 @@ async function fetchProductDetails(productId) {
         currentProduct = await response.json();
         currentStockQty = currentProduct.stockQty || 0;
 
-        // Rellenar la página con los datos
         $('productTitlePage').textContent = `${currentProduct.name} - LEVEL ONE`;
         $('productName').textContent = currentProduct.name;
         $('productSku').textContent = `SKU: ${currentProduct.sku}`;
         $('productBrand').textContent = `Marca: ${currentProduct.brand || 'Genérico'}`;
         $('productDescription').textContent = currentProduct.description || 'Sin descripción.';
-        //$('productPrice').textContent = `$${currentProduct.price.toFixed(2)}`;
 
         const precioBase = currentProduct.price || 0;
         let precioFinal = precioBase;
         let tienePromo = currentProduct.descuento && currentProduct.descuento.activa;
 
-        // Manejo de precio anterior y descuento (si aplica)
         if (tienePromo) {
             const { tipo_descuento, valor, nombre_promo } = currentProduct.descuento;
-
             if (tipo_descuento === 'PORCENTAJE') {
                 precioFinal = precioBase * (1 - (valor / 100));
-            } else if (tipo_descuento === 'MONTO') {
+            } else if (tipo_descuento === 'FIJO') {
                 precioFinal = Math.max(precioBase - valor, 0);
             }
-            // Mostrar precio final y precio anterior
             $('productPrice').textContent = `$${precioFinal.toFixed(2)}`;
             $('productOldPrice').textContent = `$${precioBase.toFixed(2)}`;
 
-            // Texto de la promoción
             let textoPromo = nombre_promo || 'Promoción aplicada';
-            if (tipo_descuento === 'PORCENTAJE') {
-                textoPromo += ` (-${valor}% )`;
-            } else if (tipo_descuento === 'MONTO') {
-                textoPromo += ` (-$${valor.toFixed(2)})`;
-            }
+            if (tipo_descuento === 'PORCENTAJE') textoPromo += ` (-${valor}% )`;
+            else if (tipo_descuento === 'FIJO') textoPromo += ` (-$${valor.toFixed(2)})`;
+            
             $('productDiscount').textContent = textoPromo;
         } else {
-            // Sin promo
             $('productPrice').textContent = `$${precioBase.toFixed(2)}`;
             $('productOldPrice').textContent = '';
             $('productDiscount').textContent = '';
         }
 
-
-        // Manejo de stock y botones
         const stockLabel = $('productStock');
         const canBuy = currentProduct.active && currentStockQty > 0;
 
@@ -473,69 +458,57 @@ async function fetchProductDetails(productId) {
 
         if (canBuy) {
             stockLabel.textContent = `En Stock (${currentStockQty} disponibles)`;
-            stockLabel.style.color = '#198754'; // Verde
+            stockLabel.style.color = '#198754';
         } else {
             stockLabel.textContent = 'Agotado / No disponible';
-            stockLabel.style.color = '#dc3545'; // Rojo
+            stockLabel.style.color = '#dc3545';
         }
 
-        // Imagen principal
         if (currentProduct.images && currentProduct.images.length > 0) {
             $('productImage').src = currentProduct.images[0];
-
-            // Generar miniaturas (Thumbnails)
             const thumbnailsContainer = $('productThumbnails');
             thumbnailsContainer.innerHTML = '';
             currentProduct.images.forEach(imgUrl => {
                 const thumb = document.createElement('img');
                 thumb.src = imgUrl;
-                thumb.alt = 'Miniatura del producto';
                 thumb.className = 'thumbnail';
-                thumb.addEventListener('click', () => {
-                    $('productImage').src = imgUrl; // Cambiar imagen principal
-                });
+                thumb.addEventListener('click', () => $('productImage').src = imgUrl);
                 thumbnailsContainer.appendChild(thumb);
             });
         }
 
-        // Rellenar detalles específicos (Material, Color)
         $('detailMaterial').textContent = currentProduct.details?.material || 'No especificado';
         $('detailColor').textContent = currentProduct.details?.color || 'No especificado';
-
 
     } catch (error) {
         console.error(error);
         $('productName').textContent = "Error cargando producto";
         showToast("No se pudo cargar el producto", "err");
-        // Deshabilitar todo si hay error
         $('addToCartBtn').disabled = true;
         $('buyNowBtn').disabled = true;
     }
 }
 
 // #################################################
-// 🚀 INICIALIZACIÓN (EVENT LISTENERS)
+// 🚀 INICIALIZACIÓN
 // #################################################
 
 document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
-    // Usamos la variable global 'currentProductId' que ya definiste
     if (currentProductId) {
-        fetchProductDetails(currentProductId); // <-- Corregido
-        fetchComments(currentProductId);     // <-- Corregido
+        fetchProductDetails(currentProductId);
+        fetchComments(currentProductId);
 
         if (token) {
             checkFavoriteStatus(currentProductId);
             $('favoriteBtn').style.display = 'inline-block';
         }
     } else {
-        // Si no hay ID en la URL, volver al inicio
         window.location.href = '../../index.html';
     }
 
     setupCommentSection();
 
-    // --- Botones de Cantidad ---
     const qtyInput = $('productQuantity');
     $('plusQuantity')?.addEventListener('click', () => {
         const val = parseInt(qtyInput.value) || 1;
@@ -545,8 +518,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const val = parseInt(qtyInput.value) || 1;
         if (val > 1) qtyInput.value = val - 1;
     });
-
-    // Asegurar que el input de cantidad no exceda stock
     qtyInput?.addEventListener('change', () => {
         let val = parseInt(qtyInput.value) || 1;
         if (val < 1) val = 1;
@@ -554,25 +525,16 @@ document.addEventListener('DOMContentLoaded', () => {
         qtyInput.value = val;
     });
 
-    // --- ACCIÓN: Agregar al Carrito ---
-    $('addToCartBtn')?.addEventListener('click', () => {
-        addToCart(parseInt(qtyInput.value));
-    });
-
-    // --- ACCIÓN: Comprar Ahora ---
+    $('addToCartBtn')?.addEventListener('click', () => addToCart(parseInt(qtyInput.value)));
     $('buyNowBtn')?.addEventListener('click', () => {
         if (addToCart(parseInt(qtyInput.value), true)) {
             window.location.href = '../compraCliente/compra.html';
         }
     });
 
-    // --- ACCIÓN: Favorito ---
     $('favoriteBtn')?.addEventListener('click', handleFavoriteToggle);
 
-    // --- MODAL DEL CARRITO ---
     const cartModal = $('cartModal');
-
-    // Abrir modal
     $('cartBtn')?.addEventListener('click', () => {
         if (!getCurrentUserId()) {
             window.location.href = '../login/login.html';
@@ -582,157 +544,102 @@ document.addEventListener('DOMContentLoaded', () => {
         cartModal.style.display = 'flex';
     });
 
-    // Cerrar modal
     $('closeCartModal')?.addEventListener('click', () => cartModal.style.display = 'none');
     cartModal?.addEventListener('click', (e) => {
         if (e.target === cartModal) cartModal.style.display = 'none';
     });
 
-    // Delegación de eventos dentro del modal
     $('cartItemsContainer')?.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (!btn) return;
         const id = btn.dataset.id;
         if (!id) return;
-
         const cart = loadCart();
         const item = cart.find(i => i.id === id);
         if (!item) return;
 
-        if (btn.classList.contains('plus')) {
-            updateCartItemQuantity(id, item.quantity + 1);
-        } else if (btn.classList.contains('minus')) {
-            updateCartItemQuantity(id, item.quantity - 1);
-        } else if (btn.classList.contains('btn-remove')) {
-            removeFromCart(id);
-        }
+        if (btn.classList.contains('plus')) updateCartItemQuantity(id, item.quantity + 1);
+        else if (btn.classList.contains('minus')) updateCartItemQuantity(id, item.quantity - 1);
+        else if (btn.classList.contains('btn-remove')) removeFromCart(id);
     });
 
-    // Botón "Proceder al Pago"
     $('checkoutBtnModal')?.addEventListener('click', () => {
         window.location.href = '../compraCliente/compra.html';
     });
 
-    // Inicializar el contador del header
     updateCartUI(loadCart());
 });
 
 // #################################################
-// ⭐️ NUEVO: LÓGICA DE FAVORITOS
+// ⭐️ FAVORITOS (LÓGICA)
 // #################################################
 
-/**
- * 1. Verifica con el backend si el producto actual ya es favorito.
- */
 async function checkFavoriteStatus(productId) {
-    if (!token) return; // No hacer nada si no hay token
-
+    if (!token) return;
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/favorites/status/${productId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) return; // Fallo silencioso
-
+        if (!response.ok) return;
         const { isFavorite } = await response.json();
         isCurrentlyFavorite = isFavorite;
-        updateFavoriteButtonUI(); // Actualizar el botón con el estado correcto
-
-    } catch (error) {
-        console.error("Error al chequear favoritos:", error);
-    }
+        updateFavoriteButtonUI();
+    } catch (error) { console.error("Error al chequear favoritos:", error); }
 }
 
-/**
- * 2. Actualiza la apariencia del botón (corazón lleno o vacío).
- */
 function updateFavoriteButtonUI() {
     const btn = $('favoriteBtn');
     if (!btn) return;
     const icon = btn.querySelector('i');
-
     if (isCurrentlyFavorite) {
         btn.classList.add('is-favorite');
-        icon.classList.remove('far'); // Quitar corazón vacío
-        icon.classList.add('fas');    // Poner corazón lleno (requiere font-weight: 900)
+        icon.classList.remove('far');
+        icon.classList.add('fas');
         btn.title = "Quitar de favoritos";
-        // Asegura que el ícono sea 'fas' (sólido)
         icon.style.fontWeight = '900'; 
     } else {
         btn.classList.remove('is-favorite');
-        icon.classList.remove('fas');    // Quitar corazón lleno
-        icon.classList.add('far');       // Poner corazón vacío
+        icon.classList.remove('fas');
+        icon.classList.add('far');
         btn.title = "Añadir a favoritos";
-        // Asegura que el ícono sea 'far' (regular)
         icon.style.fontWeight = '400';
     }
 }
 
-/**
- * 3. Decide si añadir o quitar el favorito al hacer clic.
- */
 function handleFavoriteToggle() {
-    // Re-chequear el login por si acaso
     if (!token || !getCurrentUserId()) {
         showToast("Debes iniciar sesión para añadir favoritos.", 'err');
         setTimeout(() => window.location.href = '../login/login.html', 1500);
         return;
     }
-
-    if (isCurrentlyFavorite) {
-        removeFromFavorites(currentProductId);
-    } else {
-        addToFavorites(currentProductId);
-    }
+    if (isCurrentlyFavorite) removeFromFavorites(currentProductId);
+    else addToFavorites(currentProductId);
 }
 
-/**
- * 4. Llama a la API para AÑADIR un favorito.
- */
 async function addToFavorites(productId) {
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/favorites`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ id_producto_mongo: productId })
         });
-
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Error al añadir');
-
         isCurrentlyFavorite = true;
         updateFavoriteButtonUI();
         showToast("Añadido a favoritos", "ok");
-
-    } catch (error) {
-        console.error(error);
-        showToast(error.message, 'err');
-    }
+    } catch (error) { showToast(error.message, 'err'); }
 }
 
-/**
- * 5. Llama a la API para QUITAR un favorito.
- */
 async function removeFromFavorites(productId) {
     try {
         const response = await fetch(`${RENDER_SERVER_URL}/api/favorites/${productId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
         });
-
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Error al quitar');
-
         isCurrentlyFavorite = false;
         updateFavoriteButtonUI();
         showToast("Quitado de favoritos", "info");
-
-    } catch (error) {
-        console.error(error);
-        showToast(error.message, 'err');
-    }
-}
+    } catch (error) { showToast(error.message, 'err'); }
+}FIJO
