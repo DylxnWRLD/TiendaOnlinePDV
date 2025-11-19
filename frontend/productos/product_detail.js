@@ -178,7 +178,7 @@ function addToCart(quantityToAdd, silent = false) {
         const { tipo_descuento, valor } = currentProduct.descuento;
         if (tipo_descuento === 'PORCENTAJE') {
             precioFinal = precioBase * (1 - (valor / 100));
-        } else if (tipo_descuento === 'MONTO') {
+        } else if (tipo_descuento === 'FIJO') {
             precioFinal = Math.max(precioBase - valor, 0);
         }
     }
@@ -441,7 +441,7 @@ async function fetchProductDetails(productId) {
 
             if (tipo_descuento === 'PORCENTAJE') {
                 precioFinal = precioBase * (1 - (valor / 100));
-            } else if (tipo_descuento === 'MONTO') {
+            } else if (tipo_descuento === 'FIJO') {
                 precioFinal = Math.max(precioBase - valor, 0);
             }
             // Mostrar precio final y precio anterior
@@ -452,7 +452,7 @@ async function fetchProductDetails(productId) {
             let textoPromo = nombre_promo || 'Promoción aplicada';
             if (tipo_descuento === 'PORCENTAJE') {
                 textoPromo += ` (-${valor}% )`;
-            } else if (tipo_descuento === 'MONTO') {
+            } else if (tipo_descuento === 'FIJO') {
                 textoPromo += ` (-$${valor.toFixed(2)})`;
             }
             $('productDiscount').textContent = textoPromo;
