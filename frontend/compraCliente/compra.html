@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LEVEL_ONE - Compra</title>
+    <title>LevelOne - Compra</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="compra.css">
 </head>
 
@@ -12,20 +13,9 @@
     <header class="header">
         <div class="menu-icon" id="menuToggle">☰</div>
 
-        <a href="../../index.html">
-            <h1 class="logo">LevelOne</h1>
-        </a>
-
-        <div class="search-bar">
-            <input type="text" placeholder="Buscar productos...">
-            <button>Buscar</button>
-        </div>
-
-        <div class="user-actions">
-            <button id="loginBtn" class="login-btn">Iniciar sesión</button>
-            <button class="cart-btn">Comprar</button>
-        </div>
-    </header>
+        <a href="../../index.html" class="logo">LevelOne</a>
+        
+        </header>
 
     <main class="checkout-container">
         <h2>Confirmar compra</h2>
@@ -46,13 +36,13 @@
 
             <h3>Información de entrega</h3>
 
-            <label for="direction">Dirección de entrega</label>
+            <label for="direction" style="display:block; margin-top:10px; text-align:left;">Dirección de entrega</label>
             <input id="direction" type="text" name="deliveryAddress" placeholder="Escribe tu dirección completa" required>
 
-            <label for="username">Correo electrónico</label>
+            <label for="username" style="display:block; margin-top:10px; text-align:left;">Correo electrónico</label>
             <input type="email" id="username" name="username" placeholder="ejemplo@correo.com" required>
 
-            <label for="number">Número de contacto</label>
+            <label for="number" style="display:block; margin-top:10px; text-align:left;">Número de contacto</label>
             <input type="tel" id="number" maxlength="10" placeholder="10 dígitos" pattern="[0-9]{10}" required>
 
             <div class="modal-footer">
@@ -66,9 +56,11 @@
             <button id="noNotes" class="cancel-btn top-left-btn">Atrás</button>
 
             <h3>¿Los datos son correctos?</h3>
-            <p><strong>Dirección:</strong> <span id="showDireccion"></span></p>
-            <p><strong>Correo:</strong> <span id="showCorreo"></span></p>
-            <p><strong>Teléfono:</strong> <span id="showTelefono"></span></p>
+            <div style="text-align: left; margin-top: 15px;">
+                <p><strong>Dirección:</strong> <span id="showDireccion"></span></p>
+                <p><strong>Correo:</strong> <span id="showCorreo"></span></p>
+                <p><strong>Teléfono:</strong> <span id="showTelefono"></span></p>
+            </div>
 
             <div class="modal-footer">
                 <button id="yesNotes" class="confirm-btn">Sí</button>
@@ -82,8 +74,10 @@
 
             <h3>Método de pago</h3>
 
-            <label><input type="radio" name="payMethod" value="Debito"> Débito</label><br>
-            <label><input type="radio" name="payMethod" value="Credito"> Crédito</label>
+            <div style="margin: 15px 0;">
+                <label><input type="radio" name="payMethod" value="Debito"> Débito</label>
+                <label style="margin-left: 15px;"><input type="radio" name="payMethod" value="Credito"> Crédito</label>
+            </div>
 
             <input type="text" id="cardNumber" maxlength="16" placeholder="Número de tarjeta (16 dígitos)">
             <input type="text" id="cvv" maxlength="3" placeholder="CVV (3 dígitos)">
@@ -110,7 +104,7 @@
             <button id="noCard" class="cancel-btn top-left-btn">Atrás</button>
 
             <h3>¿Los datos son correctos?</h3>
-            <p>Número: <span id="showCard"></span></p>
+            <p style="margin-top:10px;">Número: <span id="showCard"></span></p>
             <p>CVV: <span id="showCVV"></span></p>
 
             <div class="modal-footer">
@@ -121,17 +115,16 @@
 
     <div id="codeModal" class="modal hidden">
         <div class="modal-content">
-            <h3>¡Compra realizada!</h3>
+            <h3 style="color: #198754;">¡Compra realizada!</h3>
             <p>Tu código de pedido es:</p>
-            <h2 id="codigoGenerado"></h2>
+            <h2 id="codigoGenerado" style="color: #4a69ff; margin: 10px 0;"></h2>
             <p>Este código se envió al repartidor</p>
             <div class="modal-footer">
-                <button id="finalRedirectBtn">Rastrear mi pedido</button>
+                <button id="finalRedirectBtn" class="buy-btn">Rastrear mi pedido</button>
             </div>
         </div>
     </div>
 
     <script src="compra.js"></script>
 </body>
-
 </html>

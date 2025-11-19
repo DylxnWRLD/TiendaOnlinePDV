@@ -1,306 +1,241 @@
+/* --- Importar Fuente (Poppins) --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
 /* --- CSS GENERAL --- */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* Fuente unificada con la página principal */
+    font-family: 'Poppins', sans-serif;
 }
 
 body {
-  background-color: #56565a;
+    background-color: #56565a; /* Fondo gris oscuro original de la página de compra */
 }
 
-/*ENCABEZADO GENERAL */
+/* ======================================= */
+/* ENCABEZADO ("Header") - ESTILO IDÉNTICO
+/* ======================================= */
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #211949;
-  color: white;
-  padding: 10px 20px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    
+    /* Estilos traídos de la página de detalle */
+    background-color: #211949;
+    color: white;
+    padding: 12px 30px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
-/*MENÚ HAMBURGUESA */
 .menu-icon {
-  font-size: 1.8rem;
-  cursor: pointer;
-  user-select: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    user-select: none;
 }
 
-/*NOMBRE DE LA TIENDA */
+/* Estilo exacto del Logo */
 .logo {
-  font-size: 1.6rem;
-  margin-left: 10px;
-  flex-shrink: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-left: 10px;
+    flex-shrink: 0;
+    color: white;
+    text-decoration: none;
 }
 
-/*BARRA DE BÚSQUEDA */
-.search-bar {
-  display: flex;
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  margin: 0 20px;
-}
-
-.search-bar input {
-  width: 60%;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 5px 0 0 5px;
-  outline: none;
-}
-
-.search-bar button {
-  background-color: white;
-  border: none;
-  padding: 8px 10px;
-  border-radius: 0 5px 5px 0;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-/*BOTONES DE USUARIO */
-.user-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.user-actions button {
-  background-color: rgb(255, 255, 255);
-  color: #3f64ad;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
-}
-
-.user-actions button:hover {
-  background-color: #ffdfde;
-}
-
-/*ADAPTACIÓN PARA MÓVILES */
-@media (max-width: 700px) {
-  .header {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .search-bar {
-    width: 100%;
-    margin-top: 10px;
-  }
-
-  .search-bar input {
-    width: 70%;
-  }
-}
-
-
-/*=============================*/
-/*Diseño para compra.html
-===============================*/
-
+/* ======================================= */
+/* DISEÑO CONTENEDOR DE COMPRA
+/* ======================================= */
 .checkout-container {
-  width: 80%;
-  margin: 40px auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.checkout-container h2 {
+    margin-bottom: 20px;
+    color: #211949;
 }
 
 .cart-items {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .cart-item {
-  display: flex;
-  align-items: center;
-  background: #f3f3ff;
-  border-radius: 8px;
-  padding: 10px;
-  gap: 15px;
+    display: flex;
+    align-items: center;
+    background: #f4f5f7;
+    border-radius: 12px;
+    padding: 15px;
+    gap: 15px;
 }
 
 .cart-item img {
-  width: 70px;
-  height: 70px;
-  border-radius: 6px;
-  object-fit: cover;
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.item-info h4 {
+    color: #211949;
+    margin-bottom: 5px;
 }
 
 .item-info p {
-  margin: 2px 0;
+    font-size: 0.9rem;
+    color: #666;
 }
 
 .total-section {
-  margin-top: 20px;
-  text-align: right;
+    margin-top: 30px;
+    text-align: right;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.total-section p {
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+#total {
+    font-size: 1.4rem;
+    color: #4a69ff;
+    font-weight: 700;
 }
 
 .buy-btn {
-  padding: 10px 20px;
-  background: #211949;
-  color: white;
-  font-weight: bold;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+    padding: 12px 25px;
+    background-color: #4a69ff; /* Azul vibrante */
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-size: 1rem;
+    transition: background-color 0.3s;
 }
 
 .buy-btn:hover {
-  background: #3a2bad;
+    background-color: #6e48ff;
 }
 
-/* ✅ MODAL */
+/* ======================================= */
+/* ESTILOS DE MODALES (Corregidos)
+/* ======================================= */
 .modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Estilo general (ancho 280px) - Sobrescrito por el siguiente */
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 280px;
-  text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
 }
 
 .hidden {
-  display: none;
+    display: none;
 }
-
-.confirm-btn, .cancel-btn {
-  padding: 8px 12px;
-  margin-top: 10px;
-  cursor: pointer;
-  border: none;
-  border-radius: 5px;
-}
-
-.confirm-btn {
-  background: green;
-  color: white;
-}
-
-.cancel-btn {
-  background: red;
-  color: white;
-}
-
-/* ==========================================================
-   ESTILOS DE MODAL CORREGIDOS (Ajustes para ancho 320px y padding)
-========================================================== */
 
 .modal-content {
-  background: #ffffff;
-  border-radius: 10px;
-  width: 320px;
-  text-align: center;
-  animation: popup 0.2s ease-out;
-
-  /* ⭐️ CORRECCIÓN CLAVE: Agrega position: relative y el padding aumentado ⭐️ */
-  position: relative; 
-  padding: 45px 25px 25px 25px; /* 45px superior para hacer espacio al botón top-left */
+    background: #ffffff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+    animation: popup 0.2s ease-out;
+    
+    /* CLAVE PARA EL BOTÓN ATRÁS: */
+    position: relative; 
+    padding: 50px 25px 25px 25px; /* 50px arriba para dejar espacio al botón */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Animación de aparición */
 @keyframes popup {
-  from { transform: scale(0.7); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
-/* Imagen de tarjetas */
-.modal-content img {
-  width: 160px;
-  margin: 10px auto;
-  display: block;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+.modal-content h3 {
+    margin-bottom: 15px;
+    color: #211949;
 }
 
-/* Inputs de tarjeta */
 .modal-content input {
-  width: 90%;
-  padding: 8px;
-  margin-top: 10px;
-  border-radius: 6px;
-  border: 1px solid #b8b8b8;
-  font-size: 0.95rem;
-  text-align: center;
-  outline: none;
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
 }
 
 .modal-content input:focus {
-  border-color: #211949;
-  box-shadow: 0 0 4px rgba(33, 25, 73, 0.4);
+    border-color: #4a69ff;
 }
 
-/* Mejor diseño de botones */
+.modal-footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Botones dentro del modal */
 .confirm-btn, .cancel-btn {
-  width: 90%;
-  padding: 10px;
-  margin-top: 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
 }
 
 .confirm-btn {
-  background: #211949;
-  color: white;
+    background: #211949;
+    color: white;
 }
 
 .confirm-btn:hover {
-  background: #3a2bad;
+    background: #3a2bad;
 }
 
 .cancel-btn {
-  background: #d40000;
-  color: white;
+    background: #dc3545;
+    color: white;
 }
 
 .cancel-btn:hover {
-  background: #ff4747;
+    background: #ff4747;
 }
 
-/* Modal de confirmación de tarjeta */
-#confirmCardModal .modal-content {
-  width: 300px;
-}
-
-/* ==========================================================
-   ⭐️ ESTILOS PARA POSICIONAR BOTONES DE RETROCESO ⭐️
-   ========================================================== */
-
+/* BOTÓN ATRÁS (Top Left) */
 .top-left-btn {
-  position: absolute;
-  top: 5px; /* Ajustado: 10px -> 5px */
-  left: 5px; /* Ajustado: 10px -> 5px */
-  width: auto;
-  padding: 5px 10px; 
-  font-size: 0.8rem;
-  background: #eb0808;
-  color: white;
-  z-index: 10;
-}
-
-.top-left-btn:hover {
-  background: #77777a;
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: auto;
+    padding: 5px 12px; 
+    font-size: 0.85rem;
+    background: #dc3545; /* Rojo */
+    color: white;
+    flex: none; /* Evita que se estire */
 }
