@@ -1,4 +1,3 @@
-// login.js - Versión Final con Solución de Conflicto de Origen (CORS)
 
 document.getElementById('loginForm').addEventListener('submit', async (event) => {
     event.preventDefault();
