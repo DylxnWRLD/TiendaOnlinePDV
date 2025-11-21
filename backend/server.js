@@ -1272,8 +1272,7 @@ app.delete("/api/promociones/:id", authenticateAdmin, async (req, res) => {
 
 /**
  * Objetivo: Sincronizar una promoción actualizada con MongoDB.
- * 
- * @param {object} promocionActualizada 
+ * * @param {object} promocionActualizada 
  * @param {object} promocionAnterior 
  * @returns 
  */
@@ -1362,8 +1361,7 @@ async function syncPromocionToMongoDB(promocionActualizada, promocionAnterior) {
 
 /**
  * Objetivo: Eliminar una promoción de todos los productos en MongoDB.
- * 
- * @param {String} idPromocion 
+ * * @param {String} idPromocion 
  * @returns 
  */
 async function removePromocionFromMongoDB(idPromocion) {
@@ -2131,14 +2129,25 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
             // 🛑 CRÍTICO: Si modifiedCount > 0, necesitamos compensar los productos que SÍ se descontaron.
             if (mongoResult.modifiedCount > 0) {
-                const compensationOps = p_detalles.filter(d => d.cantidad <= d.cantidad).map(d => ({
+                // CORRECCIÓN: Generar y ejecutar la compensación.
+                const compensationOps = p_detalles.map(d => ({
                     updateOne: {
                         filter: { _id: d.id_producto_mongo },
-                        update: { $inc: { stockQty: d.cantidad } }
+                        update: { $inc: { stockQty: d.cantidad } } // Reponer stock
                     }
                 }));
+
+                try {
+                    await Product.bulkWrite(compensationOps);
+                    console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a fallo parcial.');
+                } catch (compensationError) {
+                    console.error('❌ FALLO CRÍTICO DE COMPENSACIÓN POST-FALLO PARCIAL DE MONGO:', compensationError);
+                    // Devolvemos 500 ya que el sistema está ahora en un estado inconsistente.
+                    return res.status(500).json({ error: 'CRITICAL_COMPENSATION_FAILURE', message: 'La venta falló en la deducción de stock y la compensación posterior falló. Se requiere intervención manual.' });
+                }
             }
 
+            // Devolvemos el error de stock.
             return res.status(409).json({ error: 'INSUFFICIENT_STOCK', message: 'Algunos productos ya no tienen stock suficiente. Por favor, revisa tu carrito.' });
         }
 
@@ -2173,6 +2182,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
         const id_repartidor_asignado = repartidor.id;
         console.log(`✅ Repartidor asignado: ${id_repartidor_asignado}`);
+
 
         // ==========================================================
         // ⭐️ ETAPA 2: REGISTRAR VENTA EN POSTGRESQL (Solo si Mongo y Repartidor fueron exitosos)
