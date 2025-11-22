@@ -167,3 +167,14 @@ body {
   font-size: 1.1rem;
   color: var(--color-texto-secundario);
 }
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-left: 10px;
+    flex-shrink: 0;
+    color: white;
+    /* Asegurar color */
+    text-decoration: none;
+    /* Quitar subrayado si es un link */
+}
