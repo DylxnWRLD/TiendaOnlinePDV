@@ -227,7 +227,7 @@ function handleClientMenuAction(action) {
       window.location.href = "../cliente/buscador.html";
       break;
     case 'favoritos':
-      alert("Favoritos: Función no implementada aún.");
+      window.location.href = "../cliente/favoritos.html";
       break;
     case 'historial':
       // Ya estamos en esta página, no hacemos nada
