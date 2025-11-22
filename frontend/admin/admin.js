@@ -699,9 +699,16 @@ class AdminPanel {
 
             // 2. Actualizar el gráfico de rendimiento
             if (this.performanceChartInstance && stats.chartData) {
+                // Etiquetas (Días)
                 this.performanceChartInstance.data.labels = stats.chartData.labels;
+                
+                // Dataset 0: Ventas Físicas (Barra Azul)
                 this.performanceChartInstance.data.datasets[0].data = stats.chartData.sales;
-                this.performanceChartInstance.data.datasets[1].data = new Array(stats.chartData.labels.length).fill(0);
+                
+                // Dataset 1: Ventas Online (Barra Verde)
+                // Antes tenías: new Array(...).fill(0). Ahora ponemos los datos reales:
+                this.performanceChartInstance.data.datasets[1].data = stats.chartData.salesOnline || []; 
+                
                 this.performanceChartInstance.update();
             }
 

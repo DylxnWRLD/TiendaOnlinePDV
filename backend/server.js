@@ -1428,18 +1428,19 @@ app.get('/api/reports/sales', authenticateAdmin, async (req, res) => {
 app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
     console.log('Petición para obtener TODAS las estadísticas (Admin) recibida.');
     try {
-        // --- Fechas ---
         const today = new Date();
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
         // --- Consultas a Supabase (PostgreSQL) ---
+        // ⭐️ CAMBIO: Agregamos la llamada a 'get_daily_online_sales_last_7_days'
         const [
             salesData,
             totalOrders,
             activeUsers,
             activeCustomers,
             activePromos,
-            chartData,
+            chartDataPhysical, // ⬅️ Renombrado para claridad
+            chartDataOnline,   // ⬅️ NUEVO: Datos de ventas online
             usersReportData
         ] = await Promise.all([
             supabase.from('ventas').select('total_final, fecha_hora'),
@@ -1447,33 +1448,31 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
             supabase.from('users').select('*', { count: 'exact', head: true }).eq('status', 'Activo'),
             supabase.from('users').select('*', { count: 'exact', head: true }).eq('role_id', 2).eq('status', 'Activo'),
             supabase.from('promociones').select('*', { count: 'exact', head: true }).eq('activa', true),
-            supabase.rpc('get_daily_sales_last_7_days'),
+            supabase.rpc('get_daily_sales_last_7_days'),        // Ventas físicas
+            supabase.rpc('get_daily_online_sales_last_7_days'), // ⭐️ Ventas online (NUEVO)
             supabase.from('users').select('role_id, status').eq('status', 'Activo')
         ]);
 
-        // --- Consultas a MongoDB ---
-        const [
-            totalProducts,
-            productsReportData
-        ] = await Promise.all([
-            Product.countDocuments(),
-            Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
+        // ... (Consultas a MongoDB y Procesamiento de Supabase se mantienen igual) ...
+        const [totalProducts, productsReportData] = await Promise.all([
+             Product.countDocuments(),
+             Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
         ]);
 
-        // --- Procesar datos de Supabase ---
         const allSales = salesData.data || [];
-
         const monthlyRevenue = allSales
             .filter(sale => new Date(sale.fecha_hora) >= firstDayOfMonth)
             .reduce((acc, v) => acc + v.total_final, 0);
-
         const totalSales = allSales.reduce((acc, v) => acc + v.total_final, 0);
 
-        // --- Procesar Gráfico (Rendimiento) ---
-        const labels = chartData.data ? chartData.data.map(d => d.day_label) : [];
-        const sales = chartData.data ? chartData.data.map(d => d.total_sales) : [];
+        // --- ⭐️ PROCESAR GRÁFICO (RENDIMIENTO) MODIFICADO ⭐️ ---
+        // Usamos las etiquetas del físico (asumiendo que ambos traen los últimos 7 días)
+        const labels = chartDataPhysical.data ? chartDataPhysical.data.map(d => d.day_label) : [];
+        const salesPhysical = chartDataPhysical.data ? chartDataPhysical.data.map(d => d.total_sales) : [];
+        // Mapeamos los datos online
+        const salesOnline = chartDataOnline.data ? chartDataOnline.data.map(d => d.total_sales) : [];
 
-        // Procesar Reporte de Usuarios
+        // ... (Procesamiento de reportes de usuarios y productos igual) ...
         const roleIdToName = { 1: 'Admin', 2: 'Cliente', 3: 'Cajero', 4: 'AdminInventario' };
         const userCounts = (usersReportData.data || []).reduce((acc, user) => {
             const roleName = roleIdToName[user.role_id] || 'Cliente';
@@ -1485,7 +1484,6 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
             data: Object.values(userCounts)
         };
 
-        //Procesar Reporte de Productos
         const productsReport = {
             labels: productsReportData.map(p => p.name),
             data: productsReportData.map(p => p.stockQty)
@@ -1503,10 +1501,11 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
             totalOrders: totalOrders.count || 0,
             activeCustomers: activeCustomers.count || 0,
             conversionRate: 0,
-            // Chart Data (Rendimiento)
+            // Chart Data (Rendimiento) ⭐️ ACTUALIZADO
             chartData: {
                 labels: labels,
-                sales: sales
+                sales: salesPhysical,     // Datos Físicos
+                salesOnline: salesOnline  // Datos Online
             },
             // Report Data (Reportes)
             usersReport: usersReport,
@@ -1515,9 +1514,7 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
 
     } catch (error) {
         console.error('Error al cargar estadísticas completas:', error.message);
-        if (error.message.includes('function get_daily_sales_last_7_days does not exist')) {
-            return res.status(500).json({ message: 'Error Crítico: La función SQL "get_daily_sales_last_7_days" no existe en la base de datos Supabase. Por favor, créala usando el SQL Editor.' });
-        }
+        // ... (Manejo de errores igual)
         res.status(500).json({ message: 'Error interno al cargar estadísticas.' });
     }
 });
