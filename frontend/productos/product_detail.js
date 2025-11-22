@@ -642,4 +642,4 @@ async function removeFromFavorites(productId) {
         updateFavoriteButtonUI();
         showToast("Quitado de favoritos", "info");
     } catch (error) { showToast(error.message, 'err'); }
-}FIJO
+}
