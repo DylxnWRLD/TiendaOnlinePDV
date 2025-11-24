@@ -245,14 +245,18 @@ async function procesarCompraFinal() {
     // ⭐️ Limpieza FINAL del Teléfono antes de enviar el payload ⭐️
     datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim() : '';
 
+    // ⭐️ CORRECCIÓN: Agregar un valor temporal para p_id_repartidor ⭐️
     const payload = {
         p_correo: datosCliente.correo,
         p_direccion: datosCliente.direccion,
         p_telefono: datosCliente.telefono,
         p_total_final: totalFinal.toFixed(2),
         p_metodo_pago: datosCliente.metodoPago,
-        p_detalles: detallesVenta
+        p_detalles: detallesVenta,
+        p_id_repartidor: '00000000-0000-0000-0000-000000000000' // UUID temporal
     };
+
+    console.log("Payload enviado a RPC:", payload);
 
     // Logueamos el payload solo después de construirlo
     console.log("Payload enviado a RPC:", payload);
