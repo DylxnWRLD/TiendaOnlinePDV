@@ -109,7 +109,7 @@ const backBtnPayment = document.getElementById("backBtnPayment");
 let datosCliente = {};
 
 // -------------------------------------------------------------------------
-// ⭐️ FUNCIÓN: RENDERIZAR CARRITO (IMAGEN CORREGIDA) ⭐️
+// ⭐️ FUNCIÓN: RENDERIZAR CARRITO ⭐️
 // -------------------------------------------------------------------------
 
 function renderCarrito() {
@@ -131,8 +131,7 @@ function renderCarrito() {
             //const itemDiscountPercent = item.descuento?.valor || item.descuento || 0;
 
             let totalProducto = itemPrice * itemQuantity;
-            let descuentoProducto = 0;          //totalProducto * (itemDiscountPercent / 100);
-
+            let descuentoProducto = 0;
 
             if (item.descuento && item.descuento.activa) {
                 const { tipo_descuento, valor } = item.descuento;
@@ -145,7 +144,6 @@ function renderCarrito() {
             subtotal += totalProducto;
             descuento += descuentoProducto;
 
-            // ⭐️ CORRECCIÓN CLAVE: Lógica robusta para obtener la URL de la imagen ⭐️
             let imageUrl = 'https://placehold.co/50x50/cccccc/000000?text=IMG';
             if (Array.isArray(item.images) && item.images.length > 0) {
                 imageUrl = item.images[0];
@@ -169,7 +167,7 @@ function renderCarrito() {
 
     let total = subtotal - descuento;
 
-    subtotalEl.textContent = total.toFixed(2); // Corregido: total en vez de subtotal
+    subtotalEl.textContent = subtotal.toFixed(2); // Corregido: Subtotal antes de descuento
     discountEl.textContent = descuento.toFixed(2);
     totalEl.textContent = total.toFixed(2);
     return total;
@@ -214,7 +212,6 @@ async function fetchClienteData() {
 // -------------------------------------------------------------------------
 
 async function procesarCompraFinal() {
-    // ... (El cuerpo de procesarCompraFinal se mantiene igual) ...
     const totalFinal = parseFloat(totalEl.textContent) || 0;
 
     const detallesVenta = carrito.map(item => {
@@ -245,14 +242,23 @@ async function procesarCompraFinal() {
         };
     });
 
+    // ⭐️ Limpieza FINAL del Teléfono antes de enviar el payload ⭐️
+    datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim() : '';
+
+    // ⭐️ CORRECCIÓN: Agregar p_id_repartidor con valor temporal ⭐️
     const payload = {
         p_correo: datosCliente.correo,
         p_direccion: datosCliente.direccion,
         p_telefono: datosCliente.telefono,
         p_total_final: totalFinal.toFixed(2),
         p_metodo_pago: datosCliente.metodoPago,
-        p_detalles: detallesVenta
+        p_detalles: detallesVenta,
+        p_id_repartidor: '00000000-0000-0000-0000-000000000000' // UUID temporal
     };
+
+    // ⭐️ MEJORA: Log más detallado para debug ⭐️
+    console.log("Payload enviado a RPC:", JSON.stringify(payload, null, 2));
+    console.log("Detalles de venta:", JSON.stringify(detallesVenta, null, 2));
 
     try {
         const token = sessionStorage.getItem('supabase-token');
@@ -271,6 +277,8 @@ async function procesarCompraFinal() {
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error("Error response from server:", errorText);
+
             let dbError = 'Error al comunicarse con la base de datos.';
             try {
                 const errorData = JSON.parse(errorText);
@@ -290,6 +298,7 @@ async function procesarCompraFinal() {
         }
 
     } catch (e) {
+        console.error("Error completo en procesarCompraFinal:", e);
         throw e;
     }
 }
@@ -449,5 +458,5 @@ document.getElementById("noCancel").addEventListener("click", () => {
 document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
     renderCarrito();
-    fetchClienteData(); 
+    fetchClienteData();
 });
