@@ -1455,8 +1455,8 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
 
         // ... (Consultas a MongoDB y Procesamiento de Supabase se mantienen igual) ...
         const [totalProducts, productsReportData] = await Promise.all([
-            Product.countDocuments(),
-            Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
+             Product.countDocuments(),
+             Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
         ]);
 
         const allSales = salesData.data || [];
@@ -2081,9 +2081,6 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
         p_detalles // Array con id_producto_mongo, cantidad, etc.
     } = req.body;
 
-    // ⭐️⭐️⭐️ CORRECCIÓN: Hacer p_id_repartidor opcional ⭐️⭐️⭐️
-    const p_id_repartidor = req.body.p_id_repartidor || null;
-
     // 3. Crear un cliente Supabase con el token del usuario
     const supabaseClient = createClient(supabaseUrl, supabaseKey, {
         global: { headers: { Authorization: `Bearer ${token}` } },
@@ -2091,18 +2088,10 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
     try {
         console.log(`[RPC] Iniciando proceso de compra para usuario...`);
-        console.log('🔍 DEBUG: Parámetros recibidos:', {
-            p_correo,
-            p_direccion,
-            p_telefono,
-            p_total_final,
-            p_metodo_pago,
-            p_detalles: p_detalles ? `Array con ${p_detalles.length} elementos` : 'NULL',
-            p_id_repartidor
-        });
 
         // ==========================================================
         // ⭐️ ETAPA 1: VERIFICAR Y DEDUCIR STOCK EN MONGO ATLAS (CRÍTICO)
+        // Esto debe ser ATÓMICO y ocurre ANTES de registrar la venta.
         // ==========================================================
 
         if (!p_detalles || p_detalles.length === 0) {
@@ -2123,6 +2112,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
         let mongoResult;
         try {
+            // La variable 'Product' es el modelo de Mongoose
             mongoResult = await Product.bulkWrite(bulkOps);
         } catch (mongoError) {
             console.error('[MONGO STOCK ERROR]: Falló la ejecución de bulkWrite.', mongoError.message);
@@ -2131,13 +2121,16 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
         // 🚨 VERIFICACIÓN DE ATOMICIDAD Y SOBREVENTA 🚨
         if (mongoResult.modifiedCount !== p_detalles.length) {
+            // Si modifiedCount < p_detalles.length, significa que hubo insuficiencia de stock.
             console.warn('[STOCK FAILURE]: Se intentaron modificar %s productos, pero solo %s tuvieron stock suficiente. Abortando PG.', p_detalles.length, mongoResult.modifiedCount);
 
+            // 🛑 CRÍTICO: Si modifiedCount > 0, necesitamos compensar los productos que SÍ se descontaron.
             if (mongoResult.modifiedCount > 0) {
+                // CORRECCIÓN: Generar y ejecutar la compensación.
                 const compensationOps = p_detalles.map(d => ({
                     updateOne: {
                         filter: { _id: d.id_producto_mongo },
-                        update: { $inc: { stockQty: d.cantidad } }
+                        update: { $inc: { stockQty: d.cantidad } } // Reponer stock
                     }
                 }));
 
@@ -2146,63 +2139,68 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
                     console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a fallo parcial.');
                 } catch (compensationError) {
                     console.error('❌ FALLO CRÍTICO DE COMPENSACIÓN POST-FALLO PARCIAL DE MONGO:', compensationError);
+                    // Devolvemos 500 ya que el sistema está ahora en un estado inconsistente.
                     return res.status(500).json({ error: 'CRITICAL_COMPENSATION_FAILURE', message: 'La venta falló en la deducción de stock y la compensación posterior falló. Se requiere intervención manual.' });
                 }
             }
 
+            // Devolvemos el error de stock.
             return res.status(409).json({ error: 'INSUFFICIENT_STOCK', message: 'Algunos productos ya no tienen stock suficiente. Por favor, revisa tu carrito.' });
         }
 
         console.log('✅ Stock verificado y deducido en Mongo. Productos modificados:', mongoResult.modifiedCount);
-
         // ==========================================================
-        // ⭐️ ETAPA 1.5: ENCONTRAR REPARTIDOR DISPONIBLE (MEJORADA) ⭐️
+        // ⭐️ NUEVO: ETAPA 1.5: ENCONTRAR REPARTIDOR DISPONIBLE ⭐️
         // ==========================================================
-        let id_repartidor_asignado = p_id_repartidor;
+        const { data: repartidor, error: repError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('role_id', 5) // Rol ID para Repartidor
+            .eq('status', 'Activo') // Solo repartidores activos
+            .limit(1) // Tomamos el primero que encontremos (asignación simple)
+            .single();
 
-        // Si no se proporcionó un repartidor, buscar uno disponible
-        if (!id_repartidor_asignado) {
-            console.log('🔍 Buscando repartidor disponible...');
-            const { data: repartidor, error: repError } = await supabase
-                .from('users')
-                .select('id')
-                .eq('role_id', 5) // Rol ID para Repartidor
-                .eq('status', 'Activo')
-                .limit(1)
-                .single();
+        if (repError || !repartidor) {
+            // Si no hay repartidores activos, debemos compensar el stock y fallar.
+            console.error('[REPARTIDOR ERROR]: No se encontró repartidor activo. Compensando stock.');
 
-            if (repError || !repartidor) {
-                console.warn('[REPARTIDOR WARNING]: No se encontró repartidor activo. Usando valor nulo.');
-                id_repartidor_asignado = null;
-            } else {
-                id_repartidor_asignado = repartidor.id;
-                console.log(`✅ Repartidor asignado: ${id_repartidor_asignado}`);
-            }
+            // Lógica de compensación de stock en MongoDB
+            const compensationOps = p_detalles.map(d => ({
+                updateOne: {
+                    filter: { _id: d.id_producto_mongo },
+                    update: { $inc: { stockQty: d.cantidad } } // Reponer stock
+                }
+            }));
+            await Product.bulkWrite(compensationOps);
+            console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a falta de repartidor.');
+
+            return res.status(500).json({ error: 'NO_DELIVERY_AGENT', message: 'No se pudo completar la compra: No hay repartidores activos asignables.' });
         }
 
+        const id_repartidor_asignado = repartidor.id;
+        console.log(`✅ Repartidor asignado: ${id_repartidor_asignado}`);
+
+
         // ==========================================================
-        // ⭐️ ETAPA 2: REGISTRAR VENTA EN POSTGRESQL
+        // ⭐️ ETAPA 2: REGISTRAR VENTA EN POSTGRESQL (Solo si Mongo y Repartidor fueron exitosos)
         // ==========================================================
 
-        console.log('🔍 DEBUG: Llamando a función procesar_compra_online con:', {
-            p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago,
-            p_detalles_count: p_detalles.length,
-            p_id_repartidor: id_repartidor_asignado
-        });
-
+        // 5. EJECUCIÓN: PostgreSQL (Registro de Cliente, Venta, Detalle, Repartidor)
         const { data, error } = await supabaseClient.rpc('procesar_compra_online', {
             p_correo, p_direccion, p_telefono, p_total_final, p_metodo_pago, p_detalles,
-            p_id_repartidor: id_repartidor_asignado
+            p_id_repartidor: id_repartidor_asignado // <-- Argumento NUEVO
         });
 
         if (error) {
             console.error('[DB ERROR - PG]:', error.message);
 
-            // 🛑 COMPENSACIÓN SI PG FALLA
+            // 🛑 LÓGICA DE COMPENSACIÓN (NECESARIA) 🛑
+            // Si PG falla, el stock en Mongo YA FUE DEDUCIDO. Debemos revertirlo.
+
             const compensationOps = p_detalles.map(d => ({
                 updateOne: {
                     filter: { _id: d.id_producto_mongo },
-                    update: { $inc: { stockQty: d.cantidad } }
+                    update: { $inc: { stockQty: d.cantidad } } // Reponer stock
                 }
             }));
 
@@ -2210,15 +2208,17 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
                 await Product.bulkWrite(compensationOps);
                 console.log('🛑 COMPENSACIÓN EXITOSA: Stock de Mongo revertido debido a fallo en PG.');
             } catch (compensationError) {
-                console.error('❌ FALLO CRÍTICO DE COMPENSACIÓN:', compensationError);
+                console.error('❌ FALLO CRÍTICO DE COMPENSACIÓN: No se pudo revertir el stock en Mongo.', compensationError);
+                // Aquí, el sistema está en un estado inconsistente (venta fallida, stock deducido).
+                // Se requiere una alerta manual o un sistema de reintentos.
                 return res.status(500).json({ error: 'CRITICAL_COMPENSATION_FAILURE', message: 'La venta falló y no se pudo revertir el stock. Se requiere intervención manual.' });
             }
 
+            // Devolvemos el error de PG después de intentar la compensación.
             return res.status(500).json({ error: 'DB_TRANSACTION_FAILED_POST_STOCK_DEDUCTION', message: 'Fallo al registrar la venta en la base de datos.' });
         }
 
         // 6. Respuesta Final (Si Mongo y PG fueron exitosos)
-        console.log('✅ Compra procesada exitosamente:', data);
         res.status(200).json(data);
 
     } catch (e) {
