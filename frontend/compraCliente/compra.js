@@ -214,7 +214,6 @@ async function fetchClienteData() {
 // -------------------------------------------------------------------------
 
 async function procesarCompraFinal() {
-    // ... (El cuerpo de procesarCompraFinal se mantiene igual) ...
     const totalFinal = parseFloat(totalEl.textContent) || 0;
 
     const detallesVenta = carrito.map(item => {
@@ -245,15 +244,15 @@ async function procesarCompraFinal() {
         };
     });
 
-    console.log("Payload enviado a RPC:", payload);
-    console.log("Detalles de venta:", JSON.stringify(detallesVenta, null, 2));
-    
+    // ⭐️ CORRECCIÓN DE LA ÚLTIMA INCONSISTENCIA: Asegurar que el teléfono esté limpio ⭐️
+    datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim() : '';
+
     const payload = {
         p_correo: datosCliente.correo,
         p_direccion: datosCliente.direccion,
         p_telefono: datosCliente.telefono,
         p_total_final: totalFinal.toFixed(2),
-        p_metodo_pago: datosCliente.metodoPago,
+        p_metodo_pago: datosCliente.metodoPago, // Ya contiene 'TARJETA DEBITO' o 'TARJETA CREDITO'
         p_detalles: detallesVenta
     };
 
