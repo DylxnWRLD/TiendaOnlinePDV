@@ -245,7 +245,7 @@ async function procesarCompraFinal() {
     // ⭐️ Limpieza FINAL del Teléfono antes de enviar el payload ⭐️
     datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim() : '';
 
-    // ⭐️ CORRECCIÓN: Agregar un valor temporal para p_id_repartidor ⭐️
+    // ⭐️ CORRECCIÓN: Agregar p_id_repartidor con valor temporal ⭐️
     const payload = {
         p_correo: datosCliente.correo,
         p_direccion: datosCliente.direccion,
@@ -256,12 +256,9 @@ async function procesarCompraFinal() {
         p_id_repartidor: '00000000-0000-0000-0000-000000000000' // UUID temporal
     };
 
-    console.log("Payload enviado a RPC:", payload);
-
-    // Logueamos el payload solo después de construirlo
-    console.log("Payload enviado a RPC:", payload);
+    // ⭐️ MEJORA: Log más detallado para debug ⭐️
+    console.log("Payload enviado a RPC:", JSON.stringify(payload, null, 2));
     console.log("Detalles de venta:", JSON.stringify(detallesVenta, null, 2));
-
 
     try {
         const token = sessionStorage.getItem('supabase-token');
@@ -280,6 +277,8 @@ async function procesarCompraFinal() {
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error("Error response from server:", errorText);
+
             let dbError = 'Error al comunicarse con la base de datos.';
             try {
                 const errorData = JSON.parse(errorText);
@@ -299,6 +298,7 @@ async function procesarCompraFinal() {
         }
 
     } catch (e) {
+        console.error("Error completo en procesarCompraFinal:", e);
         throw e;
     }
 }
