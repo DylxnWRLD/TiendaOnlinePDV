@@ -245,6 +245,9 @@ async function procesarCompraFinal() {
         };
     });
 
+    console.log("Payload enviado a RPC:", payload);
+    console.log("Detalles de venta:", JSON.stringify(detallesVenta, null, 2));
+    
     const payload = {
         p_correo: datosCliente.correo,
         p_direccion: datosCliente.direccion,
@@ -449,5 +452,5 @@ document.getElementById("noCancel").addEventListener("click", () => {
 document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
     renderCarrito();
-    fetchClienteData(); 
+    fetchClienteData();
 });
