@@ -1991,9 +1991,9 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 fecha_estimada, 
                 estado_envio, 
                 historial_seguimiento,
-                ventasOnline(
-                detalle_ventaOnline(nombre_producto, cantidad),
-                cliente_Online(correo, telefono)
+                ventaonline( 
+                    detalle_ventaonline(nombre_producto, cantidad),
+                    cliente_Online(correo, telefono)
                 )
             `)
             .eq('id', pedidoId)
@@ -2012,9 +2012,9 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         }
 
         // ⭐️ EXTRACCIÓN DE DATOS DE CONTACTO PARA FRONTEND ⭐️
-        const ventaData = data.ventasOnline;
+        const ventaData = data.ventaonline; // ✅ Lee de la clave 'ventaonline'
         const clienteData = ventaData.cliente_Online || {};
-        const detalles = ventaData.detalle_ventasOnline.map(d => ({
+        const detalles = ventaData.detalle_ventaonline.map(d => ({
             nombre: d.nombre_producto,
             cantidad: d.cantidad
         }));
@@ -2034,6 +2034,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             direccion: data.direccion,
             fecha_estimada: data.fecha_estimada,
             estado_actual: data.estado_envio, // Mantener para compatibilidad
+            // ⭐️ AGREGAMOS EL CORREO Y TELÉFONO EN EL NIVEL SUPERIOR ⭐️
             cliente_correo: clienteData.correo,
             telefono: clienteData.telefono,
             productos: detalles,
@@ -2474,14 +2475,13 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             .select(`
                 id, 
                 direccion, 
+                telefono,
                 estado_envio, 
-                fecha_estimada,
-                ventasOnline(
-                cliente_Online(correo, telefono)
-                )
+                fecha_estimada
             `)
-            .eq('id_repartidor', id_repartidor)
-            .not('estado_envio', 'in', '("ENTREGADO","CANCELADO")')
+            .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
+            // CORRECCIÓN CLAVE: Usamos .not('columna', 'operador', 'valores')
+            .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
