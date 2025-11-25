@@ -1983,7 +1983,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     try {
         // ⭐️ MODIFICACIÓN CLAVE: Incluir JOINs para obtener cliente y productos ⭐️
         const { data, error } = await supabase
-            .from('pedidos')
+            .from('pedidos') 
             .select(`
                 id, 
                 direccion, 
@@ -2025,7 +2025,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 mensaje: `Estado inicial: ${data.estado_envio}`
             });
         }
-
+        
         // Procesamiento de productos (aplanamiento)
         const detalles_venta = data.ventasOnline?.detalle_ventaonline || [];
         const lista_productos = detalles_venta.map(d => ({
@@ -2033,16 +2033,17 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             cantidad: d.cantidad
         }));
 
+
         res.status(200).json({
             id: data.id,
             direccion: data.direccion,
             fecha_estimada: data.fecha_estimada,
-            estado_actual: data.estado_envio,
-            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)),
+            estado_actual: data.estado_envio, 
+            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)), 
             // ⭐️ DATOS DEL CLIENTE Y PRODUCTOS AGREGADOS ⭐️
             cliente_correo: data.cliente_Online.correo,
             telefono: data.cliente_Online.telefono,
-            productos: lista_productos
+            productos: lista_productos 
         });
 
     } catch (error) {

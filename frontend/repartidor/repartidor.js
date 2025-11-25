@@ -168,7 +168,7 @@ async function loadPaqueteDetails(paqueteId) {
         const estadoActual = data.estado_actual;
         if (selectEstado && estadoActual) {
             // Aseguramos que el valor seleccionado sea mayúsculas (como en la BD)
-            selectEstado.value = estadoActual.toUpperCase();
+            selectEstado.value = estadoActual.toUpperCase(); 
             // Asegurar que la UI se actualice con el estado correcto
             const btnActualizar = document.getElementById('btnActualizarEstado');
             const pruebaDiv = document.getElementById('pruebasEntrega');
