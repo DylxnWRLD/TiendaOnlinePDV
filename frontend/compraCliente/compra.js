@@ -211,9 +211,31 @@ async function fetchClienteData() {
 // FUNCIÓN RPC DE COMUNICACIÓN CON EL BACKEND (procesarCompraFinal)
 // -------------------------------------------------------------------------
 
+// -------------------------------------------------------------------------
+// FUNCIÓN RPC DE COMUNICACIÓN CON EL BACKEND (procesarCompraFinal) - VERSIÓN SIMPLIFICADA
+// -------------------------------------------------------------------------
+
 async function procesarCompraFinal() {
     const totalFinal = parseFloat(totalEl.textContent) || 0;
 
+    // ✅ DEBUG: Verificar datos antes de procesar
+    console.group(" DEBUG PROCESAR COMPRA FINAL");
+    console.log("Total Final:", totalFinal);
+    console.log(" Carrito:", carrito);
+    console.log(" Datos Cliente:", datosCliente);
+    console.log("User ID:", getCurrentUserId());
+    console.groupEnd();
+
+    // Validación básica de datos críticos
+    if (!datosCliente.correo || !datosCliente.direccion || !datosCliente.telefono) {
+        throw new Error("Datos del cliente incompletos. Por favor, verifica tu información.");
+    }
+
+    if (totalFinal <= 0) {
+        throw new Error("El total de la compra debe ser mayor a cero.");
+    }
+
+    // Preparar detalles de la venta
     const detallesVenta = carrito.map(item => {
         const cantidad = item.quantity || item.cantidad || 1;
         const precioUnitario = item.price || item.precio || 0;
@@ -221,6 +243,7 @@ async function procesarCompraFinal() {
         let totalLineaBruto = precioUnitario * cantidad;
         let descuentoLinea = 0;
 
+        // Calcular descuentos si existen
         if (item.descuento && item.descuento.activa) {
             const { tipo_descuento, valor } = item.descuento;
 
@@ -238,25 +261,37 @@ async function procesarCompraFinal() {
             nombre_producto: item.name || item.nombre || 'Producto Desconocido',
             cantidad: cantidad,
             precio_unitario_venta: precioUnitario,
-            total_linea: totalLineaNeto
+            total_linea: parseFloat(totalLineaNeto.toFixed(2))
         };
     });
 
-    datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim() : '';
+    // Limpiar y validar teléfono
+    datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim().replace(/\s/g, '') : '';
+    
+    if (datosCliente.telefono.length !== 10 || !/^\d+$/.test(datosCliente.telefono)) {
+        throw new Error("El teléfono debe contener exactamente 10 dígitos numéricos.");
+    }
+
+    // ✅ UUID DIRECTO DEL REPARTIDOR
+    const REPARTIDOR_UUID = '2acb3f97-2d15-4eea-a77d-493e5573dcf3';
 
     const payload = {
-        p_correo: datosCliente.correo,
-        p_direccion: datosCliente.direccion,
+        p_correo: datosCliente.correo.trim(),
+        p_direccion: datosCliente.direccion.trim(),
         p_telefono: datosCliente.telefono,
-        p_total_final: totalFinal.toFixed(2),
+        p_total_final: parseFloat(totalFinal.toFixed(2)),
         p_metodo_pago: datosCliente.metodoPago,
         p_detalles: detallesVenta,
-        p_id_repartidor: '00000000-0000-0000-0000-000000000000' 
+        p_id_repartidor: REPARTIDOR_UUID // ✅ UUID directo
     };
 
-    // ⭐️ MEJORA: Log más detallado para debug ⭐️
-    console.log("Payload enviado a RPC:", JSON.stringify(payload, null, 2));
-    console.log("Detalles de venta:", JSON.stringify(detallesVenta, null, 2));
+    // ✅ DEBUG DETALLADO del payload
+    console.group(" PAYLOAD ENVIADO A RPC");
+    console.log("Payload completo:", JSON.stringify(payload, null, 2));
+    console.log("Número de items:", detallesVenta.length);
+    console.log("Método de pago:", datosCliente.metodoPago);
+    console.log("Repartidor asignado:", REPARTIDOR_UUID);
+    console.groupEnd();
 
     try {
         const token = sessionStorage.getItem('supabase-token');
@@ -264,6 +299,8 @@ async function procesarCompraFinal() {
             throw new Error("TOKEN_MISSING: Por favor, inicia sesión para completar la compra.");
         }
 
+        console.log(" Enviando solicitud a:", RPC_ENDPOINT_URL);
+        
         const response = await fetch(RPC_ENDPOINT_URL, {
             method: 'POST',
             headers: {
@@ -273,32 +310,116 @@ async function procesarCompraFinal() {
             body: JSON.stringify(payload)
         });
 
+        console.log(" Respuesta HTTP Status:", response.status);
+
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Error response from server:", errorText);
+            console.error(" Error response from server:", errorText);
 
-            let dbError = 'Error al comunicarse con la base de datos.';
+            // ✅ MANEJO ESPECÍFICO DE ERRORES HTTP
+            let userFriendlyError = 'Error al procesar la compra.';
+            
+            switch (response.status) {
+                case 401:
+                    userFriendlyError = "Sesión expirada. Por favor, inicia sesión nuevamente.";
+                    break;
+                case 400:
+                    userFriendlyError = "Datos inválidos en la solicitud. Verifica tu información.";
+                    break;
+                case 403:
+                    userFriendlyError = "No tienes permisos para realizar esta acción.";
+                    break;
+                case 500:
+                    userFriendlyError = "Error interno del servidor. Por favor, intenta más tarde.";
+                    break;
+            }
+
+            // Intentar parsear error de base de datos
             try {
                 const errorData = JSON.parse(errorText);
-                dbError = errorData.message || errorData.error || dbError;
-            } catch {
-                dbError = `Error HTTP ${response.status}: ${errorText.substring(0, 100)}...`;
+                const dbMessage = errorData.message || errorData.error || errorData.details;
+                
+                if (dbMessage) {
+                    // ✅ MANEJO DE ERRORES ESPECÍFICOS DE SUPABASE
+                    if (dbMessage.includes('DUPLICATE_DATA')) {
+                        userFriendlyError = "El número de teléfono ya está asociado a otra cuenta.";
+                    } else if (dbMessage.includes('INVALID_DATA')) {
+                        userFriendlyError = "Datos inválidos. Verifica tu información de contacto.";
+                    } else if (dbMessage.includes('check constraint')) {
+                        userFriendlyError = "Información de pago inválida. Verifica los datos de tu tarjeta.";
+                    } else {
+                        userFriendlyError = dbMessage;
+                    }
+                }
+            } catch (parseError) {
+                // Si no se puede parsear JSON, usar el texto plano
+                if (errorText.includes('duplicate key') || errorText.includes('unique constraint')) {
+                    userFriendlyError = "El número de teléfono ya está registrado en otra cuenta.";
+                }
             }
-            throw new Error(dbError);
+
+            throw new Error(userFriendlyError);
         }
 
         const result = await response.json();
+        console.log("Respuesta RPC recibida:", result);
 
-        if (result && result.length > 0) {
-            return result[0];
-        } else {
-            throw new Error('Respuesta vacía o inesperada del servidor.');
+        // ✅ VERIFICACIÓN ROBUSTA DEL RESULTADO
+        if (!result || !Array.isArray(result) || result.length === 0) {
+            throw new Error('La respuesta del servidor está vacía o en formato incorrecto.');
         }
 
-    } catch (e) {
-        console.error("Error completo en procesarCompraFinal:", e);
-        throw e;
+        const compraResult = result[0];
+        
+        // Verificar que tenemos los datos críticos
+        if (!compraResult.id_pedido) {
+            console.error(" Respuesta incompleta - Faltan datos:", compraResult);
+            throw new Error('No se recibió el ID del pedido. La compra no se completó correctamente.');
+        }
+
+        if (!compraResult.codigo_ped) {
+            console.error(" Respuesta incompleta - Sin código de pedido:", compraResult);
+            throw new Error('No se generó el código de pedido. Contacta con soporte.');
+        }
+
+        console.log(" COMPRA EXITOSA - Datos recibidos:");
+        console.log("   ID Pedido:", compraResult.id_pedido);
+        console.log("    Código Pedido:", compraResult.codigo_ped);
+        console.log("    ID Venta Online:", compraResult.id_v_online);
+
+        return compraResult;
+
+    } catch (error) {
+        console.error("Error completo en procesarCompraFinal:", error);
+        
+        // ✅ RE-LANZAR ERROR CON INFORMACIÓN MEJORADA
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('Error de conexión. Verifica tu internet e intenta nuevamente.');
+        }
+        
+        throw error;
     }
+}
+
+// -------------------------------------------------------------------------
+// FUNCIÓN DE DEBUG MEJORADA
+// -------------------------------------------------------------------------
+
+function debugProcesoCompraCompleto() {
+    console.group("🧾 DEBUG COMPLETO PROCESO COMPRA");
+    console.log("📦 Carrito items:", carrito.length);
+    console.log("👤 Datos Cliente:", {
+        correo: datosCliente.correo,
+        direccion: datosCliente.direccion ? "PRESENTE" : "AUSENTE",
+        telefono: datosCliente.telefono,
+        metodoPago: datosCliente.metodoPago
+    });
+    console.log("💰 Total:", totalEl.textContent);
+    console.log("🔑 User ID:", getCurrentUserId());
+    console.log("🔐 Token:", sessionStorage.getItem('supabase-token') ? "PRESENTE" : "AUSENTE");
+    console.log("🌐 API Base:", API_BASE_URL);
+    console.log("🚚 Repartidor UUID:", '2acb3f97-2d15-4eea-a77d-493e5573dcf3');
+    console.groupEnd();
 }
 
 // -------------------------------------------------------------------------
@@ -393,39 +514,42 @@ if (document.getElementById("backBtnPayment")) {
 }
 
 
-// Listener CRÍTICO: Botón "Sí" - Procesa la Transacción (Modal 5)
 yesCard.addEventListener("click", async () => {
     yesCard.disabled = true;
     noCard.disabled = true;
-
     confirmCardModal.classList.add("hidden");
+    
+    // ✅ DEBUG ANTES DE PROCESAR
+    debugProcesoCompraCompleto();
+    
     try {
         const resultado = await procesarCompraFinal();
 
-        if (resultado && resultado.codigo_ped) {
+        // ✅ VERIFICACIÓN FINAL
+        if (resultado && resultado.id_pedido && resultado.codigo_ped) {
             clearCart();
             renderCarrito();
-
             codeModal.classList.remove("hidden");
             document.getElementById("codigoGenerado").textContent = resultado.codigo_ped;
 
+            // ✅ REDIRECCIÓN CORRECTA CON ID_PEDIDO
             document.getElementById("finalRedirectBtn").onclick = function () {
-                window.location.href = `../cliente/seguimiento-detalle.html?id=${resultado.codigo_ped}`;
+                window.location.href = `../cliente/seguimiento-detalle.html?id=${resultado.id_pedido}`;
             };
+            
+            console.log("🎉 Redirección configurada con ID:", resultado.id_pedido);
         } else {
-            alert("Error al recibir el código de pedido. Intenta de nuevo.");
-            paymentModal.classList.remove("hidden");
+            throw new Error("Respuesta incompleta del servidor");
         }
     } catch (error) {
-        console.error("Error en la transacción final:", error);
-        alert(`Fallo en la compra: ${error.message || 'Error desconocido del servidor.'}`);
-        paymentModal.classList.remove("hidden");
+        console.error("❌ Error en la transacción:", error);
+        alert(`❌ Error en la compra: ${error.message}`);
+        confirmCardModal.classList.remove("hidden");
     } finally {
         yesCard.disabled = false;
         noCard.disabled = false;
     }
 });
-
 
 // Otros listeners (cancelar, etc.)
 document.getElementById("noCard").addEventListener("click", () => {
