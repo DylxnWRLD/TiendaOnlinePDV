@@ -2012,7 +2012,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         }
 
         // ⭐️ EXTRACCIÓN DE DATOS DE CONTACTO PARA FRONTEND ⭐️
-        const ventaData = data.ventaonline; // ✅ Lee de la clave 'ventaonline'
+        const ventaData = data.ventaonline;
         const clienteData = ventaData.cliente_Online || {};
         const detalles = ventaData.detalle_ventaonline.map(d => ({
             nombre: d.nombre_producto,
@@ -2034,7 +2034,6 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             direccion: data.direccion,
             fecha_estimada: data.fecha_estimada,
             estado_actual: data.estado_envio, // Mantener para compatibilidad
-            // ⭐️ AGREGAMOS EL CORREO Y TELÉFONO EN EL NIVEL SUPERIOR ⭐️
             cliente_correo: clienteData.correo,
             telefono: clienteData.telefono,
             productos: detalles,
@@ -2475,7 +2474,6 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             .select(`
                 id, 
                 direccion, 
-                telefono,
                 estado_envio, 
                 fecha_estimada
             `)
