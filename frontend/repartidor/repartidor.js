@@ -127,36 +127,40 @@ async function loadPaqueteDetails(paqueteId) {
     if (!token) return;
 
     try {
-        // Nota: Reutilizamos la ruta del cliente ya que devuelve la información completa
         const response = await fetch(`${API_BASE_URL}/api/paquetes/seguimiento/${paqueteId}`, {
-            headers: { 'Authorization': `Bearer ${token}` } // Se requiere el token si está detrás de RLS
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
 
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
-        // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
-        const venta = data.ventasonline || data.ventaonline;
-        const cliente = venta?.cliente_online || {};
+        // ⭐️ EXTRACCIÓN PLANA Y ROBUSTA (ASIGNACIÓN DEFINITIVA DE VARIABLES) ⭐️
 
-        const detallesProductos = venta?.detalle_ventaonline || []; // También aquí
-        // Rellenar información del cliente y dirección
-        document.getElementById('direccion').textContent = data.direccion || 'No disponible';
-        document.getElementById('clienteTelefonoLink').textContent = data.telefono || 'N/A';
+        // Asignamos las variables finales directamente de los campos planos del JSON de respuesta.
+        const clienteEmail = data.cliente_correo || 'N/A';
+        const clienteTelefono = data.telefono || 'N/A';
+        const detallesProductos = data.productos || [];
 
+        // 1. Dirección (ya estaba funcionando, pero nos aseguramos)
+        document.getElementById('direccion').textContent = data.direccion || 'Dirección no especificada';
+
+        // 2. Correo (funciona)
+        document.getElementById('clienteEmail').textContent = clienteEmail;
+
+        // 3. Teléfono (corregimos la asignación al elemento y al href)
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            telefonoLink.href = `tel:${cliente.telefono}`;
-            telefonoLink.textContent = cliente.telefono || 'N/A';
+            // Usamos la variable plana y garantizada
+            telefonoLink.href = `tel:${clienteTelefono !== 'N/A' ? clienteTelefono : ''}`;
+            telefonoLink.textContent = clienteTelefono;
         }
 
-        // Rellenar lista de productos
+        // 4. Productos
         const listaProductos = document.getElementById('listaProductos');
         listaProductos.innerHTML = '';
 
-        if (detallesProductos && detallesProductos.length > 0) {
+        if (detallesProductos.length > 0) {
             detallesProductos.forEach(p => {
-                // Asume que el producto tiene { nombre_producto, cantidad }
                 const li = document.createElement('li');
                 li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${p.cantidad || 1}`;
                 listaProductos.appendChild(li);
@@ -165,12 +169,11 @@ async function loadPaqueteDetails(paqueteId) {
             listaProductos.innerHTML = '<li><i class="fas fa-info-circle" style="margin-right: 8px;"></i>Detalles del producto no disponibles.</li>';
         }
 
-        // Seleccionar el estado actual en el <select>
+        // 5. Estado (lógica ya funcional)
         const selectEstado = document.getElementById('nuevoEstado');
         const estadoActual = data.estado_actual;
         if (selectEstado && estadoActual) {
             selectEstado.value = estadoActual;
-            // Asegurar que la UI se actualice con el estado correcto
             const btnActualizar = document.getElementById('btnActualizarEstado');
             const pruebaDiv = document.getElementById('pruebasEntrega');
             const mensajeExtraContainer = document.getElementById('mensajeExtraContainer');
@@ -179,10 +182,9 @@ async function loadPaqueteDetails(paqueteId) {
 
     } catch (error) {
         console.error('Error al cargar detalles del paquete:', error);
-        alert(`Error al cargar detalles: ${error.message}`);
+        alert(`❌ Error al cargar detalles: ${error.message}`);
     }
 }
-
 /**
  * Lógica para mostrar/ocultar campos y cambiar el estilo del botón
  */
