@@ -1991,11 +1991,11 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 fecha_estimada, 
                 estado_envio, 
                 historial_seguimiento,
-                ventasOnline(
-                    detalle_ventaonline(nombre_producto, cantidad),
-                    cliente_Online(correo, telefono)
+                ventaOnline(
+                detalle_ventaonline(nombre_producto, cantidad),
+                cliente_Online(correo, telefono)
                 )
-            `) // ✅ CORRECCIÓN: Se agrega JOIN anidado para obtener correo y teléfono
+            `)
             .eq('id', pedidoId)
             .single();
 
