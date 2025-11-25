@@ -57,6 +57,13 @@ async function buscarPedido(identificador) {
 
         if (response.ok) {
             const data = await response.json();
+
+            // ⭐️ CORRECCIÓN CLAVE: Borrar el código guardado si la búsqueda por ID/CÓDIGO fue exitosa ⭐️
+            // Esto evita que aparezca el código permanentemente después de rastrearlo.
+            localStorage.removeItem('last_pedido_code');
+            localStorage.removeItem('last_pedido_id');
+            // --------------------------------------------------------------------------------------
+
             return data;
         } else if (response.status === 404) {
             mensajeError.style.color = '#F56565';
@@ -95,6 +102,17 @@ $('buscadorForm').addEventListener('submit', async (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const idFromUrl = urlParams.get('id');
+    const pedidoIdInput = $('pedidoId');
+
+    // ⭐️ NUEVA LÓGICA: FIJADOR DE CÓDIGO RECIENTE ⭐️
+    const lastCode = localStorage.getItem('last_pedido_code');
+    const lastId = localStorage.getItem('last_pedido_id');
+
+    if (pedidoIdInput && lastCode) {
+        pedidoIdInput.value = lastCode;
+        // Opcional: Ejecutar la búsqueda automáticamente al cargar la página
+        $('buscadorForm').dispatchEvent(new Event('submit'));
+    }
 
     if (idFromUrl) {
         // Si viene un ID válido de la compra, redirigir automáticamente

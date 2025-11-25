@@ -267,7 +267,7 @@ async function procesarCompraFinal() {
 
     // Limpiar y validar teléfono
     datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim().replace(/\s/g, '') : '';
-    
+
     if (datosCliente.telefono.length !== 10 || !/^\d+$/.test(datosCliente.telefono)) {
         throw new Error("El teléfono debe contener exactamente 10 dígitos numéricos.");
     }
@@ -300,7 +300,7 @@ async function procesarCompraFinal() {
         }
 
         console.log(" Enviando solicitud a:", RPC_ENDPOINT_URL);
-        
+
         const response = await fetch(RPC_ENDPOINT_URL, {
             method: 'POST',
             headers: {
@@ -318,7 +318,7 @@ async function procesarCompraFinal() {
 
             // ✅ MANEJO ESPECÍFICO DE ERRORES HTTP
             let userFriendlyError = 'Error al procesar la compra.';
-            
+
             switch (response.status) {
                 case 401:
                     userFriendlyError = "Sesión expirada. Por favor, inicia sesión nuevamente.";
@@ -338,7 +338,7 @@ async function procesarCompraFinal() {
             try {
                 const errorData = JSON.parse(errorText);
                 const dbMessage = errorData.message || errorData.error || errorData.details;
-                
+
                 if (dbMessage) {
                     // ✅ MANEJO DE ERRORES ESPECÍFICOS DE SUPABASE
                     if (dbMessage.includes('DUPLICATE_DATA')) {
@@ -370,7 +370,7 @@ async function procesarCompraFinal() {
         }
 
         const compraResult = result[0];
-        
+
         // Verificar que tenemos los datos críticos
         if (!compraResult.id_pedido) {
             console.error(" Respuesta incompleta - Faltan datos:", compraResult);
@@ -391,12 +391,12 @@ async function procesarCompraFinal() {
 
     } catch (error) {
         console.error("Error completo en procesarCompraFinal:", error);
-        
+
         // ✅ RE-LANZAR ERROR CON INFORMACIÓN MEJORADA
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             throw new Error('Error de conexión. Verifica tu internet e intenta nuevamente.');
         }
-        
+
         throw error;
     }
 }
@@ -518,10 +518,10 @@ yesCard.addEventListener("click", async () => {
     yesCard.disabled = true;
     noCard.disabled = true;
     confirmCardModal.classList.add("hidden");
-    
+
     // ✅ DEBUG ANTES DE PROCESAR
     debugProcesoCompraCompleto();
-    
+
     try {
         const resultado = await procesarCompraFinal();
 
@@ -532,11 +532,17 @@ yesCard.addEventListener("click", async () => {
             codeModal.classList.remove("hidden");
             document.getElementById("codigoGenerado").textContent = resultado.codigo_ped;
 
+            // ⭐️ NUEVA LÓGICA: GUARDAR CÓDIGO TEMPORALMENTE ⭐️
+            // Guardamos el código y el ID del pedido para mostrarlo en el buscador
+            localStorage.setItem('last_pedido_code', resultado.codigo_ped);
+            localStorage.setItem('last_pedido_id', resultado.id_pedido);
+
             // ✅ REDIRECCIÓN CORRECTA CON ID_PEDIDO
             document.getElementById("finalRedirectBtn").onclick = function () {
-                window.location.href = `../cliente/seguimiento-detalle.html?id=${resultado.id_pedido}`;
+                // Redirigimos al buscador, que ahora leerá el código de localStorage
+                window.location.href = `../cliente/buscador.html`;
             };
-            
+
             console.log("🎉 Redirección configurada con ID:", resultado.id_pedido);
         } else {
             throw new Error("Respuesta incompleta del servidor");
