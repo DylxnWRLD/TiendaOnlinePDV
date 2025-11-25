@@ -2014,6 +2014,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         }
 
         // ⭐️ EXTRACCIÓN DE DATOS DE CONTACTO PARA FRONTEND ⭐️
+        const ventaData = data.ventasonline;
         const clienteData = ventaData?.cliente_online || {};
         const detalles = ventaData?.detalle_ventaonline.map(d => ({
             nombre: d.nombre_producto,
@@ -2025,7 +2026,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         if (historial.length === 0 && data.estado_envio) {
             historial.push({
                 estado: data.estado_envio,
-                fecha: data.created_at || new Date().toISOString(),
+                fecha: data.created_at || new Date().toISOString(), 
                 mensaje: `Estado inicial: ${data.estado_envio}`
             });
         }
@@ -2034,7 +2035,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             id: data.id,
             direccion: data.direccion,
             fecha_estimada: data.fecha_estimada,
-            estado_actual: data.estado_envio,
+            estado_actual: data.estado_envio, // Mantener para compatibilidad
             cliente_correo: clienteData.correo,
             telefono: clienteData.telefono,
             productos: detalles,
