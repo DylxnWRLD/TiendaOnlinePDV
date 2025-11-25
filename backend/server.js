@@ -2017,8 +2017,9 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         const ventaData = data.ventasonline;
         const clienteData = ventaData?.cliente_online || {};
         const detalles = ventaData?.detalle_ventaonline.map(d => ({
-            nombre: d.nombre_producto,
-            cantidad: d.cantidad
+            // Aseguramos que las claves coincidan exactamente con el frontend:
+            nombre_producto: d.nombre_producto, // <-- Debe ser la clave de Supabase
+            cantidad: d.cantidad                // <-- Debe ser la clave de Supabase
         })) || [];
 
         // Si historial_seguimiento es null o vacío, inicialízalo con el estado actual
@@ -2026,7 +2027,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         if (historial.length === 0 && data.estado_envio) {
             historial.push({
                 estado: data.estado_envio,
-                fecha: data.created_at || new Date().toISOString(), 
+                fecha: data.created_at || new Date().toISOString(),
                 mensaje: `Estado inicial: ${data.estado_envio}`
             });
         }

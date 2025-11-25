@@ -162,7 +162,10 @@ async function loadPaqueteDetails(paqueteId) {
         if (detallesProductos.length > 0) {
             detallesProductos.forEach(p => {
                 const li = document.createElement('li');
-                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${p.cantidad || 1}`;
+                // Usamos una conversión a entero segura (p.cantidad puede ser string o null)
+                const cantidad = parseInt(p.cantidad) || 1;
+
+                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${cantidad}`;
                 listaProductos.appendChild(li);
             });
         } else {
