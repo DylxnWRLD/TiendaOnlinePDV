@@ -1984,7 +1984,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 
     try {
         const { data, error } = await supabase
-            .from('pedidos') // Asume que 'pedidos' contiene la info del seguimiento
+            .from('pedidos')
             .select(`
                 id, 
                 direccion, 
@@ -2012,7 +2012,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         }
 
         // ⭐️ EXTRACCIÓN DE DATOS DE CONTACTO PARA FRONTEND ⭐️
-        const ventaData = data.ventaonline; // ✅ Leemos de la clave correcta (minúsculas)
+        const ventaData = data.ventaonline; // ✅ Lee de la clave 'ventaonline'
         const clienteData = ventaData.cliente_Online || {};
         const detalles = ventaData.detalle_ventaonline.map(d => ({
             nombre: d.nombre_producto,

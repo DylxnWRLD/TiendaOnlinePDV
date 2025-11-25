@@ -132,13 +132,15 @@ async function loadPaqueteDetails(paqueteId) {
             headers: { 'Authorization': `Bearer ${token}` } // Se requiere el token si está detrás de RLS
         });
         const data = await response.json();
-
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
         // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
         const venta = data.ventaonline;
         const cliente = venta.cliente_Online || {};
-        const detallesProductos = venta.detalle_ventaonline || [];
+        const detallesProductos = venta.detalle_ventaonline.map(d => ({
+            nombre: d.nombre_producto,
+            cantidad: d.cantidad
+        }));
 
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
@@ -213,10 +215,8 @@ function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
  * Lógica de la HU "Actualizar estado del paquete"
  */
 async function handleActualizarEstado(paqueteId) {
-    // ✅ Se usa toUpperCase() para asegurar que la BD reciba el valor en el formato esperado
-    const nuevoEstado = document.getElementById('nuevoEstado').value.toUpperCase().replace(/ /g, ' ');
+    const nuevoEstado = document.getElementById('nuevoEstado').value;
     const mensajeExtra = document.getElementById('mensajeExtra').value.trim();
-    const fotoInput = document.getElementById('fotoPrueba');
     const token = sessionStorage.getItem('supabase-token');
 
     if (nuevoEstado === 'ENTREGADO' && fotoInput.files.length === 0) {
