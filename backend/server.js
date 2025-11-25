@@ -2020,14 +2020,20 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
     }
 });
 
+// ===============================================
+// 2. Ruta de Seguimiento por ID de Pedido (`/api/paquetes/seguimiento/:id`)
+// ===============================================
+
 /**
  * RUTA: GET /api/paquetes/seguimiento/:id
  * Objetivo: Obtener el detalle completo del pedido (por ID de Pedido) para Repartidor/Cliente.
+ * 🛑 CORRECCIÓN CRÍTICA: Se remueven todos los JOINs anidados para evitar la falla de relación.
  */
 app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     const pedidoId = req.params.id;
 
     try {
+        // ⭐️ CONSULTA 1: Obtener detalles básicos del pedido ⭐️
         const { data, error } = await supabase
             .from('pedidos')
             .select(`
@@ -2036,31 +2042,30 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 fecha_estimada, 
                 estado_envio, 
                 historial_seguimiento,
-                cliente_Online ( 
-                    correo, 
-                    telefono
-                ),
-                ventasOnline (
-                    detalle_ventaonline (
-                        nombre_producto,
-                        cantidad
-                    )
-                )
+                id_cliente, // Necesario para la siguiente consulta
+                id_ventaOnline // Necesario para la siguiente consulta
             `)
             .eq('id', pedidoId)
             .single();
 
-        if (error && error.code === 'PGRST116') {
-            return res.status(404).json({ message: 'Pedido no encontrado.' });
-        }
-        if (error) {
-            console.error('Error Supabase al obtener seguimiento:', error.message);
-            return res.status(500).json({ message: 'Error interno al obtener seguimiento.', details: error.message });
-        }
+        if (error && error.code === 'PGRST116') return res.status(404).json({ message: 'Pedido no encontrado.' });
+        if (error) throw error;
+        if (!data) return res.status(404).json({ message: 'Pedido no encontrado.' });
 
-        if (!data) {
-            return res.status(404).json({ message: 'Pedido no encontrado.' });
-        }
+        // ⭐️ CONSULTA 2: Obtener datos del cliente y detalles de la venta (productos) ⭐️
+        const [clienteRes, ventaRes] = await Promise.all([
+            supabase.from('cliente_Online').select('correo, telefono').eq('id_cliente', data.id_cliente).single(),
+            supabase.from('ventasOnline').select(`
+                detalle_ventaonline (
+                    nombre_producto,
+                    cantidad
+                )
+            `).eq('id_ventaOnline', data.id_ventaOnline).single()
+        ]);
+
+        // Manejo de posibles errores o datos faltantes de cliente/venta (no debería fallar si la FK es correcta)
+        const cliente = clienteRes.data || {};
+        const venta = ventaRes.data || {};
 
         // Procesamiento de historial
         let historial = data.historial_seguimiento || [];
@@ -2072,12 +2077,8 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             });
         }
 
-        // Procesamiento de productos (aplanamiento)
-        const detalles_venta = data.ventasOnline?.detalle_ventaonline || [];
-        const lista_productos = detalles_venta.map(d => ({
-            nombre: d.nombre_producto,
-            cantidad: d.cantidad
-        }));
+        // Procesamiento de productos
+        const lista_productos = venta.detalle_ventaonline || [];
 
 
         res.status(200).json({
@@ -2086,9 +2087,9 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             fecha_estimada: data.fecha_estimada,
             estado_actual: data.estado_envio,
             historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)),
-            cliente_correo: data.cliente_Online?.correo,
-            telefono: data.cliente_Online?.telefono,
-            productos: lista_productos
+            cliente_correo: cliente.correo,
+            telefono: cliente.telefono,
+            productos: lista_productos.map(d => ({ nombre: d.nombre_producto, cantidad: d.cantidad }))
         });
 
     } catch (error) {
@@ -2096,7 +2097,6 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-
 
 // ===============================================
 // PROCESAMIENTO DE LA COMPRA ONLINE
@@ -2300,77 +2300,65 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
     }
 });
 
-// GET /api/paquetes/seguimiento/codigo/:codigo - VERSIÓN CORREGIDA FINAL
+
+// ===============================================
+// 3. Ruta de Seguimiento por Código (`/api/paquetes/seguimiento/codigo/:codigo`)
+// ===============================================
+/**
+ * GET /api/paquetes/seguimiento/codigo/:codigo
+ * 🛑 CORRECCIÓN CRÍTICA: Se modificó el flujo para usar las consultas separadas y evitar el error de PostgREST.
+ */
 app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
     const codigoPedido = req.params.codigo.toUpperCase();
     console.log(`🎯 [ENDPOINT LLAMADO] Buscando: ${codigoPedido}`);
 
     try {
-        // 1. Buscar el PEDIDO relacionado, haciendo JOIN a ventasOnline
-        const { data: pedidos, error: pedidoError } = await supabase
-            .from('pedidos')
-            .select(`
-                id, 
-                direccion, 
-                fecha_estimada, 
-                estado_envio, 
-                historial_seguimiento,
-                cliente_Online ( 
-                    correo, 
-                    telefono
-                ),
-                ventasOnline!inner( 
-                    codigo_pedido,
-                    detalle_ventaonline (
-                        nombre_producto,
-                        cantidad
-                    )
-                )
-            `)
-            // Filtramos directamente por el código del pedido en la tabla ventasOnline
-            .eq('ventasOnline.codigo_pedido', codigoPedido)
-            .limit(1)
+        // 1. Buscar la venta para obtener el ID de venta y ID de cliente
+        const { data: venta, error: ventaError } = await supabase
+            .from('ventasOnline')
+            .select('id_ventaOnline, id_cliente')
+            .eq('codigo_pedido', codigoPedido)
             .single();
 
-        if (pedidoError && pedidoError.code === 'PGRST116') {
-            console.log('❌ No se encontró pedido con código:', codigoPedido);
+        if (ventaError && ventaError.code === 'PGRST116') {
             return res.status(404).json({ message: `No se encontró pedido con código ${codigoPedido}` });
         }
-        if (pedidoError) {
-            console.error('❌ Error Supabase pedidos:', pedidoError);
-            return res.status(500).json({ message: 'Error al buscar seguimiento en la base de datos.', error: pedidoError.message });
-        }
+        if (ventaError) throw ventaError;
 
-        const pedido = pedidos;
-        console.log('✅ Pedido encontrado:', pedido.id);
+        // 2. Buscar el pedido (tracking) asociado
+        const { data: pedido, error: pedidoError } = await supabase
+            .from('pedidos')
+            .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento')
+            .eq('id_ventaOnline', venta.id_ventaOnline)
+            .single();
 
-        // Procesamiento de historial
+        if (pedidoError && pedidoError.code === 'PGRST116') return res.status(404).json({ message: 'Pedido sin información de seguimiento.' });
+        if (pedidoError) throw pedidoError;
+
+        // 3. Obtener datos del cliente y detalles de la venta (productos)
+        const [clienteRes, detallesRes] = await Promise.all([
+            supabase.from('cliente_Online').select('correo, telefono').eq('id_cliente', venta.id_cliente).single(),
+            supabase.from('detalle_ventaOnline').select('nombre_producto, cantidad').eq('id_ventaOnline', venta.id_ventaOnline)
+        ]);
+
+        const cliente = clienteRes.data || {};
+        const lista_productos = detallesRes.data || [];
+
+
+        // 4. Procesamiento final
         let historial = pedido.historial_seguimiento || [];
         if (historial.length === 0 && pedido.estado_envio) {
-            historial.push({
-                estado: pedido.estado_envio,
-                fecha: new Date().toISOString(),
-                mensaje: `Estado inicial: ${pedido.estado_envio}`
-            });
+            historial.push({ estado: pedido.estado_envio, fecha: new Date().toISOString(), mensaje: `Estado inicial: ${pedido.estado_envio}` });
         }
 
-        // Procesamiento de productos (aplanamiento)
-        const detalles_venta = pedido.ventasOnline?.detalle_ventaonline || [];
-        const lista_productos = detalles_venta.map(d => ({
-            nombre: d.nombre_producto,
-            cantidad: d.cantidad
-        }));
-
-
-        // 3. Devolver respuesta exitosa con la estructura completa
         res.json({
             id: pedido.id,
             direccion: pedido.direccion,
             fecha_estimada: pedido.fecha_estimada,
             estado_actual: pedido.estado_envio,
             historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)),
-            cliente_correo: pedido.cliente_Online?.correo,
-            telefono: pedido.cliente_Online?.telefono,
+            cliente_correo: cliente.correo,
+            telefono: cliente.telefono,
             productos: lista_productos
         });
 
@@ -2523,10 +2511,10 @@ app.get('/api/historial_compras', async (req, res) => {
 /**
  * RUTA: GET /api/paquetes/repartidor
  * Objetivo: Obtener la lista de pedidos ASIGNADOS al repartidor logueado.
- * Panel: Repartidor/repartidor.html (Lista de paquetes)
+ * 🛑 CORRECCIÓN CRÍTICA: Se remueve el JOIN a cliente_Online que estaba causando el fallo de relación (500).
  */
 app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
-    const id_repartidor = req.userId; // ID del repartidor (de auth.users)
+    const id_repartidor = req.userId;
 
     try {
         const { data, error } = await supabase
@@ -2534,29 +2522,38 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             .select(`
                 id, 
                 direccion, 
-                telefono,
                 estado_envio, 
-                fecha_estimada
+                fecha_estimada,
+                id_cliente // ⭐️ Devolvemos solo el FK ID del cliente ⭐️
             `)
-            .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
-            // CORRECCIÓN CLAVE: Usamos .not('columna', 'operador', 'valores')
+            .eq('id_repartidor', id_repartidor)
             .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
             console.error('Error al obtener lista de paquetes (Supabase):', error.message);
-            // Devolver un error 500 JSON que el frontend pueda manejar.
-            return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
+            return res.status(500).json({ message: 'Error al consultar la base de datos para la lista de paquetes.', details: error.message });
         }
 
-        // Formatear para facilitar el renderizado en el frontend:
+        // ⭐️ NUEVO: Si no hay paquetes, devolver vacío.
+        if (data.length === 0) return res.status(200).json([]);
+
+        // ⭐️ SEGUNDA CONSULTA: Obtener todos los teléfonos en un solo lote ⭐️
+        const clienteIds = data.map(p => p.id_cliente);
+        const { data: clientesData } = await supabase
+            .from('cliente_Online')
+            .select('id_cliente, telefono')
+            .in('id_cliente', clienteIds);
+
+        const clienteMap = new Map(clientesData.map(c => [c.id_cliente, c.telefono]));
+
+        // Formatear para el frontend:
         const paquetes = data.map(p => ({
             id: p.id,
             direccion: p.direccion,
-            telefono: p.telefono,
+            telefono: clienteMap.get(p.id_cliente) || 'N/A', // Mapeamos el teléfono
             estado_envio: p.estado_envio,
             fecha_estimada: p.fecha_estimada,
-            // ⭐️ Usaremos un valor genérico o el email del token si es necesario, pero no podemos hacer join. ⭐️
             cliente_correo: 'Contacto disponible en detalle'
         }));
 
