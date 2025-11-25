@@ -136,7 +136,7 @@ async function loadPaqueteDetails(paqueteId) {
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
         // ⭐️ EXTRAEMOS LOS DATOS ANIDADOS ⭐️
-        const venta = data.id_ventaOnline;
+        const venta = data.ventaonline;
         const cliente = venta.cliente_Online || {};
         const detallesProductos = venta.detalle_ventaonline || [];
 
@@ -211,16 +211,15 @@ function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
  * Lógica de la HU "Actualizar estado del paquete"
  */
 async function handleActualizarEstado(paqueteId) {
-    const nuevoEstado = document.getElementById('nuevoEstado').value;
+    const nuevoEstado = document.getElementById('nuevoEstado').value.toUpperCase();
     const mensajeExtra = document.getElementById('mensajeExtra').value.trim();
-    const fotoInput = document.getElementById('fotoPrueba');
     const token = sessionStorage.getItem('supabase-token');
 
     if (nuevoEstado === 'ENTREGADO' && fotoInput.files.length === 0) {
         alert('Por favor, sube una foto como prueba de entrega para marcar como Entregado.');
         return;
     }
-    if ((nuevoEstado === 'INTENTO DE ENTREGA' || nuevoEstado === 'CANCELADO') && !mensajeExtra) {
+    if ((nuevoEstado === 'FALLO EN ENTREGA' || nuevoEstado === 'CANCELADO') && !mensajeExtra) {
         alert('Por favor, ingresa un mensaje adicional para este estado.');
         return;
     }
@@ -230,7 +229,7 @@ async function handleActualizarEstado(paqueteId) {
     btn.disabled = true;
 
     try {
-            const response = await fetch(`${API_BASE_URL}/api/paquetes/${paqueteId}/estado`, {
+        const response = await fetch(`${API_BASE_URL}/api/paquetes/${paqueteId}/estado`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
