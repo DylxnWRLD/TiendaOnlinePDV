@@ -1976,10 +1976,10 @@ app.put('/api/paquetes/:id/estado', getUserIdFromToken, async (req, res) => {
 /**
  * RUTA: GET /api/paquetes/repartidor
  * Objetivo: Obtener la lista de pedidos ASIGNADOS al repartidor logueado.
- * CORREGIDO: Sintaxis de JOIN a cliente_Online para obtener el teléfono.
+ * CORREGIDO: Consulta por JOIN a cliente_Online.
  */
 app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
-    const id_repartidor = req.userId; // ID del repartidor (de auth.users)
+    const id_repartidor = req.userId;
 
     try {
         const { data, error } = await supabase
@@ -1992,24 +1992,21 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
                 cliente_Online ( 
                     telefono 
                 )
-            `) // ⬅️ Sintaxis corregida, sin comentarios ni errores de parseo
+            `)
             .eq('id_repartidor', id_repartidor)
             .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
             console.error('Error al obtener lista de paquetes (Supabase):', error.message);
-            // 🚨 El error 500 del render se debe a un error en esta consulta.
-            // Si llega aquí, significa que la consulta falló. Devolvemos el error de la BD.
-            return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
+            return res.status(500).json({ message: 'Error al consultar la base de datos para la lista de paquetes.', details: error.message });
         }
 
-        // Formatear para facilitar el renderizado en el frontend:
+        // Formatear para el frontend:
         const paquetes = data.map(p => ({
             id: p.id,
             direccion: p.direccion,
-            // ⭐️ Usamos la data del JOIN ⭐️
-            telefono: p.cliente_Online.telefono || 'N/A',
+            telefono: p.cliente_Online?.telefono || 'N/A',
             estado_envio: p.estado_envio,
             fecha_estimada: p.fecha_estimada,
             cliente_correo: 'Contacto disponible en detalle'
@@ -2022,6 +2019,84 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
+
+/**
+ * RUTA: GET /api/paquetes/seguimiento/:id
+ * Objetivo: Obtener el detalle completo del pedido (por ID de Pedido) para Repartidor/Cliente.
+ */
+app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
+    const pedidoId = req.params.id;
+
+    try {
+        const { data, error } = await supabase
+            .from('pedidos')
+            .select(`
+                id, 
+                direccion, 
+                fecha_estimada, 
+                estado_envio, 
+                historial_seguimiento,
+                cliente_Online ( 
+                    correo, 
+                    telefono
+                ),
+                ventasOnline (
+                    detalle_ventaonline (
+                        nombre_producto,
+                        cantidad
+                    )
+                )
+            `)
+            .eq('id', pedidoId)
+            .single();
+
+        if (error && error.code === 'PGRST116') {
+            return res.status(404).json({ message: 'Pedido no encontrado.' });
+        }
+        if (error) {
+            console.error('Error Supabase al obtener seguimiento:', error.message);
+            return res.status(500).json({ message: 'Error interno al obtener seguimiento.', details: error.message });
+        }
+
+        if (!data) {
+            return res.status(404).json({ message: 'Pedido no encontrado.' });
+        }
+
+        // Procesamiento de historial
+        let historial = data.historial_seguimiento || [];
+        if (historial.length === 0 && data.estado_envio) {
+            historial.push({
+                estado: data.estado_envio,
+                fecha: new Date().toISOString(),
+                mensaje: `Estado inicial: ${data.estado_envio}`
+            });
+        }
+
+        // Procesamiento de productos (aplanamiento)
+        const detalles_venta = data.ventasOnline?.detalle_ventaonline || [];
+        const lista_productos = detalles_venta.map(d => ({
+            nombre: d.nombre_producto,
+            cantidad: d.cantidad
+        }));
+
+
+        res.status(200).json({
+            id: data.id,
+            direccion: data.direccion,
+            fecha_estimada: data.fecha_estimada,
+            estado_actual: data.estado_envio,
+            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)),
+            cliente_correo: data.cliente_Online?.correo,
+            telefono: data.cliente_Online?.telefono,
+            productos: lista_productos
+        });
+
+    } catch (error) {
+        console.error('Error fatal en ruta de seguimiento:', error.message);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
+
 
 // ===============================================
 // PROCESAMIENTO DE LA COMPRA ONLINE
@@ -2225,75 +2300,84 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
     }
 });
 
-// GET /api/paquetes/seguimiento/codigo/:codigo - VERSIÓN CORREGIDA
+// GET /api/paquetes/seguimiento/codigo/:codigo - VERSIÓN CORREGIDA FINAL
 app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
     const codigoPedido = req.params.codigo.toUpperCase();
     console.log(`🎯 [ENDPOINT LLAMADO] Buscando: ${codigoPedido}`);
 
     try {
-        // 1. Buscar la venta (sin .single() - más robusto)
-        const { data: ventas, error: ventaError } = await supabase
-            .from('ventasonline')
-            .select('id_ventaonline, codigo_pedido')
-            .eq('codigo_pedido', codigoPedido)
-            .limit(1);
-
-        if (ventaError) {
-            console.error('❌ Error Supabase ventas:', ventaError);
-            return res.status(500).json({
-                message: 'Error de base de datos',
-                error: ventaError.message
-            });
-        }
-
-        if (!ventas || ventas.length === 0) {
-            console.log('❌ No se encontró venta con código:', codigoPedido);
-            return res.status(404).json({
-                message: `No se encontró pedido con código ${codigoPedido}`
-            });
-        }
-
-        const venta = ventas[0];
-        console.log('✅ Venta encontrada:', venta);
-
-        // 2. Buscar el pedido relacionado
+        // 1. Buscar el PEDIDO relacionado, haciendo JOIN a ventasOnline
         const { data: pedidos, error: pedidoError } = await supabase
             .from('pedidos')
-            .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento')
-            .eq('id_ventaOnline', venta.id_ventaOnline)
-            .limit(1);
+            .select(`
+                id, 
+                direccion, 
+                fecha_estimada, 
+                estado_envio, 
+                historial_seguimiento,
+                cliente_Online ( 
+                    correo, 
+                    telefono
+                ),
+                ventasOnline!inner( 
+                    codigo_pedido,
+                    detalle_ventaonline (
+                        nombre_producto,
+                        cantidad
+                    )
+                )
+            `)
+            // Filtramos directamente por el código del pedido en la tabla ventasOnline
+            .eq('ventasOnline.codigo_pedido', codigoPedido)
+            .limit(1)
+            .single();
 
+        if (pedidoError && pedidoError.code === 'PGRST116') {
+            console.log('❌ No se encontró pedido con código:', codigoPedido);
+            return res.status(404).json({ message: `No se encontró pedido con código ${codigoPedido}` });
+        }
         if (pedidoError) {
             console.error('❌ Error Supabase pedidos:', pedidoError);
-            return res.status(500).json({
-                message: 'Error al buscar seguimiento',
-                error: pedidoError.message
+            return res.status(500).json({ message: 'Error al buscar seguimiento en la base de datos.', error: pedidoError.message });
+        }
+
+        const pedido = pedidos;
+        console.log('✅ Pedido encontrado:', pedido.id);
+
+        // Procesamiento de historial
+        let historial = pedido.historial_seguimiento || [];
+        if (historial.length === 0 && pedido.estado_envio) {
+            historial.push({
+                estado: pedido.estado_envio,
+                fecha: new Date().toISOString(),
+                mensaje: `Estado inicial: ${pedido.estado_envio}`
             });
         }
 
-        if (!pedidos || pedidos.length === 0) {
-            console.log('❌ No se encontró pedido para venta:', venta.id_ventaOnline);
-            return res.status(404).json({
-                message: 'Pedido sin información de seguimiento'
-            });
-        }
+        // Procesamiento de productos (aplanamiento)
+        const detalles_venta = pedido.ventasOnline?.detalle_ventaonline || [];
+        const lista_productos = detalles_venta.map(d => ({
+            nombre: d.nombre_producto,
+            cantidad: d.cantidad
+        }));
 
-        const pedido = pedidos[0];
-        console.log('✅ Pedido encontrado:', pedido);
 
-        // 3. Devolver respuesta exitosa
+        // 3. Devolver respuesta exitosa con la estructura completa
         res.json({
             id: pedido.id,
             direccion: pedido.direccion,
             fecha_estimada: pedido.fecha_estimada,
-            estado_envio: pedido.estado_envio,
-            historial_seguimiento: pedido.historial_seguimiento || []
+            estado_actual: pedido.estado_envio,
+            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)),
+            cliente_correo: pedido.cliente_Online?.correo,
+            telefono: pedido.cliente_Online?.telefono,
+            productos: lista_productos
         });
 
     } catch (error) {
         console.error('💥 Error inesperado:', error);
         res.status(500).json({
-            message: 'Error interno del servidor',
+            message: 'Error interno del servidor al procesar la búsqueda por código.',
             error: error.message
         });
     }
