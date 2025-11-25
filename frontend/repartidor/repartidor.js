@@ -135,25 +135,30 @@ async function loadPaqueteDetails(paqueteId) {
 
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
+        // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
+        const venta = data.ventaonline;
+        const cliente = venta.cliente_Online || {};
+        const detallesProductos = venta.detalle_ventaonline || [];
+
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
-        document.getElementById('clienteEmail').textContent = data.cliente_correo || 'N/A';
+        document.getElementById('clienteEmail').textContent = cliente.correo || 'N/A'; // ✅ LEE DE LA CLAVE 'cliente'
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            telefonoLink.href = `tel:${data.telefono}`;
-            telefonoLink.textContent = data.telefono || 'N/A';
+            telefonoLink.href = `tel:${cliente.telefono}`; // ✅ LEE DE LA CLAVE 'cliente'
+            telefonoLink.textContent = cliente.telefono || 'N/A';
         }
 
         // Rellenar lista de productos
         const listaProductos = document.getElementById('listaProductos');
         listaProductos.innerHTML = '';
 
-        if (data.productos && data.productos.length > 0) {
-            data.productos.forEach(p => {
+        if (detallesProductos && detallesProductos.length > 0) {
+            detallesProductos.forEach(p => {
                 // Asume que el producto tiene { nombre, cantidad }
                 const li = document.createElement('li');
-                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre || 'Producto sin nombre'} x${p.cantidad || 1}`;
+                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${p.cantidad || 1}`;
                 listaProductos.appendChild(li);
             });
         } else {
@@ -183,17 +188,19 @@ async function loadPaqueteDetails(paqueteId) {
  */
 function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
     // 1. Mostrar/Ocultar prueba de entrega (Solo para ENTREGADO)
-    pruebaDiv.style.display = selectedState === 'ENTREGADO' ? 'block' : 'none';
+    const estadoEnMayusculas = selectedState.toUpperCase().replace(/\s/g, ' '); // Para uniformidad
+    pruebaDiv.style.display = estadoEnMayusculas === 'ENTREGADO' ? 'block' : 'none';
 
     // 2. Mostrar/Ocultar mensaje extra (Solo para advertencias/finales)
+    // ✅ Se ajusta la lógica a los valores correctos de la BD
     mensajeExtraContainer.style.display =
-        (selectedState === 'INTENTO DE ENTREGA' || selectedState === 'CANCELADO') ? 'block' : 'none';
+        (estadoEnMayusculas === 'FALLO EN ENTREGA' || estadoEnMayusculas === 'CANCELADO') ? 'block' : 'none';
 
     // 3. Colores del botón
-    if (selectedState === 'ENTREGADO') {
+    if (estadoEnMayusculas === 'ENTREGADO') {
         btn.className = 'btn btn-success';
         btn.textContent = 'Finalizar con Entrega';
-    } else if (selectedState === 'CANCELADO') {
+    } else if (estadoEnMayusculas === 'CANCELADO') {
         btn.className = 'btn btn-danger';
         btn.textContent = 'Confirmar Cancelación';
     } else {
@@ -206,7 +213,8 @@ function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
  * Lógica de la HU "Actualizar estado del paquete"
  */
 async function handleActualizarEstado(paqueteId) {
-    const nuevoEstado = document.getElementById('nuevoEstado').value;
+    // ✅ Se usa toUpperCase() para asegurar que la BD reciba el valor en el formato esperado
+    const nuevoEstado = document.getElementById('nuevoEstado').value.toUpperCase().replace(/ /g, ' ');
     const mensajeExtra = document.getElementById('mensajeExtra').value.trim();
     const fotoInput = document.getElementById('fotoPrueba');
     const token = sessionStorage.getItem('supabase-token');
@@ -215,7 +223,8 @@ async function handleActualizarEstado(paqueteId) {
         alert('Por favor, sube una foto como prueba de entrega para marcar como Entregado.');
         return;
     }
-    if ((nuevoEstado === 'INTENTO DE ENTREGA' || nuevoEstado === 'CANCELADO') && !mensajeExtra) {
+    // ✅ VALIDACIÓN CORREGIDA
+    if ((nuevoEstado === 'FALLO EN ENTREGA' || nuevoEstado === 'CANCELADO') && !mensajeExtra) {
         alert('Por favor, ingresa un mensaje adicional para este estado.');
         return;
     }
@@ -232,7 +241,7 @@ async function handleActualizarEstado(paqueteId) {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                nuevo_estado: nuevoEstado,
+                nuevo_estado: nuevoEstado, // Se envía el valor en mayúsculas/formato correcto
                 mensaje_extra: mensajeExtra
             })
         });
