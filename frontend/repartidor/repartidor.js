@@ -141,7 +141,7 @@ async function loadPaqueteDetails(paqueteId) {
 
         const detallesProductos = venta?.detalle_ventaonline || []; // También aquí
         // Rellenar información del cliente y dirección
-        document.getElementById('clienteEmail').textContent = data.cliente_correo || 'N/A';
+        document.getElementById('direccion').textContent = data.direccion || 'No disponible';
         document.getElementById('clienteTelefonoLink').textContent = data.telefono || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
