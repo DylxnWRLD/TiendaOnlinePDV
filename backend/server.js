@@ -1976,7 +1976,7 @@ app.put('/api/paquetes/:id/estado', getUserIdFromToken, async (req, res) => {
 /**
  * RUTA: GET /api/paquetes/repartidor
  * Objetivo: Obtener la lista de pedidos ASIGNADOS al repartidor logueado.
- * CORREGIDO: Obtiene el teléfono del cliente a través de un JOIN a cliente_online.
+ * CORREGIDO: Sintaxis de JOIN a cliente_Online para obtener el teléfono.
  */
 app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
     const id_repartidor = req.userId; // ID del repartidor (de auth.users)
@@ -1989,16 +1989,18 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
                 direccion, 
                 estado_envio, 
                 fecha_estimada,
-                cliente_Online ( // ⭐️ Corregido: JOIN a la tabla cliente_Online ⭐️
+                cliente_Online ( 
                     telefono 
                 )
-            `)
-            .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
+            `) // ⬅️ Sintaxis corregida, sin comentarios ni errores de parseo
+            .eq('id_repartidor', id_repartidor)
             .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
             console.error('Error al obtener lista de paquetes (Supabase):', error.message);
+            // 🚨 El error 500 del render se debe a un error en esta consulta.
+            // Si llega aquí, significa que la consulta falló. Devolvemos el error de la BD.
             return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
         }
 
