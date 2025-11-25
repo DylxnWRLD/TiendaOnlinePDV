@@ -135,30 +135,25 @@ async function loadPaqueteDetails(paqueteId) {
 
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
-        // ⭐️ EXTRAEMOS LOS DATOS ANIDADOS ⭐️
-        const venta = data.ventaonline;
-        const cliente = venta.cliente_Online || {};
-        const detallesProductos = venta.detalle_ventaonline || [];
-
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
-        document.getElementById('clienteEmail').textContent = cliente.correo || 'N/A';
+        document.getElementById('clienteEmail').textContent = data.cliente_correo || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            telefonoLink.href = `tel:${cliente.telefono}`;
-            telefonoLink.textContent = cliente.telefono || 'N/A';
+            telefonoLink.href = `tel:${data.telefono}`;
+            telefonoLink.textContent = data.telefono || 'N/A';
         }
 
         // Rellenar lista de productos
         const listaProductos = document.getElementById('listaProductos');
         listaProductos.innerHTML = '';
 
-        if (detallesProductos && detallesProductos.length > 0) {
-            detallesProductos.forEach(p => {
+        if (data.productos && data.productos.length > 0) {
+            data.productos.forEach(p => {
                 // Asume que el producto tiene { nombre, cantidad }
                 const li = document.createElement('li');
-                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${p.cantidad || 1}`;
+                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre || 'Producto sin nombre'} x${p.cantidad || 1}`;
                 listaProductos.appendChild(li);
             });
         } else {
@@ -211,15 +206,16 @@ function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
  * Lógica de la HU "Actualizar estado del paquete"
  */
 async function handleActualizarEstado(paqueteId) {
-    const nuevoEstado = document.getElementById('nuevoEstado').value.toUpperCase();
+    const nuevoEstado = document.getElementById('nuevoEstado').value;
     const mensajeExtra = document.getElementById('mensajeExtra').value.trim();
+    const fotoInput = document.getElementById('fotoPrueba');
     const token = sessionStorage.getItem('supabase-token');
 
     if (nuevoEstado === 'ENTREGADO' && fotoInput.files.length === 0) {
         alert('Por favor, sube una foto como prueba de entrega para marcar como Entregado.');
         return;
     }
-    if ((nuevoEstado === 'FALLO EN ENTREGA' || nuevoEstado === 'CANCELADO') && !mensajeExtra) {
+    if ((nuevoEstado === 'INTENTO DE ENTREGA' || nuevoEstado === 'CANCELADO') && !mensajeExtra) {
         alert('Por favor, ingresa un mensaje adicional para este estado.');
         return;
     }

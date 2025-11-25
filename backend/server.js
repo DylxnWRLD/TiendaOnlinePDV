@@ -1455,8 +1455,8 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
 
         // ... (Consultas a MongoDB y Procesamiento de Supabase se mantienen igual) ...
         const [totalProducts, productsReportData] = await Promise.all([
-            Product.countDocuments(),
-            Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
+             Product.countDocuments(),
+             Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
         ]);
 
         const allSales = salesData.data || [];
@@ -1984,18 +1984,8 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 
     try {
         const { data, error } = await supabase
-            .from('pedidos')
-            .select(`
-                id, 
-                direccion, 
-                fecha_estimada, 
-                estado_envio, 
-                historial_seguimiento,
-                ventaonline( 
-                    detalle_ventaonline(nombre_producto, cantidad),
-                    cliente_Online(correo, telefono)
-                )
-            `)
+            .from('pedidos') // Asume que 'pedidos' contiene la info del seguimiento
+            .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento') // Selecciona el historial
             .eq('id', pedidoId)
             .single();
 
@@ -2241,7 +2231,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
     const codigoPedido = req.params.codigo.toUpperCase();
     console.log(`🎯 [ENDPOINT LLAMADO] Buscando: ${codigoPedido}`);
-
+    
     try {
         // 1. Buscar la venta (sin .single() - más robusto)
         const { data: ventas, error: ventaError } = await supabase
@@ -2252,16 +2242,16 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
 
         if (ventaError) {
             console.error('❌ Error Supabase ventas:', ventaError);
-            return res.status(500).json({
+            return res.status(500).json({ 
                 message: 'Error de base de datos',
-                error: ventaError.message
+                error: ventaError.message 
             });
         }
 
         if (!ventas || ventas.length === 0) {
             console.log('❌ No se encontró venta con código:', codigoPedido);
-            return res.status(404).json({
-                message: `No se encontró pedido con código ${codigoPedido}`
+            return res.status(404).json({ 
+                message: `No se encontró pedido con código ${codigoPedido}` 
             });
         }
 
@@ -2277,16 +2267,16 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
 
         if (pedidoError) {
             console.error('❌ Error Supabase pedidos:', pedidoError);
-            return res.status(500).json({
+            return res.status(500).json({ 
                 message: 'Error al buscar seguimiento',
-                error: pedidoError.message
+                error: pedidoError.message 
             });
         }
 
         if (!pedidos || pedidos.length === 0) {
             console.log('❌ No se encontró pedido para venta:', venta.id_ventaOnline);
-            return res.status(404).json({
-                message: 'Pedido sin información de seguimiento'
+            return res.status(404).json({ 
+                message: 'Pedido sin información de seguimiento' 
             });
         }
 
@@ -2304,9 +2294,9 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
 
     } catch (error) {
         console.error('💥 Error inesperado:', error);
-        res.status(500).json({
+        res.status(500).json({ 
             message: 'Error interno del servidor',
-            error: error.message
+            error: error.message 
         });
     }
 });
@@ -2462,11 +2452,14 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
             .select(`
                 id, 
                 direccion, 
+                telefono,
                 estado_envio, 
                 fecha_estimada
             `)
-            .eq('id_repartidor', id_repartidor)
-            .filter('estado_envio', 'not.in', '("ENTREGADO", "CANCELADO")')
+            .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
+            // CORRECCIÓN CLAVE: Usamos .not('columna', 'operador', 'valores')
+            .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
+            .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
             console.error('Error al obtener lista de paquetes (Supabase):', error.message);
