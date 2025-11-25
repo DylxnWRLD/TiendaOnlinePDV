@@ -49,11 +49,13 @@ async function buscarPedido(identificador) {
         if (tipo === 'pedido') {
             endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/${identificador}`;
         } else {
-            endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/codigo/${identificador}`;
+            // ⭐️ CORRECCIÓN: Aseguramos que el código vaya en mayúsculas para la URL ⭐️
+            const codigoMayusculas = identificador.toUpperCase();
+            endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/codigo/${codigoMayusculas}`;
         }
 
         const response = await fetch(endpoint);
-        
+
         if (response.ok) {
             const data = await response.json();
             return data;
@@ -76,14 +78,14 @@ async function buscarPedido(identificador) {
 $('buscadorForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const identificador = $('pedidoId').value.trim();
-    
+
     if (!identificador) {
         $('mensaje-error').textContent = 'Por favor, ingresa un ID de pedido.';
         return;
     }
 
     const resultado = await buscarPedido(identificador);
-    
+
     if (resultado && resultado.id) {
         // Redirigir con el ID del pedido (siempre usa id de tabla pedidos para el seguimiento)
         window.location.href = `seguimiento-detalle.html?id=${resultado.id}`;
@@ -94,7 +96,7 @@ $('buscadorForm').addEventListener('submit', async (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const idFromUrl = urlParams.get('id');
-    
+
     if (idFromUrl) {
         // Si viene un ID válido de la compra, redirigir automáticamente
         const tipo = getTipoId(idFromUrl);
