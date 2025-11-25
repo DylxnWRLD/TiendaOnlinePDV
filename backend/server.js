@@ -2281,6 +2281,62 @@ app.get('/api/cliente/historial', getUserIdFromToken, async (req, res) => {
     }
 });
 
+// GET /api/paquetes/seguimiento/codigo/:codigo
+app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
+    const codigoPedido = req.params.codigo;
+
+    try {
+        // Buscar en ventasOnline por código_pedido y obtener el pedido relacionado
+        const { data: ventaData, error: ventaError } = await supabase
+            .from('ventasOnline')
+            .select('id_ventaOnline, codigo_pedido')
+            .eq('codigo_pedido', codigoPedido)
+            .single();
+
+        if (ventaError || !ventaData) {
+            return res.status(404).json({ 
+                message: 'Pedido no encontrado con ese código.' 
+            });
+        }
+
+        // Buscar el pedido relacionado
+        const { data: pedidoData, error: pedidoError } = await supabase
+            .from('pedidos')
+            .select(`
+                id,
+                direccion,
+                fecha_estimada,
+                estado_envio,
+                historial_seguimiento,
+                ventasOnline!inner(id_ventaOnline, codigo_pedido)
+            `)
+            .eq('id_ventaOnline', ventaData.id_ventaOnline)
+            .single();
+
+        if (pedidoError || !pedidoData) {
+            return res.status(404).json({ 
+                message: 'No se encontró información de seguimiento para este pedido.' 
+            });
+        }
+
+        // Devolver datos en el mismo formato que el endpoint original
+        res.json({
+            id: pedidoData.id,
+            direccion: pedidoData.direccion,
+            fecha_estimada: pedidoData.fecha_estimada,
+            estado_envio: pedidoData.estado_envio,
+            historial_seguimiento: pedidoData.historial_seguimiento,
+            codigo_pedido: ventaData.codigo_pedido
+        });
+
+    } catch (error) {
+        console.error('Error en seguimiento por código:', error);
+        res.status(500).json({ 
+            message: 'Error interno del servidor.' 
+        });
+    }
+});
+
 // ===============================================
 // RUTA: HISTORIAL DE COMPRAS DEL CAJERO
 // ===============================================

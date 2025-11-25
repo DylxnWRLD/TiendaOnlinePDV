@@ -6,52 +6,86 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 // Utilidad para obtener elementos del DOM
 const $ = (id) => document.getElementById(id);
 
-// Validación de UUID
+// Validación de UUID (para id_pedido)
 function isValidUUID(uuid) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
 }
 
-// Manejar envío del formulario
-$('buscadorForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const pedidoId = $('pedidoId').value.trim();
+// Validación de código de pedido (para id_venta)
+function isValidCodigoPedido(codigo) {
+    const codigoRegex = /^(PED|VENTA)-[A-Z0-9]{6,12}$/i;
+    return codigoRegex.test(codigo);
+}
+
+// Determinar tipo de ID
+function getTipoId(identificador) {
+    if (isValidUUID(identificador)) {
+        return 'pedido'; // UUID de tabla pedidos
+    } else if (isValidCodigoPedido(identificador)) {
+        return 'venta';  // Código de tabla ventasOnline
+    } else {
+        return 'invalido';
+    }
+}
+
+// Buscar pedido por cualquier tipo de ID
+async function buscarPedido(identificador) {
+    const tipo = getTipoId(identificador);
     const mensajeError = $('mensaje-error');
 
-    // Limpiar mensajes anteriores
-    mensajeError.textContent = '';
-
-    if (!pedidoId) {
-        mensajeError.textContent = 'Por favor, ingresa un ID de pedido.';
-        return;
+    if (tipo === 'invalido') {
+        mensajeError.style.color = '#F56565';
+        mensajeError.textContent = 'Formato de ID inválido. Usa UUID (ej: 2acb3f97-2d15-...) o Código (ej: PED-ABC123).';
+        return null;
     }
 
-    // Validar formato UUID
-    if (!isValidUUID(pedidoId)) {
-        mensajeError.textContent = 'Formato de ID inválido. Debe ser un UUID (ej: 2acb3f97-2d15-4eea-a77d-493e5573dcf3).';
-        return;
-    }
-
-    // Verificar si el pedido existe antes de redirigir
     try {
-        mensajeError.textContent = 'Verificando pedido...';
+        mensajeError.textContent = 'Buscando pedido...';
         mensajeError.style.color = '#A0AEC0';
 
-        const response = await fetch(`${API_BASE_URL}/api/paquetes/seguimiento/${pedidoId}`);
+        let endpoint;
+        if (tipo === 'pedido') {
+            endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/${identificador}`;
+        } else {
+            endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/codigo/${identificador}`;
+        }
+
+        const response = await fetch(endpoint);
         
         if (response.ok) {
-            // Pedido existe, redirigir
-            window.location.href = `seguimiento-detalle.html?id=${pedidoId}`;
+            const data = await response.json();
+            return data;
         } else if (response.status === 404) {
             mensajeError.style.color = '#F56565';
             mensajeError.textContent = 'Pedido no encontrado. Verifica el ID e intenta nuevamente.';
+            return null;
         } else {
             throw new Error('Error del servidor');
         }
     } catch (error) {
-        console.error('Error verificando pedido:', error);
+        console.error('Error buscando pedido:', error);
         mensajeError.style.color = '#F56565';
         mensajeError.textContent = 'Error de conexión. Intenta nuevamente.';
+        return null;
+    }
+}
+
+// Manejar envío del formulario
+$('buscadorForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const identificador = $('pedidoId').value.trim();
+    
+    if (!identificador) {
+        $('mensaje-error').textContent = 'Por favor, ingresa un ID de pedido.';
+        return;
+    }
+
+    const resultado = await buscarPedido(identificador);
+    
+    if (resultado && resultado.id) {
+        // Redirigir con el ID del pedido (siempre usa id de tabla pedidos para el seguimiento)
+        window.location.href = `seguimiento-detalle.html?id=${resultado.id}`;
     }
 });
 
@@ -60,9 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const idFromUrl = urlParams.get('id');
     
-    if (idFromUrl && isValidUUID(idFromUrl)) {
-        // Redirigir automáticamente si viene un UUID válido
-        window.location.href = `seguimiento-detalle.html?id=${idFromUrl}`;
+    if (idFromUrl) {
+        // Si viene un ID válido de la compra, redirigir automáticamente
+        const tipo = getTipoId(idFromUrl);
+        if (tipo !== 'invalido') {
+            window.location.href = `seguimiento-detalle.html?id=${idFromUrl}`;
+        }
     }
 });
 
