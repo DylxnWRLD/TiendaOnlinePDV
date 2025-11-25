@@ -1991,9 +1991,9 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 fecha_estimada, 
                 estado_envio, 
                 historial_seguimiento,
-                ventaonline( 
+                ventasonline( 
                     detalle_ventaonline(nombre_producto, cantidad),
-                    cliente_Online(correo, telefono)
+                    cliente_online(correo, telefono)
                 )
             `)
             .eq('id', pedidoId)
@@ -2284,7 +2284,7 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
         const { data: pedidos, error: pedidoError } = await supabase
             .from('pedidos')
             .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento')
-            .eq('id_ventaOnline', venta.id_ventaOnline)
+            .eq('id_ventaonline', venta.id_ventaonline)
             .limit(1);
 
         if (pedidoError) {
@@ -2478,7 +2478,6 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
                 fecha_estimada
             `)
             .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
-            // CORRECCIÓN CLAVE: Usamos .not('columna', 'operador', 'valores')
             .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
             .order('fecha_actualizacion', { ascending: false });
 
