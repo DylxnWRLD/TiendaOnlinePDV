@@ -1991,7 +1991,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 fecha_estimada, 
                 estado_envio, 
                 historial_seguimiento,
-                ventaOnline(
+                id_ventaOnline( 
                 detalle_ventaonline(nombre_producto, cantidad),
                 cliente_Online(correo, telefono)
                 )

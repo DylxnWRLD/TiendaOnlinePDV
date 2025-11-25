@@ -136,9 +136,9 @@ async function loadPaqueteDetails(paqueteId) {
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
         // ⭐️ EXTRAEMOS LOS DATOS ANIDADOS ⭐️
-        const venta = data.ventasOnline;
-        const cliente = venta.cliente_Online;
-        const detallesProductos = venta.detalle_ventaonline;
+        const venta = data.id_ventaOnline;
+        const cliente = venta.cliente_Online || {};
+        const detallesProductos = venta.detalle_ventaonline || [];
 
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
