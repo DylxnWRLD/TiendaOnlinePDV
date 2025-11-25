@@ -132,23 +132,23 @@ async function loadPaqueteDetails(paqueteId) {
             headers: { 'Authorization': `Bearer ${token}` } // Se requiere el token si está detrás de RLS
         });
         const data = await response.json();
+
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
         // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
         const venta = data.ventaonline;
         const cliente = venta.cliente_Online || {};
-        const detallesProductos = venta.detalle_ventaonline.map(d => ({
-            nombre: d.nombre_producto,
-            cantidad: d.cantidad
-        }));
+        const detallesProductos = venta.detalle_ventaonline || [];
 
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
-        document.getElementById('clienteEmail').textContent = cliente.correo || 'N/A'; // ✅ LEE DE LA CLAVE 'cliente'
+        // ✅ CORRECCIÓN: Lee de la clave cliente
+        document.getElementById('clienteEmail').textContent = cliente.correo || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            telefonoLink.href = `tel:${cliente.telefono}`; // ✅ LEE DE LA CLAVE 'cliente'
+            // ✅ CORRECCIÓN: Lee de la clave cliente
+            telefonoLink.href = `tel:${cliente.telefono}`;
             telefonoLink.textContent = cliente.telefono || 'N/A';
         }
 
@@ -158,7 +158,7 @@ async function loadPaqueteDetails(paqueteId) {
 
         if (detallesProductos && detallesProductos.length > 0) {
             detallesProductos.forEach(p => {
-                // Asume que el producto tiene { nombre, cantidad }
+                // Asume que el producto tiene { nombre_producto, cantidad }
                 const li = document.createElement('li');
                 li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${p.cantidad || 1}`;
                 listaProductos.appendChild(li);
@@ -189,12 +189,12 @@ async function loadPaqueteDetails(paqueteId) {
  * Lógica para mostrar/ocultar campos y cambiar el estilo del botón
  */
 function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
+    const estadoEnMayusculas = selectedState.toUpperCase().replace(/\s/g, ' '); // Uniformidad para FALLO EN ENTREGA
     // 1. Mostrar/Ocultar prueba de entrega (Solo para ENTREGADO)
-    const estadoEnMayusculas = selectedState.toUpperCase().replace(/\s/g, ' '); // Para uniformidad
     pruebaDiv.style.display = estadoEnMayusculas === 'ENTREGADO' ? 'block' : 'none';
 
     // 2. Mostrar/Ocultar mensaje extra (Solo para advertencias/finales)
-    // ✅ Se ajusta la lógica a los valores correctos de la BD
+    // ✅ CORRECCIÓN: Usar FALLO EN ENTREGA
     mensajeExtraContainer.style.display =
         (estadoEnMayusculas === 'FALLO EN ENTREGA' || estadoEnMayusculas === 'CANCELADO') ? 'block' : 'none';
 
@@ -215,8 +215,10 @@ function setupDetailUI(selectedState, btn, pruebaDiv, mensajeExtraContainer) {
  * Lógica de la HU "Actualizar estado del paquete"
  */
 async function handleActualizarEstado(paqueteId) {
+    // ✅ CLAVE: Usamos el valor del HTML, que ahora debe ser 'FALLO EN ENTREGA' o 'PENDIENTE'
     const nuevoEstado = document.getElementById('nuevoEstado').value;
     const mensajeExtra = document.getElementById('mensajeExtra').value.trim();
+    const fotoInput = document.getElementById('fotoPrueba');
     const token = sessionStorage.getItem('supabase-token');
 
     if (nuevoEstado === 'ENTREGADO' && fotoInput.files.length === 0) {
