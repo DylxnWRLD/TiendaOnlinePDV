@@ -131,10 +131,15 @@
     <div class="container">
         <h2>Rastrea tu Pedido</h2>
         <form id="buscadorForm">
+            <!-- Actualiza solo esta parte del formulario -->
             <div class="form-group">
-                <label for="pedidoId">Ingresa tu ID de Pedido:</label>
-                <input type="text" id="pedidoId" placeholder="Ej: 2acb3f97-2d15-4eea-a77d-493e5573dcf3" required>
-                <span class="info-text">El ID es un código único que recibiste al completar tu compra</span>
+                <label for="pedidoId">Ingresa tu ID de Pedido o Código:</label>
+                <input type="text" id="pedidoId" placeholder="Ej: 2acb3f97-2d15... o PED-ABC123" required>
+                <span class="info-text">
+                    Puedes usar:
+                    <br>• <strong>ID único:</strong> 2acb3f97-2d15-4eea-a77d-493e5573dcf3
+                    <br>• <strong>Código de pedido:</strong> PED-ABC123
+                </span>
             </div>
 
             <div class="button-group">

@@ -12,9 +12,10 @@ function isValidUUID(uuid) {
     return uuidRegex.test(uuid);
 }
 
-// Validación de código de pedido (para id_venta)
+// Validación de código de pedido (para id_venta) - ✅ CORREGIDA
 function isValidCodigoPedido(codigo) {
-    const codigoRegex = /^(PED|VENTA)-[A-Z0-9]{6,12}$/i;
+    // ✅ ACEPTA: PED- + entre 3 y 20 caracteres alfanuméricos
+    const codigoRegex = /^(PED|VENTA)-[A-Za-z0-9]{3,20}$/i;
     return codigoRegex.test(codigo);
 }
 
