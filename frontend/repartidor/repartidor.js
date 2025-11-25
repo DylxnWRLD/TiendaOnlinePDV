@@ -127,35 +127,36 @@ async function loadPaqueteDetails(paqueteId) {
     if (!token) return;
 
     try {
+        // Nota: Reutilizamos la ruta del cliente ya que devuelve la información completa
         const response = await fetch(`${API_BASE_URL}/api/paquetes/seguimiento/${paqueteId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}` } // Se requiere el token si está detrás de RLS
         });
         const data = await response.json();
 
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
-        // ⭐️ EXTRACCIÓN SIMPLE Y SEGURA (Del JSON a variables locales) ⭐️
-        const clienteEmail = data.cliente_correo || 'N/A';
-        const clienteTelefono = data.telefono || 'N/A';
-        const detallesProductos = data.productos || [];
+        // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
+        const venta = data.ventasonline || data.ventaonline;
+        const cliente = venta?.cliente_online || {};
 
-        // CORRECCIÓN FINAL: Asignamos valores a los elementos DOM
-        document.getElementById('direccion').textContent = data.direccion || 'Dirección no especificada';
-        document.getElementById('clienteEmail').textContent = clienteEmail;
+        const detallesProductos = venta?.detalle_ventaonline || []; // También aquí
+        // Rellenar información del cliente y dirección
+        document.getElementById('direccion').textContent = data.direccion || 'No disponible';
+        document.getElementById('clienteTelefonoLink').textContent = data.telefono || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            // Usamos la variable plana y garantizada
-            telefonoLink.href = `tel:${clienteTelefono !== 'N/A' ? clienteTelefono : ''}`;
-            telefonoLink.textContent = clienteTelefono;
+            telefonoLink.href = `tel:${cliente.telefono}`;
+            telefonoLink.textContent = cliente.telefono || 'N/A';
         }
 
         // Rellenar lista de productos
         const listaProductos = document.getElementById('listaProductos');
         listaProductos.innerHTML = '';
 
-        if (detallesProductos.length > 0) {
+        if (detallesProductos && detallesProductos.length > 0) {
             detallesProductos.forEach(p => {
+                // Asume que el producto tiene { nombre_producto, cantidad }
                 const li = document.createElement('li');
                 li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${p.cantidad || 1}`;
                 listaProductos.appendChild(li);
@@ -178,7 +179,7 @@ async function loadPaqueteDetails(paqueteId) {
 
     } catch (error) {
         console.error('Error al cargar detalles del paquete:', error);
-        alert(`❌ Error al cargar detalles: ${error.message}`);
+        alert(`Error al cargar detalles: ${error.message}`);
     }
 }
 
