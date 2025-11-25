@@ -2227,27 +2227,34 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
     }
 });
 
-// GET /api/paquetes/seguimiento/codigo/:codigo - VERSIÓN MEJORADA
+// GET /api/paquetes/seguimiento/codigo/:codigo - VERSIÓN CORREGIDA
 app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
     const codigoPedido = req.params.codigo.toUpperCase();
-    console.log(`🔍 Buscando por código: ${codigoPedido}`);
+    console.log(` [BACKEND] Buscando por código: ${codigoPedido}`);
 
     try {
-        // 1. Buscar en ventasOnline
+        // 1. Buscar en ventasonline (MINÚSCULAS)
         const { data: ventaData, error: ventaError } = await supabase
-            .from('ventasOnline')
+            .from('ventasonline') // ⬅️ CORREGIDO: minúsculas
             .select('id_ventaOnline, codigo_pedido')
             .eq('codigo_pedido', codigoPedido)
             .single();
 
         if (ventaError) {
-            console.log('❌ Error en ventasOnline:', ventaError);
+            console.log(' [BACKEND] Error en ventasonline:', ventaError);
             return res.status(404).json({ 
                 message: 'No se encontró ningún pedido con ese código.' 
             });
         }
 
-        console.log('✅ Venta encontrada:', ventaData);
+        if (!ventaData) {
+            console.log(' [BACKEND] Venta no encontrada');
+            return res.status(404).json({ 
+                message: 'No se encontró ningún pedido con ese código.' 
+            });
+        }
+
+        console.log(' [BACKEND] Venta encontrada:', ventaData);
 
         // 2. Buscar en pedidos
         const { data: pedidoData, error: pedidoError } = await supabase
@@ -2257,13 +2264,20 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
             .single();
 
         if (pedidoError) {
-            console.log('❌ Error en pedidos:', pedidoError);
+            console.log(' [BACKEND] Error en pedidos:', pedidoError);
+            return res.status(404).json({ 
+                message: 'No se encontró información de seguimiento para este pedido.' 
+            });
+        }
+
+        if (!pedidoData) {
+            console.log(' [BACKEND] Pedido no encontrado');
             return res.status(404).json({ 
                 message: 'No se encontró información de seguimiento.' 
             });
         }
 
-        console.log('✅ Pedido encontrado:', pedidoData);
+        console.log(' [BACKEND] Pedido encontrado:', pedidoData);
 
         // 3. Devolver respuesta
         res.json({
@@ -2275,7 +2289,7 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('💥 Error inesperado:', error);
+        console.error(' [BACKEND] Error inesperado:', error);
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
