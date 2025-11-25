@@ -137,7 +137,7 @@ async function loadPaqueteDetails(paqueteId) {
 
         // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
         const venta = data.ventasonline;
-        const cliente = venta.cliente_Online || {};
+        const cliente = venta.cliente_online || {};
         const detallesProductos = venta.detalle_ventaonline || [];
 
         // Rellenar información del cliente y dirección
