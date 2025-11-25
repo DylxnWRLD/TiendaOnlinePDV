@@ -50,8 +50,7 @@ async function buscarPedido(identificador) {
             endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/${identificador}`;
         } else {
             // ⭐️ CORRECCIÓN: Aseguramos que el código vaya en mayúsculas para la URL ⭐️
-            const codigoMayusculas = identificador.toUpperCase();
-            endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/codigo/${codigoMayusculas}`;
+            endpoint = `${API_BASE_URL}/api/paquetes/seguimiento/codigo/${identificador}`;
         }
 
         const response = await fetch(endpoint);

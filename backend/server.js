@@ -2254,15 +2254,14 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 
 // GET /api/paquetes/seguimiento/codigo/:codigo - VERSIÓN CORREGIDA
 app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
-    const codigoPedido = req.params.codigo.toUpperCase();
-    console.log(`🎯 [ENDPOINT LLAMADO] Buscando: ${codigoPedido}`);
+    const codigoPedido = req.params.codigo; // <-- Leemos tal cual, la base de datos lo ajusta
 
     try {
-        // 1. Buscar la venta (sin .single() - más robusto)
+        // 1. Buscar la venta (AHORA con filtro ILIKE para insensibilidad a mayúsculas/minúsculas)
         const { data: ventas, error: ventaError } = await supabase
             .from('ventasonline')
             .select('id_ventaonline, codigo_pedido')
-            .eq('codigo_pedido', codigoPedido)
+            .ilike('codigo_pedido', codigoPedido) // ⭐️ CORRECCIÓN CLAVE: Usar ILIKE ⭐️
             .limit(1);
 
         if (ventaError) {
@@ -2287,6 +2286,7 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
         const { data: pedidos, error: pedidoError } = await supabase
             .from('pedidos')
             .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento')
+            // Aseguramos que la columna sea minúscula y usamos el ID de la venta
             .eq('id_ventaonline', venta.id_ventaonline)
             .limit(1);
 
