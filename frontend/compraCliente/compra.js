@@ -206,7 +206,6 @@ async function fetchClienteData() {
     }
 }
 
-
 // -------------------------------------------------------------------------
 // FUNCIÓN RPC DE COMUNICACIÓN CON EL BACKEND (procesarCompraFinal)
 // -------------------------------------------------------------------------
@@ -272,8 +271,7 @@ async function procesarCompraFinal() {
         throw new Error("El teléfono debe contener exactamente 10 dígitos numéricos.");
     }
 
-    // ✅ UUID DIRECTO DEL REPARTIDOR
-    const REPARTIDOR_UUID = '2acb3f97-2d15-4eea-a77d-493e5573dcf3';
+    // ❌ ELIMINADO: const REPARTIDOR_UUID = '2acb3f97-2d15-4eea-a77d-493e5573dcf3';
 
     const payload = {
         p_correo: datosCliente.correo.trim(),
@@ -282,7 +280,7 @@ async function procesarCompraFinal() {
         p_total_final: parseFloat(totalFinal.toFixed(2)),
         p_metodo_pago: datosCliente.metodoPago,
         p_detalles: detallesVenta,
-        p_id_repartidor: REPARTIDOR_UUID // ✅ UUID directo
+        // ❌ ELIMINADO: p_id_repartidor: REPARTIDOR_UUID 
     };
 
     // ✅ DEBUG DETALLADO del payload
@@ -290,7 +288,7 @@ async function procesarCompraFinal() {
     console.log("Payload completo:", JSON.stringify(payload, null, 2));
     console.log("Número de items:", detallesVenta.length);
     console.log("Método de pago:", datosCliente.metodoPago);
-    console.log("Repartidor asignado:", REPARTIDOR_UUID);
+    console.log("Repartidor asignado: ASIGNADO POR EL SERVIDOR"); // MODIFICADO
     console.groupEnd();
 
     try {
@@ -418,7 +416,7 @@ function debugProcesoCompraCompleto() {
     console.log("🔑 User ID:", getCurrentUserId());
     console.log("🔐 Token:", sessionStorage.getItem('supabase-token') ? "PRESENTE" : "AUSENTE");
     console.log("🌐 API Base:", API_BASE_URL);
-    console.log("🚚 Repartidor UUID:", '2acb3f97-2d15-4eea-a77d-493e5573dcf3');
+    console.log("🚚 Repartidor UUID: ASIGNADO POR EL SERVIDOR"); // MODIFICADO
     console.groupEnd();
 }
 

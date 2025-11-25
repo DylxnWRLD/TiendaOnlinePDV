@@ -1455,8 +1455,8 @@ app.get('/api/stats/full', authenticateAdmin, async (req, res) => {
 
         // ... (Consultas a MongoDB y Procesamiento de Supabase se mantienen igual) ...
         const [totalProducts, productsReportData] = await Promise.all([
-             Product.countDocuments(),
-             Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
+            Product.countDocuments(),
+            Product.find().sort({ stockQty: -1 }).limit(5).select('name stockQty')
         ]);
 
         const allSales = salesData.data || [];
@@ -1975,21 +1975,36 @@ app.put('/api/paquetes/:id/estado', getUserIdFromToken, async (req, res) => {
 
 /**
  * RUTA: GET /api/paquetes/seguimiento/:id
- * Objetivo: Permitir al cliente rastrear el estado de su pedido.
- * Creado para: HU Seguimiento de paquetes.
+ * Objetivo: Obtener el detalle completo del pedido (incluye info de cliente y productos) para Repartidor/Cliente.
  */
-// Ruta para el seguimiento del cliente, ahora devuelve el historial completo
 app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     const pedidoId = req.params.id;
 
     try {
+        // ⭐️ MODIFICACIÓN CLAVE: Incluir JOINs para obtener cliente y productos ⭐️
         const { data, error } = await supabase
-            .from('pedidos') // Asume que 'pedidos' contiene la info del seguimiento
-            .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento') // Selecciona el historial
+            .from('pedidos')
+            .select(`
+                id, 
+                direccion, 
+                fecha_estimada, 
+                estado_envio, 
+                historial_seguimiento,
+                cliente_Online (
+                    correo, 
+                    telefono
+                ),
+                ventasOnline (
+                    detalle_ventaonline (
+                        nombre_producto,
+                        cantidad
+                    )
+                )
+            `)
             .eq('id', pedidoId)
             .single();
 
-        if (error && error.code === 'PGRST116') { // No rows found
+        if (error && error.code === 'PGRST116') {
             return res.status(404).json({ message: 'Pedido no encontrado.' });
         }
         if (error) {
@@ -2001,22 +2016,33 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             return res.status(404).json({ message: 'Pedido no encontrado.' });
         }
 
-        // Si historial_seguimiento es null o vacío, inicialízalo con el estado actual
+        // Procesamiento de historial
         let historial = data.historial_seguimiento || [];
         if (historial.length === 0 && data.estado_envio) {
             historial.push({
                 estado: data.estado_envio,
-                fecha: data.created_at || new Date().toISOString(), // Usar fecha de creación del pedido o actual
+                fecha: data.created_at || new Date().toISOString(),
                 mensaje: `Estado inicial: ${data.estado_envio}`
             });
         }
+
+        // Procesamiento de productos (aplanamiento)
+        const detalles_venta = data.ventasOnline?.detalle_ventaonline || [];
+        const lista_productos = detalles_venta.map(d => ({
+            nombre: d.nombre_producto,
+            cantidad: d.cantidad
+        }));
 
         res.status(200).json({
             id: data.id,
             direccion: data.direccion,
             fecha_estimada: data.fecha_estimada,
-            estado_actual: data.estado_envio, // Mantener para compatibilidad
-            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)) // Ordenar por fecha
+            estado_actual: data.estado_envio,
+            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)),
+            // ⭐️ DATOS DEL CLIENTE Y PRODUCTOS AGREGADOS ⭐️
+            cliente_correo: data.cliente_Online.correo,
+            telefono: data.cliente_Online.telefono,
+            productos: lista_productos
         });
 
     } catch (error) {
@@ -2231,7 +2257,7 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
     const codigoPedido = req.params.codigo.toUpperCase();
     console.log(`🎯 [ENDPOINT LLAMADO] Buscando: ${codigoPedido}`);
-    
+
     try {
         // 1. Buscar la venta (sin .single() - más robusto)
         const { data: ventas, error: ventaError } = await supabase
@@ -2242,16 +2268,16 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
 
         if (ventaError) {
             console.error('❌ Error Supabase ventas:', ventaError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 message: 'Error de base de datos',
-                error: ventaError.message 
+                error: ventaError.message
             });
         }
 
         if (!ventas || ventas.length === 0) {
             console.log('❌ No se encontró venta con código:', codigoPedido);
-            return res.status(404).json({ 
-                message: `No se encontró pedido con código ${codigoPedido}` 
+            return res.status(404).json({
+                message: `No se encontró pedido con código ${codigoPedido}`
             });
         }
 
@@ -2267,16 +2293,16 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
 
         if (pedidoError) {
             console.error('❌ Error Supabase pedidos:', pedidoError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 message: 'Error al buscar seguimiento',
-                error: pedidoError.message 
+                error: pedidoError.message
             });
         }
 
         if (!pedidos || pedidos.length === 0) {
             console.log('❌ No se encontró pedido para venta:', venta.id_ventaOnline);
-            return res.status(404).json({ 
-                message: 'Pedido sin información de seguimiento' 
+            return res.status(404).json({
+                message: 'Pedido sin información de seguimiento'
             });
         }
 
@@ -2294,9 +2320,9 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
 
     } catch (error) {
         console.error('💥 Error inesperado:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Error interno del servidor',
-            error: error.message 
+            error: error.message
         });
     }
 });

@@ -129,7 +129,7 @@ async function loadPaqueteDetails(paqueteId) {
     try {
         // Nota: Reutilizamos la ruta del cliente ya que devuelve la información completa
         const response = await fetch(`${API_BASE_URL}/api/paquetes/seguimiento/${paqueteId}`, {
-            headers: { 'Authorization': `Bearer ${token}` } // Se requiere el token si está detrás de RLS
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
 
@@ -137,10 +137,12 @@ async function loadPaqueteDetails(paqueteId) {
 
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
+        // ⭐️ MODIFICADO: Usamos el nuevo campo cliente_correo ⭐️
         document.getElementById('clienteEmail').textContent = data.cliente_correo || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
+            // ⭐️ MODIFICADO: Usamos el nuevo campo telefono ⭐️
             telefonoLink.href = `tel:${data.telefono}`;
             telefonoLink.textContent = data.telefono || 'N/A';
         }
@@ -149,6 +151,7 @@ async function loadPaqueteDetails(paqueteId) {
         const listaProductos = document.getElementById('listaProductos');
         listaProductos.innerHTML = '';
 
+        // ⭐️ MODIFICADO: Procesamos el nuevo array 'productos' ⭐️
         if (data.productos && data.productos.length > 0) {
             data.productos.forEach(p => {
                 // Asume que el producto tiene { nombre, cantidad }
@@ -164,12 +167,13 @@ async function loadPaqueteDetails(paqueteId) {
         const selectEstado = document.getElementById('nuevoEstado');
         const estadoActual = data.estado_actual;
         if (selectEstado && estadoActual) {
-            selectEstado.value = estadoActual;
+            // Aseguramos que el valor seleccionado sea mayúsculas (como en la BD)
+            selectEstado.value = estadoActual.toUpperCase();
             // Asegurar que la UI se actualice con el estado correcto
             const btnActualizar = document.getElementById('btnActualizarEstado');
             const pruebaDiv = document.getElementById('pruebasEntrega');
             const mensajeExtraContainer = document.getElementById('mensajeExtraContainer');
-            setupDetailUI(estadoActual, btnActualizar, pruebaDiv, mensajeExtraContainer);
+            setupDetailUI(estadoActual.toUpperCase(), btnActualizar, pruebaDiv, mensajeExtraContainer);
         }
 
     } catch (error) {
