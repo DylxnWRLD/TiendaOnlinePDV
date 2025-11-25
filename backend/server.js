@@ -2236,7 +2236,7 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
         // 1. Buscar la venta (sin .single() - más robusto)
         const { data: ventas, error: ventaError } = await supabase
             .from('ventasonline')
-            .select('id_ventaOnline, codigo_pedido')
+            .select('id_ventaonline, codigo_pedido')
             .eq('codigo_pedido', codigoPedido)
             .limit(1);
 
