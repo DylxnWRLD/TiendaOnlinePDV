@@ -1984,8 +1984,18 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 
     try {
         const { data, error } = await supabase
-            .from('pedidos') // Asume que 'pedidos' contiene la info del seguimiento
-            .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento') // Selecciona el historial
+            .from('pedidos')
+            .select(`
+                id, 
+                direccion, 
+                fecha_estimada, 
+                estado_envio, 
+                historial_seguimiento,
+                ventasOnline(
+                    detalle_ventaonline(nombre_producto, cantidad),
+                    cliente_Online(correo, telefono)
+                )
+            `) // ✅ CORRECCIÓN: Se agrega JOIN anidado para obtener correo y teléfono
             .eq('id', pedidoId)
             .single();
 
@@ -2450,15 +2460,13 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
         const { data, error } = await supabase
             .from('pedidos')
             .select(`
-                id,
-                direccion,
-                telefono,
-                estado_envio,
+                id, 
+                direccion, 
+                estado_envio, 
                 fecha_estimada
             `)
-            .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
-            .filter('estado_envio', 'not.in', '(ENTREGADO,CANCELADO)')
-            .order('fecha_actualizacion', { ascending: false });
+            .eq('id_repartidor', id_repartidor)
+            .filter('estado_envio', 'not.in', '("ENTREGADO", "CANCELADO")')
 
         if (error) {
             console.error('Error al obtener lista de paquetes (Supabase):', error.message);

@@ -135,25 +135,30 @@ async function loadPaqueteDetails(paqueteId) {
 
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
+        // ⭐️ EXTRAEMOS LOS DATOS ANIDADOS ⭐️
+        const venta = data.ventasOnline;
+        const cliente = venta.cliente_Online;
+        const detallesProductos = venta.detalle_ventaonline;
+
         // Rellenar información del cliente y dirección
         document.getElementById('direccion').textContent = data.direccion || 'N/A';
-        document.getElementById('clienteEmail').textContent = data.cliente_correo || 'N/A';
+        document.getElementById('clienteEmail').textContent = cliente.correo || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            telefonoLink.href = `tel:${data.telefono}`;
-            telefonoLink.textContent = data.telefono || 'N/A';
+            telefonoLink.href = `tel:${cliente.telefono}`;
+            telefonoLink.textContent = cliente.telefono || 'N/A';
         }
 
         // Rellenar lista de productos
         const listaProductos = document.getElementById('listaProductos');
         listaProductos.innerHTML = '';
 
-        if (data.productos && data.productos.length > 0) {
-            data.productos.forEach(p => {
+        if (detallesProductos && detallesProductos.length > 0) {
+            detallesProductos.forEach(p => {
                 // Asume que el producto tiene { nombre, cantidad }
                 const li = document.createElement('li');
-                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre || 'Producto sin nombre'} x${p.cantidad || 1}`;
+                li.innerHTML = `<i class="fas fa-cube" style="margin-right: 8px;"></i>${p.nombre_producto || 'Producto sin nombre'} x${p.cantidad || 1}`;
                 listaProductos.appendChild(li);
             });
         } else {
