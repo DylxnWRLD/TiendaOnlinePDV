@@ -2457,7 +2457,7 @@ app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
                 fecha_estimada
             `)
             .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
-            .filter('estado_envio', 'notin', 'ENTREGADO,CANCELADO')
+            .filter('estado_envio', 'not.in', '(ENTREGADO,CANCELADO)')
             .order('fecha_actualizacion', { ascending: false });
 
         if (error) {
