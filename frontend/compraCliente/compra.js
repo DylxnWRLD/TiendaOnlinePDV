@@ -242,10 +242,8 @@ async function procesarCompraFinal() {
         };
     });
 
-    // ⭐️ Limpieza FINAL del Teléfono antes de enviar el payload ⭐️
     datosCliente.telefono = datosCliente.telefono ? datosCliente.telefono.trim() : '';
 
-    // ⭐️ CORRECCIÓN: Agregar p_id_repartidor con valor temporal ⭐️
     const payload = {
         p_correo: datosCliente.correo,
         p_direccion: datosCliente.direccion,
@@ -253,7 +251,7 @@ async function procesarCompraFinal() {
         p_total_final: totalFinal.toFixed(2),
         p_metodo_pago: datosCliente.metodoPago,
         p_detalles: detallesVenta,
-        p_id_repartidor: '00000000-0000-0000-0000-000000000000' // UUID temporal
+        p_id_repartidor: '00000000-0000-0000-0000-000000000000' 
     };
 
     // ⭐️ MEJORA: Log más detallado para debug ⭐️
