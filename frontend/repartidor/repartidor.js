@@ -136,7 +136,7 @@ async function loadPaqueteDetails(paqueteId) {
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
         // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
-        const venta = data.ventaonline;
+        const venta = data.ventasonline;
         const cliente = venta.cliente_Online || {};
         const detallesProductos = venta.detalle_ventaonline || [];
 

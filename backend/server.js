@@ -2012,7 +2012,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         }
 
         // ⭐️ EXTRACCIÓN DE DATOS DE CONTACTO PARA FRONTEND ⭐️
-        const ventaData = data.ventaonline;
+        const ventaData = data.ventasonline;
         const clienteData = ventaData.cliente_Online || {};
         const detalles = ventaData.detalle_ventaonline.map(d => ({
             nombre: d.nombre_producto,
