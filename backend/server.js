@@ -2236,7 +2236,7 @@ app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
         // 1. Buscar en ventasonline (MINÚSCULAS)
         const { data: ventaData, error: ventaError } = await supabase
             .from('ventasonline') // ⬅️ CORREGIDO: minúsculas
-            .select('id_ventaOnline, codigo_pedido')
+            .select('id_ventaonline, codigo_pedido')
             .eq('codigo_pedido', codigoPedido)
             .single();
 
