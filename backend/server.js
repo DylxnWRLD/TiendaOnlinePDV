@@ -1983,6 +1983,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
     const pedidoId = req.params.id;
 
     try {
+        // 1. Consulta Principal: Obtenemos el pedido y sus relaciones anidadas
         const { data, error } = await supabase
             .from('pedidos')
             .select(`
@@ -1992,8 +1993,9 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 estado_envio, 
                 historial_seguimiento,
                 ventasonline( 
-                    detalle_ventaonline(nombre_producto, cantidad),
-                    cliente_online(correo, telefono)
+                    id_ventaonline, 
+                    detalle_ventaonline(nombre_producto, cantidad), 
+                    cliente_online(correo, telefono)              
                 )
             `)
             .eq('id', pedidoId)
@@ -2001,7 +2003,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
 
         if (error) {
             console.error('Error Supabase al obtener seguimiento:', error.message);
-            if (error.code === 'PGRST116') { // No rows found
+            if (error.code === 'PGRST116') {
                 return res.status(404).json({ message: 'Pedido no encontrado.' });
             }
             return res.status(500).json({ message: 'Error interno del servidor.' });
@@ -2024,7 +2026,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
         if (historial.length === 0 && data.estado_envio) {
             historial.push({
                 estado: data.estado_envio,
-                fecha: data.created_at || new Date().toISOString(), // Usar fecha de creación del pedido o actual
+                fecha: data.created_at || new Date().toISOString(),
                 mensaje: `Estado inicial: ${data.estado_envio}`
             });
         }
@@ -2033,7 +2035,7 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
             id: data.id,
             direccion: data.direccion,
             fecha_estimada: data.fecha_estimada,
-            estado_actual: data.estado_envio, // Mantener para compatibilidad
+            estado_actual: data.estado_envio,
             cliente_correo: clienteData.correo,
             telefono: clienteData.telefono,
             productos: detalles,

@@ -141,12 +141,11 @@ async function loadPaqueteDetails(paqueteId) {
 
         const detallesProductos = venta?.detalle_ventaonline || []; // También aquí
         // Rellenar información del cliente y dirección
-        document.getElementById('direccion').textContent = data.direccion || 'N/A';        // ✅ CORRECCIÓN: Lee de la clave cliente
-        document.getElementById('clienteEmail').textContent = cliente.correo || 'N/A';
+        document.getElementById('clienteEmail').textContent = data.cliente_correo || 'N/A';
+        document.getElementById('clienteTelefonoLink').textContent = data.telefono || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
         if (telefonoLink) {
-            // ✅ CORRECCIÓN: Lee de la clave cliente
             telefonoLink.href = `tel:${cliente.telefono}`;
             telefonoLink.textContent = cliente.telefono || 'N/A';
         }
