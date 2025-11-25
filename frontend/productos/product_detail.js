@@ -84,11 +84,7 @@ function setupHeader() {
     if (token) {
         // --- Usuario LOGUEADO ---
         if (loginBtn) {
-            loginBtn.textContent = "Mi Cuenta";
-            loginBtn.addEventListener("click", () => {
-                // Redirige directo al perfil del cliente
-                window.location.href = "../cliente/cliente.html";
-            });
+            loginBtn.style.display = "none"
         }
 
         // --- Menú Hamburguesa (Visible para quien esté logueado) ---
@@ -136,7 +132,7 @@ function setupHeader() {
     }
 }
 
-// ⭐️ Manejador de acciones del menú (Rutas ajustadas para /productos/) ⭐️
+// Manejador de acciones del menú (Rutas ajustadas para /productos/)
 function handleClientMenuAction(action) {
     switch (action) {
         case 'rastreo':
@@ -322,7 +318,7 @@ function renderCartModal() {
 }
 
 // #################################################
-// ⭐️ COMENTARIOS
+// COMENTARIOS
 // #################################################
 
 async function fetchComments(productId) {
@@ -571,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // #################################################
-// ⭐️ FAVORITOS (LÓGICA)
+// FAVORITOS (LÓGICA)
 // #################################################
 
 async function checkFavoriteStatus(productId) {

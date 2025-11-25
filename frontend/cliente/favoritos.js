@@ -43,11 +43,7 @@ function setupHeader() {
     if (token) {
         // --- Usuario LOGUEADO ---
         if (loginBtn) {
-            loginBtn.textContent = "Mi Cuenta";
-            loginBtn.addEventListener("click", () => {
-                // Ya estamos en la carpeta cliente, así que recargamos o vamos al dashboard
-                window.location.href = "./cliente.html";
-            });
+            loginBtn.style.display = "none"
         }
 
         // --- Menú Hamburguesa ---
