@@ -2230,67 +2230,74 @@ app.post('/api/rpc/procesar_compra_online', async (req, res) => {
 // GET /api/paquetes/seguimiento/codigo/:codigo - VERSIÓN CORREGIDA
 app.get('/api/paquetes/seguimiento/codigo/:codigo', async (req, res) => {
     const codigoPedido = req.params.codigo.toUpperCase();
-    console.log(` [BACKEND] Buscando por código: ${codigoPedido}`);
-
+    console.log(`🎯 [ENDPOINT LLAMADO] Buscando: ${codigoPedido}`);
+    
     try {
-        // 1. Buscar en ventasonline (MINÚSCULAS)
-        const { data: ventaData, error: ventaError } = await supabase
-            .from('ventasonline') // ⬅️ CORREGIDO: minúsculas
-            .select('id_ventaonline, codigo_pedido')
+        // 1. Buscar la venta (sin .single() - más robusto)
+        const { data: ventas, error: ventaError } = await supabase
+            .from('ventasonline')
+            .select('id_ventaOnline, codigo_pedido')
             .eq('codigo_pedido', codigoPedido)
-            .single();
+            .limit(1);
 
         if (ventaError) {
-            console.log(' [BACKEND] Error en ventasonline:', ventaError);
-            return res.status(404).json({ 
-                message: 'No se encontró ningún pedido con ese código.' 
+            console.error('❌ Error Supabase ventas:', ventaError);
+            return res.status(500).json({ 
+                message: 'Error de base de datos',
+                error: ventaError.message 
             });
         }
 
-        if (!ventaData) {
-            console.log(' [BACKEND] Venta no encontrada');
+        if (!ventas || ventas.length === 0) {
+            console.log('❌ No se encontró venta con código:', codigoPedido);
             return res.status(404).json({ 
-                message: 'No se encontró ningún pedido con ese código.' 
+                message: `No se encontró pedido con código ${codigoPedido}` 
             });
         }
 
-        console.log(' [BACKEND] Venta encontrada:', ventaData);
+        const venta = ventas[0];
+        console.log('✅ Venta encontrada:', venta);
 
-        // 2. Buscar en pedidos
-        const { data: pedidoData, error: pedidoError } = await supabase
+        // 2. Buscar el pedido relacionado
+        const { data: pedidos, error: pedidoError } = await supabase
             .from('pedidos')
             .select('id, direccion, fecha_estimada, estado_envio, historial_seguimiento')
-            .eq('id_ventaOnline', ventaData.id_ventaOnline)
-            .single();
+            .eq('id_ventaOnline', venta.id_ventaOnline)
+            .limit(1);
 
         if (pedidoError) {
-            console.log(' [BACKEND] Error en pedidos:', pedidoError);
-            return res.status(404).json({ 
-                message: 'No se encontró información de seguimiento para este pedido.' 
+            console.error('❌ Error Supabase pedidos:', pedidoError);
+            return res.status(500).json({ 
+                message: 'Error al buscar seguimiento',
+                error: pedidoError.message 
             });
         }
 
-        if (!pedidoData) {
-            console.log(' [BACKEND] Pedido no encontrado');
+        if (!pedidos || pedidos.length === 0) {
+            console.log('❌ No se encontró pedido para venta:', venta.id_ventaOnline);
             return res.status(404).json({ 
-                message: 'No se encontró información de seguimiento.' 
+                message: 'Pedido sin información de seguimiento' 
             });
         }
 
-        console.log(' [BACKEND] Pedido encontrado:', pedidoData);
+        const pedido = pedidos[0];
+        console.log('✅ Pedido encontrado:', pedido);
 
-        // 3. Devolver respuesta
+        // 3. Devolver respuesta exitosa
         res.json({
-            id: pedidoData.id,
-            direccion: pedidoData.direccion,
-            fecha_estimada: pedidoData.fecha_estimada,
-            estado_envio: pedidoData.estado_envio,
-            historial_seguimiento: pedidoData.historial_seguimiento || []
+            id: pedido.id,
+            direccion: pedido.direccion,
+            fecha_estimada: pedido.fecha_estimada,
+            estado_envio: pedido.estado_envio,
+            historial_seguimiento: pedido.historial_seguimiento || []
         });
 
     } catch (error) {
-        console.error(' [BACKEND] Error inesperado:', error);
-        res.status(500).json({ message: 'Error interno del servidor.' });
+        console.error('💥 Error inesperado:', error);
+        res.status(500).json({ 
+            message: 'Error interno del servidor',
+            error: error.message 
+        });
     }
 });
 
