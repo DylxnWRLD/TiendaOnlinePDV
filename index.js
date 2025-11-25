@@ -12,7 +12,7 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", () => {
-    // ⭐️ NUEVO: Carga los productos desde la API
+    // Carga los productos desde la API
     cargarProductosDinamicos();
 
     // Código de tu compañero (Manejo de estado y botones)
@@ -75,7 +75,7 @@ async function cargarProductosDinamicos(searchQuery = "") {
 
             // Esta es la plantilla.
             const productHTML = `
-                <!-- ⭐️ CADA TARJETA ES UN ENLACE A LA PÁGINA DE DETALLE ⭐️ -->
+                <!-- CADA TARJETA ES UN ENLACE A LA PÁGINA DE DETALLE -->
                 <a href="frontend/productos/product_detail.html?id=${producto._id}" class="product-link">
                     <div class="product-card">
                         <img src="${imageUrl}" alt="${producto.name}" />
@@ -112,7 +112,7 @@ function setupHeaderAndMenu() {
     const searchInput = document.getElementById("search");
     const searchBtn = document.getElementById("searchBtn");
 
-    // ⭐️ NUEVOS ELEMENTOS DEL MENÚ LATERAL ⭐️
+    // NUEVOS ELEMENTOS DEL MENÚ LATERAL
     const sideMenu = document.getElementById("clientSideMenu");
     const menuOverlay = document.getElementById("menuOverlay");
     const clientMenuLinks = document.getElementById("clientMenuLinks");
@@ -125,24 +125,7 @@ function setupHeaderAndMenu() {
     if (token && role) {
         // --- Usuario LOGUEADO ---
         if (loginBtn) {
-            loginBtn.textContent = "Mi Cuenta";
-            loginBtn.addEventListener("click", () => {
-                // Redirección basada en el rol
-                if (role === 'Cliente') {
-                    // Se asume la existencia de la página cliente.html
-                    window.location.href = "frontend/cliente/cliente.html";
-                } else if (role === 'Admin') {
-                    window.location.href = "frontend/admin/admin.html";
-                } else if (role === 'Cajero') {
-                    window.location.href = "frontend/cajero/apertura_caja.html";
-                } else if (role === 'AdminInventario') {
-                    window.location.href = "frontend/admin_inv/admininv.html";
-                } else if (role === 'Repartidor') {
-                    window.location.href = "frontend/repartidor/repartidor.html";
-                } else {
-                    window.location.href = "frontend/cliente/cliente.html";
-                }
-            });
+            loginBtn.style.display = "none";
         }
         if (cartBtn) {
             cartBtn.addEventListener("click", () => {
@@ -150,7 +133,7 @@ function setupHeaderAndMenu() {
             });
         }
 
-        // ⭐️ Lógica del Menú Hamburguesa (Solo visible y funcional para Cliente) ⭐️
+        // Lógica del Menú Hamburguesa (Solo visible y funcional para Cliente)
         if (menuToggle) {
             if (role === 'Cliente') {
                 menuToggle.style.display = 'block'; // Asegurar que esté visible
@@ -205,7 +188,7 @@ function setupHeaderAndMenu() {
         }
     }
 
-    // --- ⭐️ Lógica de Búsqueda (MODIFICADA) ⭐️ ---
+    // --- Lógica de Búsqueda ---
     // Ahora la búsqueda llama a la API
     if (searchBtn && searchInput) {
         searchBtn.addEventListener("click", () => {
@@ -221,7 +204,7 @@ function setupHeaderAndMenu() {
     }
 }
 
-// ⭐️ FUNCIÓN: Manejar las acciones del menú del cliente (Nueva) ⭐️
+// FUNCIÓN: Manejar las acciones del menú del cliente
 function handleClientMenuAction(action) {
     switch (action) {
         case 'rastreo':
