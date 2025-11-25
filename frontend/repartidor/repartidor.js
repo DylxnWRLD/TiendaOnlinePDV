@@ -136,13 +136,12 @@ async function loadPaqueteDetails(paqueteId) {
         if (!response.ok) throw new Error(data.message || 'Error al cargar detalles.');
 
         // ⭐️ EXTRACCIÓN DE DATOS DESDE LA CLAVE 'ventaonline' ⭐️
-        const venta = data.ventasonline;
-        const cliente = venta.cliente_online || {};
-        const detallesProductos = venta.detalle_ventaonline || [];
+        const venta = data.ventasonline || data.ventaonline;
+        const cliente = venta?.cliente_online || {};
 
+        const detallesProductos = venta?.detalle_ventaonline || []; // También aquí
         // Rellenar información del cliente y dirección
-        document.getElementById('direccion').textContent = data.direccion || 'N/A';
-        // ✅ CORRECCIÓN: Lee de la clave cliente
+        document.getElementById('direccion').textContent = data.direccion || 'N/A';        // ✅ CORRECCIÓN: Lee de la clave cliente
         document.getElementById('clienteEmail').textContent = cliente.correo || 'N/A';
 
         const telefonoLink = document.getElementById('clienteTelefonoLink');
