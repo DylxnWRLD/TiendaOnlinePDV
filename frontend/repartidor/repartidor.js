@@ -230,7 +230,7 @@ async function handleActualizarEstado(paqueteId) {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/paquetes/${paqueteId}/estado`, {
+            const response = await fetch(`${API_BASE_URL}/api/paquetes/${paqueteId}/estado`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

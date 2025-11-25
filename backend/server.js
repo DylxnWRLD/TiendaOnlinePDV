@@ -1992,8 +1992,8 @@ app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
                 estado_envio, 
                 historial_seguimiento,
                 id_ventaOnline( 
-                detalle_ventaonline(nombre_producto, cantidad),
-                cliente_Online(correo, telefono)
+                    detalle_ventaonline(nombre_producto, cantidad),
+                    cliente_Online(correo, telefono)
                 )
             `)
             .eq('id', pedidoId)
