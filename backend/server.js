@@ -1974,80 +1974,49 @@ app.put('/api/paquetes/:id/estado', getUserIdFromToken, async (req, res) => {
 });
 
 /**
- * RUTA: GET /api/paquetes/seguimiento/:id
- * Objetivo: Obtener el detalle completo del pedido (incluye info de cliente y productos) para Repartidor/Cliente.
+ * RUTA: GET /api/paquetes/repartidor
+ * Objetivo: Obtener la lista de pedidos ASIGNADOS al repartidor logueado.
+ * CORREGIDO: Obtiene el teléfono del cliente a través de un JOIN a cliente_online.
  */
-app.get('/api/paquetes/seguimiento/:id', async (req, res) => {
-    const pedidoId = req.params.id;
+app.get('/api/paquetes/repartidor', getUserIdFromToken, async (req, res) => {
+    const id_repartidor = req.userId; // ID del repartidor (de auth.users)
 
     try {
-        // ⭐️ MODIFICACIÓN CLAVE: Incluir JOINs para obtener cliente y productos ⭐️
         const { data, error } = await supabase
-            .from('pedidos') 
+            .from('pedidos')
             .select(`
                 id, 
                 direccion, 
-                fecha_estimada, 
                 estado_envio, 
-                historial_seguimiento,
-                cliente_Online (
-                    correo, 
-                    telefono
-                ),
-                ventasOnline (
-                    detalle_ventaonline (
-                        nombre_producto,
-                        cantidad
-                    )
+                fecha_estimada,
+                cliente_Online ( // ⭐️ Corregido: JOIN a la tabla cliente_Online ⭐️
+                    telefono 
                 )
             `)
-            .eq('id', pedidoId)
-            .single();
+            .eq('id_repartidor', id_repartidor) // Filtra por el repartidor logueado
+            .not('estado_envio', 'in', '("ENTREGADO", "CANCELADO")')
+            .order('fecha_actualizacion', { ascending: false });
 
-        if (error && error.code === 'PGRST116') {
-            return res.status(404).json({ message: 'Pedido no encontrado.' });
-        }
         if (error) {
-            console.error('Error Supabase al obtener seguimiento:', error.message);
-            return res.status(500).json({ message: 'Error interno del servidor.' });
+            console.error('Error al obtener lista de paquetes (Supabase):', error.message);
+            return res.status(500).json({ message: 'Error interno al cargar la lista de paquetes.', details: error.message });
         }
 
-        if (!data) {
-            return res.status(404).json({ message: 'Pedido no encontrado.' });
-        }
-
-        // Procesamiento de historial
-        let historial = data.historial_seguimiento || [];
-        if (historial.length === 0 && data.estado_envio) {
-            historial.push({
-                estado: data.estado_envio,
-                fecha: data.created_at || new Date().toISOString(),
-                mensaje: `Estado inicial: ${data.estado_envio}`
-            });
-        }
-        
-        // Procesamiento de productos (aplanamiento)
-        const detalles_venta = data.ventasOnline?.detalle_ventaonline || [];
-        const lista_productos = detalles_venta.map(d => ({
-            nombre: d.nombre_producto,
-            cantidad: d.cantidad
+        // Formatear para facilitar el renderizado en el frontend:
+        const paquetes = data.map(p => ({
+            id: p.id,
+            direccion: p.direccion,
+            // ⭐️ Usamos la data del JOIN ⭐️
+            telefono: p.cliente_Online.telefono || 'N/A',
+            estado_envio: p.estado_envio,
+            fecha_estimada: p.fecha_estimada,
+            cliente_correo: 'Contacto disponible en detalle'
         }));
 
-
-        res.status(200).json({
-            id: data.id,
-            direccion: data.direccion,
-            fecha_estimada: data.fecha_estimada,
-            estado_actual: data.estado_envio, 
-            historial: historial.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)), 
-            // ⭐️ DATOS DEL CLIENTE Y PRODUCTOS AGREGADOS ⭐️
-            cliente_correo: data.cliente_Online.correo,
-            telefono: data.cliente_Online.telefono,
-            productos: lista_productos 
-        });
+        res.status(200).json(paquetes);
 
     } catch (error) {
-        console.error('Error fatal en ruta de seguimiento:', error.message);
+        console.error('Error fatal en /api/paquetes/repartidor:', error.message);
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
