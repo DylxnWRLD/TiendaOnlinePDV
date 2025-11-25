@@ -167,7 +167,7 @@ function setupHeaderAndMenu() {
   if (token && role) {
     // --- Usuario LOGUEADO ---
     if (loginBtn) {
-      lloginBtn.style.display = "none"
+      loginBtn.style.display = "none"
     }
     if (cartBtn) {
       cartBtn.addEventListener("click", () => {
